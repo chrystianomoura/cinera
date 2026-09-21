@@ -1,6 +1,7 @@
-import { Search } from "lucide-react";
-import { useTrendingMovies } from "@/hooks/use-movies";
-import { getPosterUrl, getBackdropUrl } from "@/infrastructure/api/movie-service";
+import { useState, useEffect } from "react";
+import { Search, Play, Info, X } from "lucide-react";
+import { useTrendingMovies, useHeroFeaturedMovies } from "@/hooks/use-movies";
+import { getPosterUrl, getBackdropUrl, movieService } from "@/infrastructure/api/movie-service";
 
 const GENRES = [
   "Ação", "Aventura", "Animação", "Comédia", "Crime", "Documentário", 
@@ -8,11 +9,69 @@ const GENRES = [
   "Mistério", "Ficção Científica", "Cinema TV", "Thriller", "Guerra", "Faroeste"
 ];
 
-export default function App() {
-  const { data, isLoading, isError } = useTrendingMovies(1);
+function formatRuntime(minutes?: number): string | null {
+  if (!minutes || minutes <= 0) return null;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours === 0) return `${remainingMinutes}m`;
+  if (remainingMinutes === 0) return `${hours}h`;
+  return `${hours}h ${remainingMinutes}m`;
+}
 
-  // Encontra o primeiro filme com backdrop para o Hero
-  const heroMovie = data?.results.find((m) => m.backdropPath) || data?.results[0];
+export default function App() {
+  const { data: trendingData, isLoading: isLoadingTrending, isError: isErrorTrending } = useTrendingMovies(1);
+  const { data: heroMovies, isLoading: isLoadingHero } = useHeroFeaturedMovies();
+
+  const heroCandidates = heroMovies || [];
+
+  // Sorteia um índice aleatório inicial
+  const [heroIndex, setHeroIndex] = useState<number>(0);
+  const [isFading, setIsFading] = useState<boolean>(false);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+
+  const heroMovie = heroCandidates.length > 0 ? heroCandidates[heroIndex % heroCandidates.length] : null;
+
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
+  const [trailerData, setTrailerData] = useState<{ movieId: number; key: string | null } | null>(null);
+  const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
+
+  // Deriva a chave do trailer apenas para o filme ativo no Hero
+  const trailerKey = (heroMovie?.id && trailerData?.movieId === heroMovie.id) ? trailerData.key : null;
+
+  // Rotação automática a cada 8 segundos com crossfade suave (pausa no hover ou trailer aberto)
+  useEffect(() => {
+    if (heroCandidates.length <= 1 || isTrailerOpen || isHovered) return;
+
+    const interval = setInterval(() => {
+      setIsFading(true);
+      setTimeout(() => {
+        setHeroIndex((prev) => (prev + 1) % heroCandidates.length);
+        setIsFading(false);
+      }, 700);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [heroCandidates.length, isTrailerOpen, isHovered]);
+
+  const handleOpenTrailer = async () => {
+    if (!heroMovie) return;
+    setIsTrailerOpen(true);
+    if (trailerData?.movieId !== heroMovie.id) {
+      setIsLoadingTrailer(true);
+      try {
+        const videos = await movieService.getMovieVideos(heroMovie.id);
+        const trailer =
+          videos.find((v) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")) ||
+          videos.find((v) => v.site === "YouTube") ||
+          videos[0];
+        setTrailerData({ movieId: heroMovie.id, key: trailer?.key || null });
+      } catch (err) {
+        console.error("Erro ao carregar trailer:", err);
+      } finally {
+        setIsLoadingTrailer(false);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
@@ -40,32 +99,157 @@ export default function App() {
         <div className="w-24"></div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative w-full h-[60vh] md:h-[75vh] flex items-end pb-10 px-6 md:px-12">
-        {isLoading && (
+      {/* Hero Section com Ken Burns e Crossfade */}
+      <section 
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="relative w-full min-h-[65vh] md:min-h-[80vh] flex items-end pb-12 px-6 md:px-12 overflow-hidden"
+      >
+        {(isLoadingHero || !heroMovie) && (
           <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
         )}
         
-        {!isLoading && heroMovie && (
+        {!isLoadingHero && heroMovie && (
           <>
-            <div className="absolute inset-0 overflow-hidden">
+            <div className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${isFading ? 'opacity-0' : 'opacity-100'}`}>
               <img 
+                key={heroMovie.id}
                 src={getBackdropUrl(heroMovie.backdropPath)} 
                 alt={heroMovie.title}
-                className="w-full h-full object-cover object-top opacity-60"
+                className="w-full h-full object-cover object-top animate-kenburns origin-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/30 to-transparent" />
+              {/* Degradê inferior suave fundindo com a página */}
+              <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none" />
+              {/* Degradê direcional no lado esquerdo do texto, protegendo a leitura contra fundos claros e preservando a foto na direita */}
+              <div className="absolute inset-y-0 left-0 w-full md:w-3/5 bg-gradient-to-r from-black/95 via-black/75 to-transparent pointer-events-none" />
             </div>
             
-            <div className="relative z-10 max-w-4xl">
-              <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-5 leading-tight drop-shadow-2xl">
-                {heroMovie.title}
-              </h2>
-              {/* SINOPSE: Removido line-clamp, texto inteiro */}
-              <p className="text-zinc-300 text-base md:text-lg max-w-xl font-normal drop-shadow-lg leading-relaxed">
-                {heroMovie.overview}
-              </p>
+            <div className={`relative z-10 max-w-3xl transition-all duration-700 transform ${isFading ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
+              {/* META-DADOS: Gênero Principal / Ano / Tempo de Duração / Nota */}
+              {(() => {
+                const heroGenre = heroMovie.genres?.[0]?.name || null;
+                const releaseYear = heroMovie.releaseDate ? heroMovie.releaseDate.slice(0, 4) : null;
+                const runtimeFormatted = formatRuntime(heroMovie.runtime);
+
+                return (
+                  <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-4 text-sm md:text-base">
+                    {/* Gênero Principal com destaque vivo */}
+                    {heroGenre && (
+                      <span className="font-bold text-white tracking-wide uppercase text-xs md:text-sm drop-shadow-md">
+                        {heroGenre}
+                      </span>
+                    )}
+
+                    {/* Separador */}
+                    {heroGenre && releaseYear && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block flex-shrink-0 shadow-sm" />
+                    )}
+
+                    {/* Ano */}
+                    {releaseYear && (
+                      <span className="font-semibold text-zinc-200 drop-shadow-sm">
+                        {releaseYear}
+                      </span>
+                    )}
+
+                    {/* Separador */}
+                    {releaseYear && runtimeFormatted && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block flex-shrink-0 shadow-sm" />
+                    )}
+
+                    {/* Duração */}
+                    {runtimeFormatted && (
+                      <span className="font-semibold text-zinc-200 drop-shadow-sm">
+                        {runtimeFormatted}
+                      </span>
+                    )}
+
+                    {/* Separador */}
+                    {(heroGenre || releaseYear || runtimeFormatted) && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block flex-shrink-0 shadow-sm" />
+                    )}
+
+                    {/* Nota IMDb */}
+                    <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/20">
+                      <span className="bg-[#f5c518] text-black text-xs md:text-sm font-black px-2 py-0.5 tracking-wider uppercase">
+                        IMDb
+                      </span>
+                      <span className="bg-black/90 text-white text-xs md:text-sm font-bold px-2 py-0.5 backdrop-blur-md">
+                        {heroMovie.voteAverage.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* TÍTULO PRINCIPAL: se contiver dois pontos (:), quebra a linha mantendo a mesma formatação e tamanho */}
+              {(() => {
+                const colonIndex = heroMovie.title.indexOf(":");
+                if (colonIndex !== -1) {
+                  const part1 = heroMovie.title.slice(0, colonIndex).trim();
+                  const part2 = heroMovie.title.slice(colonIndex + 1).trim();
+                  const longestPart = Math.max(part1.length, part2.length);
+
+                  return (
+                    <h2
+                      className={`font-black tracking-tight text-white mb-4 leading-[1.08] drop-shadow-2xl max-w-3xl ${
+                        longestPart > 24
+                          ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
+                          : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
+                      }`}
+                    >
+                      <span>{part1}</span>
+                      {part2 && (
+                        <>
+                          <br />
+                          <span>{part2}</span>
+                        </>
+                      )}
+                    </h2>
+                  );
+                }
+
+                return (
+                  <h2 
+                    className={`font-black tracking-tight text-white mb-4 leading-[1.08] drop-shadow-2xl ${
+                      heroMovie.title.length > 32
+                        ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl max-w-2xl"
+                        : heroMovie.title.length > 18
+                        ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-2xl"
+                        : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-xl"
+                    }`}
+                  >
+                    {heroMovie.title}
+                  </h2>
+                );
+              })()}
+
+              {/* TAGLINE OFICIAL DO FILME (substitui a sinopse no Hero) */}
+              {heroMovie.tagline && (
+                <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-8 drop-shadow-md max-w-2xl">
+                  &ldquo;{heroMovie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}&rdquo;
+                </p>
+              )}
+
+              {/* BOTÕES DE AÇÃO: Trailer e Ver Detalhes (desativado por enquanto) */}
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  onClick={handleOpenTrailer}
+                  className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-white text-black font-bold text-base hover:bg-zinc-200 transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 cursor-pointer group"
+                >
+                  <Play className="w-5 h-5 fill-current transition-transform group-hover:scale-110" />
+                  <span>Trailer</span>
+                </button>
+
+                <button
+                  disabled
+                  title="Página de detalhes em desenvolvimento"
+                  className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-zinc-900/40 text-zinc-500 font-semibold text-base border border-white/5 cursor-not-allowed select-none"
+                >
+                  <Info className="w-5 h-5 text-zinc-500" />
+                  <span>Ver Detalhes</span>
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -93,7 +277,7 @@ export default function App() {
           {/* TÍTULO EM ALTA: Margem inferior restaurada para mb-6 para dar espaço aos cards */}
           <h3 className="text-3xl font-semibold mb-6 text-white tracking-tight">Em Alta</h3>
           
-          {isError && (
+          {isErrorTrending && (
             <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-8 text-center backdrop-blur-sm">
               <p className="text-zinc-400">
                 Ocorreu um erro ao carregar os filmes. Tente novamente mais tarde.
@@ -101,7 +285,7 @@ export default function App() {
             </div>
           )}
 
-          {isLoading ? (
+          {isLoadingTrending ? (
             <div className="flex gap-4 md:gap-6 overflow-hidden">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex-shrink-0 w-36 md:w-48 lg:w-56 flex flex-col gap-3 animate-pulse">
@@ -113,7 +297,7 @@ export default function App() {
             </div>
           ) : (
             <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide snap-x">
-              {data?.results.map((movie) => (
+              {trendingData?.results.map((movie) => (
                 <div
                   key={movie.id}
                   className="snap-start flex-shrink-0 w-36 md:w-48 lg:w-56 group relative flex flex-col gap-2 cursor-pointer"
@@ -162,6 +346,59 @@ export default function App() {
         </section>
 
       </main>
+
+      {/* Modal de Trailer com Título Centralizado */}
+      {isTrailerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+            {/* Cabeçalho com título centralizado */}
+            <div className="relative flex items-center justify-center px-12 py-4 border-b border-white/10 bg-zinc-900/80">
+              <h4 className="text-base md:text-lg font-semibold text-white tracking-wide text-center truncate">
+                {heroMovie?.title} — Trailer Oficial
+              </h4>
+              <button
+                onClick={() => setIsTrailerOpen(false)}
+                className="absolute right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative w-full aspect-video bg-black flex items-center justify-center">
+              {isLoadingTrailer && (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <span className="text-sm text-zinc-400">Carregando trailer...</span>
+                </div>
+              )}
+              {!isLoadingTrailer && trailerKey ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`}
+                  title={`${heroMovie?.title} Trailer`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
+              ) : !isLoadingTrailer ? (
+                <div className="p-8 text-center text-zinc-400">
+                  <p>Nenhum trailer encontrado diretamente na API para este filme.</p>
+                  <a
+                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                      `${heroMovie?.title || ""} trailer oficial`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block mt-4 px-5 py-2.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors"
+                  >
+                    Buscar no YouTube
+                  </a>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
