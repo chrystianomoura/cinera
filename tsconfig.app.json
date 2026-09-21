@@ -9,9 +9,8 @@
     "skipLibCheck": true,
 
     /* Resolução de Módulos e Aliases */
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,

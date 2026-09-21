@@ -16,24 +16,23 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
-      {/* Header Sticky (Ocupa espaço e empurra a foto para baixo) */}
-      <header className="sticky top-0 z-50 bg-black/70 backdrop-blur-xl border-b border-white/5 transition-all duration-300 px-6 py-5 flex items-center justify-between">
+      {/* Header Sticky com efeito Vidro Fumê Lapidado */}
+      <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] transition-all duration-300 px-6 py-4 md:py-5 flex items-center justify-between">
         {/* LOGO */}
-        <h1 className="tracking-widest font-black text-3xl md:text-4xl text-white uppercase font-serif drop-shadow-lg">
+        <h1 className="tracking-widest font-black text-3xl md:text-4xl text-white uppercase font-serif drop-shadow-md">
           Cinera
         </h1>
         
-        {/* Barra de Pesquisa */}
+        {/* Barra de Pesquisa em Vidro Harmonizado */}
         <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-lg hidden md:block">
           <div className="relative group">
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+              <Search className="h-4 w-4 text-zinc-400 group-focus-within:text-white transition-colors" />
             </div>
-            {/* Placeholder maior (text-base), cor hover mais suave */}
             <input
               type="text"
               placeholder="Pesquisar filmes..."
-              className="w-full bg-zinc-900/60 hover:bg-zinc-900/80 focus:bg-zinc-800/90 border border-transparent focus:border-zinc-700 rounded-full py-2.5 pl-11 pr-4 text-base text-white placeholder:text-zinc-500 outline-none transition-all duration-300 ring-0"
+              className="w-full bg-white/[0.06] hover:bg-white/[0.09] focus:bg-black/60 border border-white/10 focus:border-white/25 rounded-full py-2.5 pl-11 pr-4 text-base text-white placeholder:text-zinc-400 outline-none backdrop-blur-md transition-all duration-300 shadow-inner"
             />
           </div>
         </div>
