@@ -64,6 +64,16 @@ export default function App() {
     key: string | null;
   } | null>(null);
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Monitora a rolagem para adensar o Header dinamicamente durante a navegação
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 25);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Deriva a chave do trailer apenas para o filme ativo no Hero
   const trailerKey =
@@ -112,23 +122,33 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
-      {/* Header Fixo Translúcido flutuando com efeito Vidro Fumê Lapidado sobre o filme */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] transition-all duration-300 px-6 py-4 md:py-5 flex items-center justify-between gap-4">
-        {/* LOGO */}
-        <h1 className="tracking-widest font-black text-3xl md:text-4xl text-white uppercase font-serif drop-shadow-md flex-shrink-0">
+      {/* Header Fixo Translúcido Dinâmico: Enxuto, Cristalino no topo e Vidro Adensado ao rolar */}
+      <header
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 px-6 md:px-8 flex items-center justify-between gap-4 border-b ${
+          isScrolled
+            ? "bg-black/85 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] py-2 md:py-2.5"
+            : "bg-black/15 backdrop-blur-md border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.15)] py-2.5 md:py-3"
+        }`}
+      >
+        {/* LOGO Cinera: Fonte ampliada, leading-none para respiro vertical perfeito e sombra composta */}
+        <h1 className="tracking-widest font-black text-3xl sm:text-4xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
           Cinera
         </h1>
 
-        {/* Barra de Pesquisa em Vidro Harmonizado alinhada à direita */}
+        {/* Barra de Pesquisa com Lupa na mesma cor do placeholder e garantia de sobreposição z-10 */}
         <div className="relative group w-64 sm:w-80 md:w-96 flex-shrink-0">
-          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-zinc-400 group-focus-within:text-white transition-colors" />
-          </div>
           <input
             type="text"
             placeholder="Pesquisar filmes..."
-            className="w-full bg-white/[0.06] hover:bg-white/[0.09] focus:bg-black/60 border border-white/10 focus:border-white/25 rounded-full py-2.5 pl-11 pr-4 text-sm md:text-base text-white placeholder:text-zinc-400 outline-none backdrop-blur-md transition-all duration-300 shadow-inner"
+            className="w-full bg-zinc-800/80 hover:bg-zinc-700/80 focus:bg-zinc-900 border border-white/25 hover:border-white/40 focus:border-white rounded-full py-2 pl-11 pr-4 text-sm md:text-base text-white placeholder:text-zinc-400 outline-none backdrop-blur-md transition-all duration-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] focus:ring-2 focus:ring-white/20"
           />
+          <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none z-10">
+            <Search
+              size={18}
+              strokeWidth={2.2}
+              className="text-zinc-400 group-focus-within:text-white transition-colors"
+            />
+          </div>
         </div>
       </header>
 
@@ -136,7 +156,7 @@ export default function App() {
       <section
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-12 px-6 md:px-12 pt-28 md:pt-32 overflow-hidden"
+        className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-12 px-6 md:px-12 pt-24 md:pt-28 overflow-hidden"
       >
         {(isLoadingHero || !heroMovie) && (
           <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
@@ -153,8 +173,11 @@ export default function App() {
                 alt={heroMovie.title}
                 className="w-full h-full object-cover object-top animate-kenburns origin-center"
               />
-              {/* Degradê superior sutil apenas para garantir legibilidade da barra e logo sob o vidro */}
-              <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/60 via-black/20 to-transparent pointer-events-none" />
+              {/* Vinheta anamórfica localizada no canto superior esquerdo: protege a logo Cinera em fundos claros sem escurecer o restante do pôster */}
+              <div className="absolute top-0 left-0 w-80 md:w-96 h-36 bg-[radial-gradient(ellipse_at_top_left,_rgba(0,0,0,0.45)_0%,_transparent_75%)] pointer-events-none" />
+
+              {/* Degradê superior sutil e cristalino apenas para contraste suave da logo e busca */}
+              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/25 via-black/5 to-transparent pointer-events-none" />
 
               {/* Degradê inferior cinematográfico: restrito aos 50% inferiores, mantendo o topo e centro 100% livres e preservando as cores reais da fotografia */}
               <div
