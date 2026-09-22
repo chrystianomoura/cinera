@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Search, Play, Info, X } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Search, Play, Info, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTrendingMovies, useHeroFeaturedMovies } from "@/hooks/use-movies";
 import {
   getPosterUrl,
@@ -75,6 +75,161 @@ export default function App() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Refs e estados de limites de rolagem (atualizados de forma passiva após o término do scroll)
+  const genresRowRef = useRef<HTMLDivElement>(null);
+  const trendingRowRef = useRef<HTMLDivElement>(null);
+
+  const [canScrollLeftGenres, setCanScrollLeftGenres] = useState(false);
+  const [canScrollRightGenres, setCanScrollRightGenres] = useState(true);
+
+  const [canScrollLeftTrending, setCanScrollLeftTrending] = useState(false);
+  const [canScrollRightTrending, setCanScrollRightTrending] = useState(true);
+
+  // Monitora as fronteiras das pílulas com ativação instantânea no primeiro pixel
+  useEffect(() => {
+    const el = genresRowRef.current;
+    if (!el) return;
+
+    let lastLeft = el.scrollLeft > 2;
+    let lastRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+
+    const syncState = () => {
+      const left = el.scrollLeft > 2;
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+      if (left !== lastLeft) {
+        lastLeft = left;
+        setCanScrollLeftGenres(left);
+      }
+      if (right !== lastRight) {
+        lastRight = right;
+        setCanScrollRightGenres(right);
+      }
+    };
+
+    let timer: number | null = null;
+    const onScroll = () => {
+      // Disparo IMEDIATO no frame 0 quando cruza o limite
+      const left = el.scrollLeft > 2;
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+      if (left !== lastLeft) {
+        lastLeft = left;
+        setCanScrollLeftGenres(left);
+      }
+      if (right !== lastRight) {
+        lastRight = right;
+        setCanScrollRightGenres(right);
+      }
+
+      if (timer) clearTimeout(timer);
+      timer = window.setTimeout(syncState, 60);
+    };
+
+    syncState();
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", syncState);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", syncState);
+    };
+  }, []);
+
+  // Monitora as fronteiras do Em Alta com ativação instantânea no primeiro pixel (sem atraso)
+  useEffect(() => {
+    const el = trendingRowRef.current;
+    if (!el) return;
+
+    let lastLeft = el.scrollLeft > 2;
+    let lastRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+
+    const syncState = () => {
+      const left = el.scrollLeft > 2;
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+      if (left !== lastLeft) {
+        lastLeft = left;
+        setCanScrollLeftTrending(left);
+      }
+      if (right !== lastRight) {
+        lastRight = right;
+        setCanScrollRightTrending(right);
+      }
+    };
+
+    let timer: number | null = null;
+    const onScroll = () => {
+      // Disparo IMEDIATO no frame 0 quando cruza o limite
+      const left = el.scrollLeft > 2;
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+      if (left !== lastLeft) {
+        lastLeft = left;
+        setCanScrollLeftTrending(left);
+      }
+      if (right !== lastRight) {
+        lastRight = right;
+        setCanScrollRightTrending(right);
+      }
+
+      if (timer) clearTimeout(timer);
+      timer = window.setTimeout(syncState, 60);
+    };
+
+    syncState();
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", syncState);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", syncState);
+    };
+  }, [trendingData]);
+
+  const scrollGenres = (direction: "left" | "right") => {
+    const el = genresRowRef.current;
+    if (!el) return;
+    if (direction === "right") {
+      setCanScrollLeftGenres(true);
+    }
+    const scrollAmount = Math.max(Math.floor(el.clientWidth * 0.5), 320);
+    el.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollTrending = (direction: "left" | "right") => {
+    const el = trendingRowRef.current;
+    if (!el) return;
+    // Ativação instantânea do fade e da seta esquerda no exato momento do clique
+    if (direction === "right") {
+      setCanScrollLeftTrending(true);
+    }
+    // Padrão Netflix: avança ~80% da tela visível (cerca de 4 a 5 cards com 1 de âncora visual)
+    const scrollAmount = Math.max(Math.floor(el.clientWidth * 0.8), 500);
+    el.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  // Máscara com feathering suave não-linear (estilo Apple TV/Netflix) para entrada e saída dos cards
+  const trendingMask = useMemo(() => {
+    if (!canScrollLeftTrending && !canScrollRightTrending) return "none";
+
+    const leftStops = canScrollLeftTrending
+      ? "transparent 0%, rgba(0,0,0,0.12) 10px, rgba(0,0,0,0.45) 22px, rgba(0,0,0,0.88) 36px, black 48px"
+      : "black 0%";
+
+    const rightStops = canScrollRightTrending
+      ? "black calc(100% - 48px), rgba(0,0,0,0.88) calc(100% - 36px), rgba(0,0,0,0.45) calc(100% - 22px), rgba(0,0,0,0.12) calc(100% - 10px), transparent 100%"
+      : "black 100%";
+
+    return `linear-gradient(to right, ${leftStops}, ${rightStops})`;
+  }, [canScrollLeftTrending, canScrollRightTrending]);
 
   // Deriva a chave do trailer apenas para o filme ativo no Hero
   const trailerKey =
@@ -330,15 +485,35 @@ export default function App() {
 
       {/* Main Content */}
       <main className="relative z-10 px-6 md:px-12 flex flex-col gap-10">
-        {/* Pílulas de Gênero com fade cinematográfico, destaque nítido e rolagem livre */}
-        <section>
+        {/* Pílulas de Gênero com fade cinematográfico, destaque nítido e Fade Dock elegante */}
+        <section className="relative group/pills">
+          {/* Fade Dock Esquerdo perfeitamente alinhado com a altura das pílulas (top-0 bottom-4 desconsidera o pb-4) */}
           <div
+            className={`hidden md:flex absolute left-0 top-0 bottom-4 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity duration-300 ${
+              canScrollLeftGenres ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <button
+              onClick={() => scrollGenres("left")}
+              aria-label="Rolar gêneros para a esquerda"
+              className={`pointer-events-auto w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ml-4 ${
+                !canScrollLeftGenres ? "pointer-events-none invisible" : ""
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+
+          <div
+            ref={genresRowRef}
             className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide"
             style={{
-              maskImage:
-                "linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)",
-              WebkitMaskImage:
-                "linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)",
+              maskImage: canScrollRightGenres
+                ? "linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)"
+                : "none",
+              WebkitMaskImage: canScrollRightGenres
+                ? "linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)"
+                : "none",
             }}
           >
             {["Todos", ...GENRES].map((genre) => {
@@ -360,10 +535,27 @@ export default function App() {
             {/* Espaçador final para absorver o fade quando rolado até o final */}
             <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
           </div>
+
+          {/* Fade Dock Direito perfeitamente alinhado com a altura das pílulas (top-0 bottom-4 desconsidera o pb-4) */}
+          <div
+            className={`hidden md:flex absolute right-0 top-0 bottom-4 w-28 bg-gradient-to-l from-black from-35% via-black/70 to-transparent z-20 items-center justify-end pointer-events-none transition-opacity duration-300 ${
+              canScrollRightGenres ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <button
+              onClick={() => scrollGenres("right")}
+              aria-label="Rolar gêneros para a direita"
+              className={`pointer-events-auto w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer mr-4 ${
+                !canScrollRightGenres ? "pointer-events-none invisible" : ""
+              }`}
+            >
+              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
         </section>
 
         {/* Carrossel Em Alta com rolagem livre sem snap forçado */}
-        <section>
+        <section className="relative group/carousel">
           {/* TÍTULO EM ALTA: Margem inferior restaurada para mb-6 para dar espaço aos cards */}
           <h3 className="text-3xl font-semibold mb-6 text-white tracking-tight">
             Em Alta
@@ -392,65 +584,89 @@ export default function App() {
               ))}
             </div>
           ) : (
-            <div
-              className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide"
-              style={{
-                maskImage:
-                  "linear-gradient(to right, black 0%, black calc(100% - 72px), transparent 100%)",
-                WebkitMaskImage:
-                  "linear-gradient(to right, black 0%, black calc(100% - 72px), transparent 100%)",
-              }}
-            >
-              {trendingData?.results.map((movie) => (
-                <div
-                  key={movie.id}
-                  className="flex-shrink-0 w-36 md:w-48 lg:w-56 group relative flex flex-col gap-2 cursor-pointer"
+            <div className="relative">
+              {/* Botão flutuante esquerdo (aparece no hover apenas se houver conteúdo à esquerda) */}
+              {canScrollLeftTrending && (
+                <button
+                  onClick={() => scrollTrending("left")}
+                  aria-label="Rolar filmes em alta para a esquerda"
+                  className="hidden md:flex absolute left-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-950/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-md opacity-0 group-hover/carousel:opacity-100 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
                 >
-                  {/* Card do Pôster */}
-                  {/* ANIMAÇÃO: Apenas -translate-y-3 e sombra, sem alterar a borda no hover */}
-                  <div className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-zinc-900 border border-white/5 relative transition-all duration-500 group-hover:-translate-y-3 group-hover:shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
-                    {movie.posterPath ? (
-                      <img
-                        src={getPosterUrl(movie.posterPath)}
-                        alt={movie.title}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex flex-col h-full w-full items-center justify-center bg-zinc-900 text-zinc-500 text-center p-4">
-                        <span className="text-[10px] uppercase tracking-widest mb-2 font-mono">
-                          Sem Imagem
+                  <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+                </button>
+              )}
+
+              <div
+                ref={trendingRowRef}
+                className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide"
+                style={{
+                  maskImage: trendingMask,
+                  WebkitMaskImage: trendingMask,
+                }}
+              >
+                {trendingData?.results.map((movie) => (
+                  <div
+                    key={movie.id}
+                    className="flex-shrink-0 w-36 md:w-48 lg:w-56 group/card relative flex flex-col gap-2 cursor-pointer"
+                  >
+                    {/* Card do Pôster */}
+                    {/* ANIMAÇÃO: Apenas -translate-y-3 e sombra, sem alterar a borda no hover */}
+                    <div className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-zinc-900 border border-white/5 relative transition-all duration-300 group-hover/card:-translate-y-3 group-hover/card:shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
+                      {movie.posterPath ? (
+                        <img
+                          src={getPosterUrl(movie.posterPath)}
+                          alt={movie.title}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div className="flex flex-col h-full w-full items-center justify-center bg-zinc-900 text-zinc-500 text-center p-4">
+                          <span className="text-[10px] uppercase tracking-widest mb-2 font-mono">
+                            Sem Imagem
+                          </span>
+                          <span className="font-semibold text-sm leading-tight text-zinc-400">
+                            {movie.title}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Badge IMDb Clássica: Alto contraste sem o blur pesado que sobrecarrega a GPU */}
+                      <div className="absolute top-3 right-3 flex items-center rounded overflow-hidden shadow-lg border border-black/20">
+                        <span className="bg-[#f5c518] text-black text-xs font-black px-2 py-1 tracking-wider uppercase">
+                          IMDb
                         </span>
-                        <span className="font-semibold text-sm leading-tight text-zinc-400">
-                          {movie.title}
+                        <span className="bg-zinc-950/90 text-white text-xs font-bold px-2 py-1">
+                          {movie.voteAverage.toFixed(1)}
                         </span>
                       </div>
-                    )}
+                    </div>
 
-                    {/* Badge IMDb Clássica: Maior legibilidade (text-xs e px-2 py-1) */}
-                    <div className="absolute top-3 right-3 flex items-center rounded overflow-hidden shadow-lg border border-black/20">
-                      <span className="bg-[#f5c518] text-black text-xs font-black px-2 py-1 tracking-wider uppercase">
-                        IMDb
-                      </span>
-                      <span className="bg-black/80 text-white text-xs font-bold px-2 py-1 backdrop-blur-md">
-                        {movie.voteAverage.toFixed(1)}
+                    {/* Detalhes Textuais */}
+                    <div className="flex flex-col px-1">
+                      <h4 className="truncate text-sm md:text-base font-semibold text-zinc-300 group-hover/card:text-white transition-colors duration-200">
+                        {movie.title}
+                      </h4>
+                      <span className="text-xs text-zinc-500 mt-1">
+                        {new Date(movie.releaseDate).getFullYear()}
                       </span>
                     </div>
                   </div>
+                ))}
+                {/* Espaçador final para absorver o fade e permitir visualização completa do último card */}
+                <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
+              </div>
 
-                  {/* Detalhes Textuais */}
-                  <div className="flex flex-col px-1">
-                    <h4 className="truncate text-sm md:text-base font-semibold text-zinc-300 group-hover:text-white transition-colors duration-300">
-                      {movie.title}
-                    </h4>
-                    <span className="text-xs text-zinc-500 mt-1">
-                      {new Date(movie.releaseDate).getFullYear()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {/* Espaçador final para absorver o fade e permitir visualização completa do último card */}
-              <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
+              {/* Botão flutuante direito (aparece no hover apenas se houver conteúdo à direita) */}
+              {canScrollRightTrending && (
+                <button
+                  onClick={() => scrollTrending("right")}
+                  aria-label="Rolar filmes em alta para a direita"
+                  className="hidden md:flex absolute right-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-950/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-md opacity-0 group-hover/carousel:opacity-100 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+                </button>
+              )}
             </div>
           )}
         </section>
