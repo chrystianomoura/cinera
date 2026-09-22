@@ -198,7 +198,7 @@ export default function App() {
                           : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
                       }`}
                     >
-                      <span>{part1}</span>
+                      <span>{part1}:</span>
                       {part2 && (
                         <>
                           <br />
@@ -227,7 +227,7 @@ export default function App() {
               {/* TAGLINE OFICIAL DO FILME (substitui a sinopse no Hero) */}
               {heroMovie.tagline && (
                 <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-8 drop-shadow-md max-w-2xl">
-                  &ldquo;{heroMovie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}&rdquo;
+                  {heroMovie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}
                 </p>
               )}
 
