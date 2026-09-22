@@ -35,3 +35,4 @@ body {
   animation: kenburns 8.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
   will-change: transform;
 }
+

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { movieService } from '@/infrastructure/api/movie-service';
 import type { Movie, PaginatedResponse } from '@/domain';
 
@@ -11,6 +11,70 @@ export function useTrendingMovies(page: number = 1) {
   return useQuery<PaginatedResponse<Movie>>({
     queryKey: ['movies', 'trending', page],
     queryFn: () => movieService.getTrendingMovies(page),
+  });
+}
+
+/**
+ * Hook customizado para buscar as novidades e lançamentos autênticos do ano.
+ */
+export function useNewReleasesMovies(page: number = 1) {
+  return useQuery<PaginatedResponse<Movie>>({
+    queryKey: ['movies', 'new-releases', page],
+    queryFn: () => movieService.getNewReleasesMovies(page),
+  });
+}
+
+/**
+ * Hook legado mantido para retrocompatibilidade.
+ */
+export function useNowPlayingMovies(page: number = 1) {
+  return useNewReleasesMovies(page);
+}
+
+/**
+ * Hook customizado para buscar filmes aclamados pela crítica (mais bem avaliados).
+ */
+export function useTopRatedMovies(page: number = 1) {
+  return useQuery<PaginatedResponse<Movie>>({
+    queryKey: ['movies', 'top-rated', page],
+    queryFn: () => movieService.getTopRatedMovies(page),
+  });
+}
+
+/**
+ * Hook customizado para buscar clássicos indispensáveis do cinema (pré-2000).
+ */
+export function useClassicMovies(page: number = 1) {
+  return useQuery<PaginatedResponse<Movie>>({
+    queryKey: ['movies', 'classics', page],
+    queryFn: () => movieService.getClassicMovies(page),
+  });
+}
+
+/**
+ * Hook customizado para buscar filmes populares.
+ */
+export function usePopularMovies(page: number = 1) {
+  return useQuery<PaginatedResponse<Movie>>({
+    queryKey: ['movies', 'popular', page],
+    queryFn: () => movieService.getPopularMovies(page),
+  });
+}
+
+/**
+ * Hook customizado com paginação infinita para o catálogo de gênero.
+ */
+export function useInfiniteGenreMovies(genreId: number | null) {
+  return useInfiniteQuery<PaginatedResponse<Movie>>({
+    queryKey: ['movies', 'genre-infinite', genreId],
+    queryFn: ({ pageParam = 1 }) =>
+      genreId
+        ? movieService.getMoviesByGenre(genreId, pageParam as number)
+        : Promise.resolve({ page: 1, results: [], totalPages: 1, totalResults: 0 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    enabled: Boolean(genreId),
   });
 }
 

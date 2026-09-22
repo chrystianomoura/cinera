@@ -113,6 +113,27 @@ const mapTMDBMovie = (raw: TMDBMovieRaw): Movie => {
 };
 
 /**
+ * Filtra filmes estritamente qualificados para a vitrine:
+ * - Deve ter nota válida maior ou igual ao piso (padrão: 6.0)
+ * - Deve ter contagem de votos relevante (padrão: 20)
+ * - Deve ter cartaz de exibição oficial (posterPath)
+ */
+export const filterQualifiedMovies = (
+  movies: Movie[],
+  minVoteAverage: number = 6.0,
+  minVoteCount: number = 20
+): Movie[] => {
+  return movies.filter(
+    (m) =>
+      Boolean(
+        m.posterPath &&
+        m.voteAverage >= minVoteAverage &&
+        m.voteCount >= minVoteCount
+      )
+  );
+};
+
+/**
  * Executa requisições autenticadas para a API do TMDB.
  */
 async function fetchFromTMDB<T>(pathWithQuery: string): Promise<T> {
@@ -142,20 +163,29 @@ async function fetchFromTMDB<T>(pathWithQuery: string): Promise<T> {
  */
 class MovieService {
   /**
-   * Retorna os filmes em tendência do dia.
+   * Retorna os filmes em tendência do dia com filtro estrito de qualidade.
    */
   async getTrendingMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (API_TOKEN || API_KEY) {
-        const data = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-          `/trending/movie/day?language=pt-BR&page=${page}`
+        const pagesToFetch = page === 1 ? [1, 2] : [page];
+        const responses = await Promise.all(
+          pagesToFetch.map((p) =>
+            fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
+              `/trending/movie/day?language=pt-BR&page=${p}`
+            )
+          )
         );
 
+        const allRaw = responses.flatMap((r) => r.results);
+        const mapped = allRaw.map(mapTMDBMovie);
+        const qualified = filterQualifiedMovies(mapped, 6.0, 30);
+
         return {
-          page: data.page,
-          results: data.results.map(mapTMDBMovie),
-          totalPages: data.total_pages,
-          totalResults: data.total_results,
+          page,
+          results: qualified,
+          totalPages: responses[0]?.total_pages ?? 1,
+          totalResults: responses[0]?.total_results ?? qualified.length,
         };
       }
     } catch (error) {
@@ -166,7 +196,7 @@ class MovieService {
     const itemsPerPage = 20;
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const results = moviesMock.slice(startIndex, endIndex);
+    const results = filterQualifiedMovies(moviesMock.slice(startIndex, endIndex), 5.5, 5);
 
     return {
       page,
@@ -374,6 +404,219 @@ class MovieService {
       totalResults: filteredMovies.length,
     };
   }
+
+  /**
+   * Retorna lançamentos autênticos e novidades do ano corrente com alta relevância.
+   * Substitui chamadas genéricas de cinema por produções originais recentes.
+   */
+  async getNewReleasesMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
+    try {
+      if (API_TOKEN || API_KEY) {
+        const currentYear = new Date().getFullYear();
+        const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
+        const responses = await Promise.all(
+          pagesToFetch.map((p) =>
+            fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
+              `/discover/movie?language=pt-BR&sort_by=popularity.desc&primary_release_date.gte=${currentYear}-01-01&vote_count.gte=30&vote_average.gte=6.0&page=${p}`
+            )
+          )
+        );
+
+        const allRaw = responses.flatMap((r) => r.results);
+        const mapped = allRaw.map(mapTMDBMovie);
+        const qualified = filterQualifiedMovies(mapped, 6.0, 30);
+
+        return {
+          page,
+          results: qualified,
+          totalPages: responses[0]?.total_pages ?? 1,
+          totalResults: responses[0]?.total_results ?? qualified.length,
+        };
+      }
+    } catch (error) {
+      console.warn("Falha ao obter novidades do TMDB:", error);
+    }
+
+    const currentYear = new Date().getFullYear();
+    const newReleases = moviesMock.filter((m) => {
+      const year = new Date(m.releaseDate).getFullYear();
+      return year >= currentYear - 1;
+    });
+    const results = filterQualifiedMovies(newReleases.length > 0 ? newReleases : moviesMock, 5.5, 5);
+    return {
+      page,
+      results,
+      totalPages: 1,
+      totalResults: results.length,
+    };
+  }
+
+  /**
+   * Mantém retrocompatibilidade para o nome anterior, redirecionando para as Novidades.
+   */
+  async getNowPlayingMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
+    return this.getNewReleasesMovies(page);
+  }
+
+  /**
+   * Retorna os filmes aclamados pela crítica (mais bem avaliados).
+   */
+  async getTopRatedMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
+    try {
+      if (API_TOKEN || API_KEY) {
+        const pagesToFetch = page === 1 ? [1, 2] : [page];
+        const responses = await Promise.all(
+          pagesToFetch.map((p) =>
+            fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
+              `/movie/top_rated?language=pt-BR&page=${p}`
+            )
+          )
+        );
+
+        const allRaw = responses.flatMap((r) => r.results);
+        const mapped = allRaw.map(mapTMDBMovie);
+        const qualified = filterQualifiedMovies(mapped, 7.5, 300);
+
+        return {
+          page,
+          results: qualified,
+          totalPages: responses[0]?.total_pages ?? 1,
+          totalResults: responses[0]?.total_results ?? qualified.length,
+        };
+      }
+    } catch (error) {
+      console.warn("Falha ao obter filmes mais bem avaliados do TMDB:", error);
+    }
+
+    const sorted = [...moviesMock].sort((a, b) => b.voteAverage - a.voteAverage);
+    const results = filterQualifiedMovies(sorted, 6.0, 10);
+    return {
+      page,
+      results,
+      totalPages: 1,
+      totalResults: results.length,
+    };
+  }
+
+  /**
+   * Retorna os clássicos indispensáveis do cinema (obras pré-2000 consagradas).
+   */
+  async getClassicMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
+    try {
+      if (API_TOKEN || API_KEY) {
+        const pagesToFetch = page === 1 ? [1, 2] : [page];
+        const responses = await Promise.all(
+          pagesToFetch.map((p) =>
+            fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
+              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=3000&primary_release_date.lte=2000-01-01&page=${p}`
+            )
+          )
+        );
+
+        const allRaw = responses.flatMap((r) => r.results);
+        const mapped = allRaw.map(mapTMDBMovie);
+        const qualified = filterQualifiedMovies(mapped, 7.5, 1000);
+
+        return {
+          page,
+          results: qualified,
+          totalPages: responses[0]?.total_pages ?? 1,
+          totalResults: responses[0]?.total_results ?? qualified.length,
+        };
+      }
+    } catch (error) {
+      console.warn("Falha ao obter clássicos do cinema do TMDB:", error);
+    }
+
+    const classics = moviesMock.filter((m) => {
+      const year = new Date(m.releaseDate).getFullYear();
+      return year <= 2000;
+    });
+    const results = filterQualifiedMovies(classics.length > 0 ? classics : moviesMock, 6.0, 10);
+    return {
+      page,
+      results,
+      totalPages: 1,
+      totalResults: results.length,
+    };
+  }
+
+  /**
+   * Retorna os filmes populares com alta adesão de público.
+   * Filtro estrito: nota mínima 6.0 e pelo menos 50 votos para eliminar filmes medíocres como 3.9.
+   */
+  async getPopularMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
+    try {
+      if (API_TOKEN || API_KEY) {
+        // Busca 5 páginas (100 filmes) para que, após a deduplicação com Em Alta e Novidades,
+        // ainda sobrem com folga mais de 20 filmes consagrados e populares.
+        const pagesToFetch = page === 1 ? [1, 2, 3, 4, 5] : [page];
+        const responses = await Promise.all(
+          pagesToFetch.map((p) =>
+            fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
+              `/movie/popular?language=pt-BR&page=${p}`
+            )
+          )
+        );
+
+        const allRaw = responses.flatMap((r) => r.results);
+        const mapped = allRaw.map(mapTMDBMovie);
+        const qualified = filterQualifiedMovies(mapped, 6.0, 30);
+
+        return {
+          page,
+          results: qualified,
+          totalPages: responses[0]?.total_pages ?? 1,
+          totalResults: responses[0]?.total_results ?? qualified.length,
+        };
+      }
+    } catch (error) {
+      console.warn("Falha ao obter filmes populares do TMDB:", error);
+    }
+
+    const popular = [...moviesMock].sort((a, b) => b.voteCount - a.voteCount);
+    const results = filterQualifiedMovies(popular, 6.0, 10);
+    return {
+      page,
+      results,
+      totalPages: 1,
+      totalResults: results.length,
+    };
+  }
+
+  /**
+   * Retorna filmes filtrados por gênero com paginação e ordenação por popularidade.
+   */
+  async getMoviesByGenre(genreId: number, page: number = 1): Promise<PaginatedResponse<Movie>> {
+    try {
+      if (API_TOKEN || API_KEY) {
+        const data = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
+          `/discover/movie?language=pt-BR&with_genres=${genreId}&sort_by=popularity.desc&vote_count.gte=10&page=${page}`
+        );
+
+        return {
+          page: data.page,
+          results: filterQualifiedMovies(data.results.map(mapTMDBMovie), 5.5, 10),
+          totalPages: data.total_pages,
+          totalResults: data.total_results,
+        };
+      }
+    } catch (error) {
+      console.warn(`Falha ao obter filmes do gênero ${genreId} do TMDB:`, error);
+    }
+
+    const filtered = moviesMock.filter((m) =>
+      m.genres?.some((g) => g.id === genreId)
+    );
+    const results = filterQualifiedMovies(filtered.length > 0 ? filtered : moviesMock);
+    return {
+      page,
+      results,
+      totalPages: 1,
+      totalResults: results.length,
+    };
+  }
+
   /**
    * Retorna os vídeos e trailers de um filme.
    */

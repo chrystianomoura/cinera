@@ -8,6 +8,7 @@ interface HeroFeaturedProps {
   candidates: Movie[];
   isLoading: boolean;
   isTrailerOpen: boolean;
+  isVisible?: boolean;
   onOpenTrailer: (movie: Movie) => void;
 }
 
@@ -15,6 +16,7 @@ export function HeroFeatured({
   candidates,
   isLoading,
   isTrailerOpen,
+  isVisible = true,
   onOpenTrailer,
 }: HeroFeaturedProps) {
   const [heroIndex, setHeroIndex] = useState(0);
@@ -80,7 +82,9 @@ export function HeroFeatured({
 
           <div
             className={`relative z-10 max-w-3xl transition-all duration-700 transform ${
-              isFading ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
+              isFading || !isVisible
+                ? "opacity-0 translate-y-6"
+                : "opacity-100 translate-y-0 delay-200"
             }`}
           >
             {/* 1. TÍTULO PRINCIPAL: se contiver dois pontos (:), quebra a linha */}

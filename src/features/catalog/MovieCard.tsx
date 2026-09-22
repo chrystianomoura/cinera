@@ -4,14 +4,23 @@ import { getPosterUrl } from "@/infrastructure/api/movie-service";
 
 interface MovieCardProps {
   movie: Movie;
+  isEager?: boolean;
+  className?: string;
   onClick?: (movie: Movie) => void;
 }
 
-export const MovieCard = memo(function MovieCard({ movie, onClick }: MovieCardProps) {
+export const MovieCard = memo(function MovieCard({
+  movie,
+  isEager = true,
+  className,
+  onClick,
+}: MovieCardProps) {
   return (
     <div
       onClick={() => onClick?.(movie)}
-      className="flex-shrink-0 w-36 md:w-48 lg:w-56 group/card relative flex flex-col gap-2 cursor-pointer"
+      className={`group/card relative flex flex-col gap-2 cursor-pointer ${
+        className ?? "flex-shrink-0 w-36 md:w-48 lg:w-56"
+      }`}
     >
       {/* Card do Pôster */}
       {/* ANIMAÇÃO: Subida suave e aveludada (-translate-y-3) com sombra difusa elegante */}
@@ -21,7 +30,7 @@ export const MovieCard = memo(function MovieCard({ movie, onClick }: MovieCardPr
             src={getPosterUrl(movie.posterPath)}
             alt={movie.title}
             className="h-full w-full object-cover"
-            loading="eager"
+            loading={isEager ? "eager" : "lazy"}
             decoding="async"
           />
         ) : (
