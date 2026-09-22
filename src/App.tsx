@@ -58,6 +58,7 @@ export default function App() {
       ? heroCandidates[heroIndex % heroCandidates.length]
       : null;
 
+  const [selectedGenre, setSelectedGenre] = useState<string>("Todos");
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [trailerData, setTrailerData] = useState<{
     movieId: number;
@@ -122,12 +123,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
-      {/* Header Fixo Translúcido Dinâmico: Enxuto, Cristalino no topo e Vidro Adensado ao rolar */}
+      {/* Header Fixo Translúcido: Altura 100% constante, variando apenas a densidade do vidro ao rolar */}
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 px-6 md:px-8 flex items-center justify-between gap-4 border-b ${
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 px-6 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b ${
           isScrolled
-            ? "bg-black/85 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] py-2 md:py-2.5"
-            : "bg-black/15 backdrop-blur-md border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.15)] py-2.5 md:py-3"
+            ? "bg-black/85 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]"
+            : "bg-black/15 backdrop-blur-md border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
         }`}
       >
         {/* LOGO Cinera: Fonte ampliada, leading-none para respiro vertical perfeito e sombra composta */}
@@ -135,18 +136,18 @@ export default function App() {
           Cinera
         </h1>
 
-        {/* Barra de Pesquisa com Lupa na mesma cor do placeholder e garantia de sobreposição z-10 */}
-        <div className="relative group w-64 sm:w-80 md:w-96 flex-shrink-0">
+        {/* Barra de Pesquisa estável: aparência constante e idêntica ao focar/tocar */}
+        <div className="relative w-64 sm:w-80 md:w-96 flex-shrink-0">
           <input
             type="text"
             placeholder="Pesquisar filmes..."
-            className="w-full bg-zinc-800/80 hover:bg-zinc-700/80 focus:bg-zinc-900 border border-white/25 hover:border-white/40 focus:border-white rounded-full py-2 pl-11 pr-4 text-sm md:text-base text-white placeholder:text-zinc-400 outline-none backdrop-blur-md transition-all duration-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] focus:ring-2 focus:ring-white/20"
+            className="w-full bg-zinc-800/80 border border-white/25 rounded-full py-2 pl-11 pr-4 text-sm md:text-base text-white placeholder:text-zinc-400 outline-none backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)]"
           />
           <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none z-10">
             <Search
               size={18}
               strokeWidth={2.2}
-              className="text-zinc-400 group-focus-within:text-white transition-colors"
+              className="text-zinc-400"
             />
           </div>
         </div>
@@ -329,21 +330,39 @@ export default function App() {
 
       {/* Main Content */}
       <main className="relative z-10 px-6 md:px-12 flex flex-col gap-10">
-        {/* Pílulas de Gênero */}
+        {/* Pílulas de Gênero com fade cinematográfico, destaque nítido e rolagem livre */}
         <section>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
-            {GENRES.map((genre) => (
-              <button
-                key={genre}
-                className="snap-start flex-shrink-0 px-8 py-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/5 hover:border-zinc-400 hover:bg-zinc-800 transition-all duration-300 text-base font-medium text-zinc-400 hover:text-white"
-              >
-                {genre}
-              </button>
-            ))}
+          <div
+            className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide"
+            style={{
+              maskImage:
+                "linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to right, black 0%, black calc(100% - 64px), transparent 100%)",
+            }}
+          >
+            {["Todos", ...GENRES].map((genre) => {
+              const isSelected = selectedGenre === genre;
+              return (
+                <button
+                  key={genre}
+                  onClick={() => setSelectedGenre(genre)}
+                  className={`flex-shrink-0 px-7 py-2.5 rounded-full text-sm md:text-base transition-all duration-200 cursor-pointer ${
+                    isSelected
+                      ? "bg-white text-black font-bold shadow-[0_2px_14px_rgba(255,255,255,0.25)] border border-white"
+                      : "bg-zinc-800/80 hover:bg-zinc-700/80 text-white font-semibold border border-white/15 hover:border-white/35"
+                  }`}
+                >
+                  {genre}
+                </button>
+              );
+            })}
+            {/* Espaçador final para absorver o fade quando rolado até o final */}
+            <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
           </div>
         </section>
 
-        {/* Carrossel Em Alta */}
+        {/* Carrossel Em Alta com rolagem livre sem snap forçado */}
         <section>
           {/* TÍTULO EM ALTA: Margem inferior restaurada para mb-6 para dar espaço aos cards */}
           <h3 className="text-3xl font-semibold mb-6 text-white tracking-tight">
@@ -373,11 +392,19 @@ export default function App() {
               ))}
             </div>
           ) : (
-            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide snap-x">
+            <div
+              className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide"
+              style={{
+                maskImage:
+                  "linear-gradient(to right, black 0%, black calc(100% - 72px), transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to right, black 0%, black calc(100% - 72px), transparent 100%)",
+              }}
+            >
               {trendingData?.results.map((movie) => (
                 <div
                   key={movie.id}
-                  className="snap-start flex-shrink-0 w-36 md:w-48 lg:w-56 group relative flex flex-col gap-2 cursor-pointer"
+                  className="flex-shrink-0 w-36 md:w-48 lg:w-56 group relative flex flex-col gap-2 cursor-pointer"
                 >
                   {/* Card do Pôster */}
                   {/* ANIMAÇÃO: Apenas -translate-y-3 e sombra, sem alterar a borda no hover */}
@@ -422,6 +449,8 @@ export default function App() {
                   </div>
                 </div>
               ))}
+              {/* Espaçador final para absorver o fade e permitir visualização completa do último card */}
+              <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
             </div>
           )}
         </section>
