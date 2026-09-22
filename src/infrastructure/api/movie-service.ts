@@ -134,6 +134,72 @@ export const filterQualifiedMovies = (
 };
 
 /**
+ * Normaliza o título ou saga para identificar filmes pertencentes à mesma franquia.
+ */
+export function getFranchiseKey(title: string, originalTitle?: string): string {
+  const normalize = (t: string) => {
+    let s = t.toLowerCase().trim();
+    if (s.includes("harry potter")) return "harry potter";
+    if (s.includes("senhor dos anéis") || s.includes("lord of the rings")) return "lord of the rings";
+    if (s.includes("poderoso chefão") || s.includes("godfather")) return "the godfather";
+    if (s.includes("vingadores") || s.includes("avengers")) return "avengers";
+    if (s.includes("star wars") || s.includes("guerra nas estrelas")) return "star wars";
+    if (s.includes("homem-aranha") || s.includes("spider-man")) return "spider-man";
+    if (s.includes("batman") || s.includes("cavaleiro das trevas") || s.includes("dark knight")) return "batman";
+    if (s.includes("de volta para o futuro") || s.includes("back to the future")) return "back to the future";
+    if (s.includes("toy story")) return "toy story";
+    if (s.includes("kill bill")) return "kill bill";
+    if (s.includes("matrix")) return "matrix";
+    if (s.includes("alien")) return "alien";
+    if (s.includes("gladiador") || s.includes("gladiator")) return "gladiator";
+    if (s.includes("exterminador do futuro") || s.includes("terminator")) return "terminator";
+    if (s.includes("indiana jones")) return "indiana jones";
+    if (s.includes("shrek")) return "shrek";
+    if (s.includes("mad max")) return "mad max";
+    if (s.includes("jurassic")) return "jurassic";
+    if (s.includes("duna") || s.includes("dune")) return "dune";
+    if (s.includes("blade runner")) return "blade runner";
+    if (s.includes("top gun")) return "top gun";
+    if (s.includes("avatar")) return "avatar";
+    if (s.includes("planeta dos macacos") || s.includes("planet of the apes")) return "planet of the apes";
+    if (s.includes("missão: impossível") || s.includes("missao impossivel") || s.includes("mission: impossible")) return "mission impossible";
+
+    if (s.includes(":")) {
+      s = s.split(":")[0].trim();
+    }
+    if (s.includes(" - ")) {
+      s = s.split(" - ")[0].trim();
+    }
+    s = s.replace(/\s+(parte\s+[ivx\d]+|vol\.\s*\d+|\d+|[ivx]+)$/i, "").trim();
+    return s;
+  };
+
+  const key1 = normalize(title);
+  if (originalTitle) {
+    const key2 = normalize(originalTitle);
+    if (key2.length < key1.length && key2.length > 3) return key2;
+  }
+  return key1;
+}
+
+/**
+ * Deduplica títulos pertencentes à mesma franquia, mantendo estritamente
+ * o filme com a maior nota (já que a lista original vem ordenada decrescente por nota).
+ */
+export function dedupeFranchises(movies: Movie[]): Movie[] {
+  const seenFranchises = new Set<string>();
+  const result: Movie[] = [];
+  for (const m of movies) {
+    const key = getFranchiseKey(m.title, m.originalTitle);
+    if (!seenFranchises.has(key)) {
+      seenFranchises.add(key);
+      result.push(m);
+    }
+  }
+  return result;
+}
+
+/**
  * Executa requisições autenticadas para a API do TMDB.
  */
 async function fetchFromTMDB<T>(pathWithQuery: string): Promise<T> {
@@ -215,22 +281,37 @@ class MovieService {
     try {
       if (API_TOKEN || API_KEY) {
         const trending = await this.getTrendingMovies(1);
-        const candidates = trending.results.filter(
-          (m) => Boolean(m.backdropPath && m.voteAverage >= 6.5 && m.voteCount >= 10)
+        
+        // Padrão Ouro: Nota mínima elevada para >= 7.0, votos >= 10 e backdrop horizontal
+        let candidates = trending.results.filter(
+          (m) => Boolean(m.backdropPath && m.voteAverage >= 7.0 && m.voteCount >= 10)
         );
+
+        // Fallback de Segurança: Se menos de 3 filmes atingirem 7.0, relaxa suavemente para >= 6.5 para nunca faltar filme
+        if (candidates.length < 3) {
+          candidates = trending.results.filter(
+            (m) => Boolean(m.backdropPath && m.voteAverage >= 6.5 && m.voteCount >= 10)
+          );
+        }
 
         // Busca detalhes completos em paralelo para obter a tagline oficial e metadados
         const detailedMovies = await Promise.all(
           candidates.slice(0, 10).map((m) => this.getMovieById(m.id))
         );
 
-        // REGRA ESTRITA: Se não tiver tagline oficial, não entra no Hero
+        // REGRA ESTRITA: Prioriza filmes com tagline oficial
         const heroValid = detailedMovies.filter(
           (m): m is Movie => Boolean(m && m.tagline && m.tagline.trim().length > 0)
         );
 
-        if (heroValid.length > 0) {
+        if (heroValid.length >= 3) {
           return heroValid;
+        }
+
+        // Fallback de segurança: Se menos de 3 tiverem tagline, inclui os candidatos qualificados
+        const validCandidates = detailedMovies.filter((m): m is Movie => Boolean(m));
+        if (validCandidates.length > 0) {
+          return validCandidates;
         }
       }
     } catch (error) {
@@ -459,37 +540,49 @@ class MovieService {
   }
 
   /**
-   * Retorna os filmes aclamados pela crítica (mais bem avaliados).
+   * Retorna os filmes aclamados pela crítica contemporânea (Século XXI: 2000 em diante).
+   * Filtro estrito: exclui animações (sem desenhos) para focar puramente em cinema live-action de alta qualidade.
    */
   async getTopRatedMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (API_TOKEN || API_KEY) {
-        const pagesToFetch = page === 1 ? [1, 2] : [page];
+        // Busca 3 páginas (60 filmes) para que, após a remoção de franquias repetidas e animações,
+        // ainda tenhamos com folga 20 filmes de altíssimo prestígio
+        const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-              `/movie/top_rated?language=pt-BR&page=${p}`
+              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=2000&primary_release_date.gte=2000-01-01&without_genres=16&page=${p}`
             )
           )
         );
 
         const allRaw = responses.flatMap((r) => r.results);
         const mapped = allRaw.map(mapTMDBMovie);
-        const qualified = filterQualifiedMovies(mapped, 7.5, 300);
+        const qualified = filterQualifiedMovies(mapped, 7.5, 500);
+        const franchiseChampionOnly = dedupeFranchises(qualified);
 
         return {
           page,
-          results: qualified,
+          results: franchiseChampionOnly,
           totalPages: responses[0]?.total_pages ?? 1,
-          totalResults: responses[0]?.total_results ?? qualified.length,
+          totalResults: responses[0]?.total_results ?? franchiseChampionOnly.length,
         };
       }
     } catch (error) {
       console.warn("Falha ao obter filmes mais bem avaliados do TMDB:", error);
     }
 
-    const sorted = [...moviesMock].sort((a, b) => b.voteAverage - a.voteAverage);
-    const results = filterQualifiedMovies(sorted, 6.0, 10);
+    const contemporary = moviesMock
+      .filter((m) => {
+        const year = new Date(m.releaseDate).getFullYear();
+        const isNotAnimation = !m.genres?.some((g) => g.id === 16 || g.name === "Animação");
+        return year >= 2000 && isNotAnimation;
+      })
+      .sort((a, b) => b.voteAverage - a.voteAverage);
+    const results = dedupeFranchises(
+      filterQualifiedMovies(contemporary.length > 0 ? contemporary : moviesMock, 6.0, 10)
+    );
     return {
       page,
       results,
@@ -499,16 +592,18 @@ class MovieService {
   }
 
   /**
-   * Retorna os clássicos indispensáveis do cinema (obras pré-2000 consagradas).
+   * Retorna os clássicos indispensáveis da história do cinema (obras consagradas até 1999).
+   * Filtro estrito: exclui animações e deduplica franquias (apenas o filme mais bem avaliado de cada saga entra).
    */
   async getClassicMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (API_TOKEN || API_KEY) {
-        const pagesToFetch = page === 1 ? [1, 2] : [page];
+        // Busca 3 páginas (60 filmes) para abastecer a deduplicação de franquias pré-2000
+        const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=3000&primary_release_date.lte=2000-01-01&page=${p}`
+              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=3000&primary_release_date.lte=1999-12-31&without_genres=16&page=${p}`
             )
           )
         );
@@ -516,23 +611,29 @@ class MovieService {
         const allRaw = responses.flatMap((r) => r.results);
         const mapped = allRaw.map(mapTMDBMovie);
         const qualified = filterQualifiedMovies(mapped, 7.5, 1000);
+        const franchiseChampionOnly = dedupeFranchises(qualified);
 
         return {
           page,
-          results: qualified,
+          results: franchiseChampionOnly,
           totalPages: responses[0]?.total_pages ?? 1,
-          totalResults: responses[0]?.total_results ?? qualified.length,
+          totalResults: responses[0]?.total_results ?? franchiseChampionOnly.length,
         };
       }
     } catch (error) {
       console.warn("Falha ao obter clássicos do cinema do TMDB:", error);
     }
 
-    const classics = moviesMock.filter((m) => {
-      const year = new Date(m.releaseDate).getFullYear();
-      return year <= 2000;
-    });
-    const results = filterQualifiedMovies(classics.length > 0 ? classics : moviesMock, 6.0, 10);
+    const classics = moviesMock
+      .filter((m) => {
+        const year = new Date(m.releaseDate).getFullYear();
+        const isNotAnimation = !m.genres?.some((g) => g.id === 16 || g.name === "Animação");
+        return year <= 1999 && isNotAnimation;
+      })
+      .sort((a, b) => b.voteAverage - a.voteAverage);
+    const results = dedupeFranchises(
+      filterQualifiedMovies(classics.length > 0 ? classics : moviesMock, 6.0, 10)
+    );
     return {
       page,
       results,
@@ -540,6 +641,7 @@ class MovieService {
       totalResults: results.length,
     };
   }
+
 
   /**
    * Retorna os filmes populares com alta adesão de público.
