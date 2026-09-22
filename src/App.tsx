@@ -1,12 +1,31 @@
 import { useState, useEffect } from "react";
 import { Search, Play, Info, X } from "lucide-react";
 import { useTrendingMovies, useHeroFeaturedMovies } from "@/hooks/use-movies";
-import { getPosterUrl, getBackdropUrl, movieService } from "@/infrastructure/api/movie-service";
+import {
+  getPosterUrl,
+  getBackdropUrl,
+  movieService,
+} from "@/infrastructure/api/movie-service";
 
 const GENRES = [
-  "Ação", "Aventura", "Animação", "Comédia", "Crime", "Documentário", 
-  "Drama", "Família", "Fantasia", "História", "Terror", "Música", 
-  "Mistério", "Ficção Científica", "Cinema TV", "Thriller", "Guerra", "Faroeste"
+  "Ação",
+  "Aventura",
+  "Animação",
+  "Comédia",
+  "Crime",
+  "Documentário",
+  "Drama",
+  "Família",
+  "Fantasia",
+  "História",
+  "Terror",
+  "Música",
+  "Mistério",
+  "Ficção Científica",
+  "Cinema TV",
+  "Thriller",
+  "Guerra",
+  "Faroeste",
 ];
 
 function formatRuntime(minutes?: number): string | null {
@@ -19,8 +38,13 @@ function formatRuntime(minutes?: number): string | null {
 }
 
 export default function App() {
-  const { data: trendingData, isLoading: isLoadingTrending, isError: isErrorTrending } = useTrendingMovies(1);
-  const { data: heroMovies, isLoading: isLoadingHero } = useHeroFeaturedMovies();
+  const {
+    data: trendingData,
+    isLoading: isLoadingTrending,
+    isError: isErrorTrending,
+  } = useTrendingMovies(1);
+  const { data: heroMovies, isLoading: isLoadingHero } =
+    useHeroFeaturedMovies();
 
   const heroCandidates = heroMovies || [];
 
@@ -29,14 +53,23 @@ export default function App() {
   const [isFading, setIsFading] = useState<boolean>(false);
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
-  const heroMovie = heroCandidates.length > 0 ? heroCandidates[heroIndex % heroCandidates.length] : null;
+  const heroMovie =
+    heroCandidates.length > 0
+      ? heroCandidates[heroIndex % heroCandidates.length]
+      : null;
 
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
-  const [trailerData, setTrailerData] = useState<{ movieId: number; key: string | null } | null>(null);
+  const [trailerData, setTrailerData] = useState<{
+    movieId: number;
+    key: string | null;
+  } | null>(null);
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
 
   // Deriva a chave do trailer apenas para o filme ativo no Hero
-  const trailerKey = (heroMovie?.id && trailerData?.movieId === heroMovie.id) ? trailerData.key : null;
+  const trailerKey =
+    heroMovie?.id && trailerData?.movieId === heroMovie.id
+      ? trailerData.key
+      : null;
 
   // Rotação automática a cada 8 segundos com crossfade suave (pausa no hover ou trailer aberto)
   useEffect(() => {
@@ -61,7 +94,11 @@ export default function App() {
       try {
         const videos = await movieService.getMovieVideos(heroMovie.id);
         const trailer =
-          videos.find((v) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")) ||
+          videos.find(
+            (v) =>
+              v.site === "YouTube" &&
+              (v.type === "Trailer" || v.type === "Teaser"),
+          ) ||
           videos.find((v) => v.site === "YouTube") ||
           videos[0];
         setTrailerData({ movieId: heroMovie.id, key: trailer?.key || null });
@@ -75,114 +112,64 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
-      {/* Header Sticky com efeito Vidro Fumê Lapidado */}
-      <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] transition-all duration-300 px-6 py-4 md:py-5 flex items-center justify-between">
+      {/* Header Fixo Translúcido flutuando com efeito Vidro Fumê Lapidado sobre o filme */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] transition-all duration-300 px-6 py-4 md:py-5 flex items-center justify-between gap-4">
         {/* LOGO */}
-        <h1 className="tracking-widest font-black text-3xl md:text-4xl text-white uppercase font-serif drop-shadow-md">
+        <h1 className="tracking-widest font-black text-3xl md:text-4xl text-white uppercase font-serif drop-shadow-md flex-shrink-0">
           Cinera
         </h1>
-        
-        {/* Barra de Pesquisa em Vidro Harmonizado */}
-        <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-lg hidden md:block">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-zinc-400 group-focus-within:text-white transition-colors" />
-            </div>
-            <input
-              type="text"
-              placeholder="Pesquisar filmes..."
-              className="w-full bg-white/[0.06] hover:bg-white/[0.09] focus:bg-black/60 border border-white/10 focus:border-white/25 rounded-full py-2.5 pl-11 pr-4 text-base text-white placeholder:text-zinc-400 outline-none backdrop-blur-md transition-all duration-300 shadow-inner"
-            />
+
+        {/* Barra de Pesquisa em Vidro Harmonizado alinhada à direita */}
+        <div className="relative group w-64 sm:w-80 md:w-96 flex-shrink-0">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-zinc-400 group-focus-within:text-white transition-colors" />
           </div>
+          <input
+            type="text"
+            placeholder="Pesquisar filmes..."
+            className="w-full bg-white/[0.06] hover:bg-white/[0.09] focus:bg-black/60 border border-white/10 focus:border-white/25 rounded-full py-2.5 pl-11 pr-4 text-sm md:text-base text-white placeholder:text-zinc-400 outline-none backdrop-blur-md transition-all duration-300 shadow-inner"
+          />
         </div>
-        
-        <div className="w-24"></div>
       </header>
 
-      {/* Hero Section com Ken Burns e Crossfade */}
-      <section 
+      {/* Hero Section Full-Bleed iniciando no top:0 absoluto sob o header */}
+      <section
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="relative w-full min-h-[65vh] md:min-h-[80vh] flex items-end pb-12 px-6 md:px-12 overflow-hidden"
+        className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-12 px-6 md:px-12 pt-28 md:pt-32 overflow-hidden"
       >
         {(isLoadingHero || !heroMovie) && (
           <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
         )}
-        
+
         {!isLoadingHero && heroMovie && (
           <>
-            <div className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${isFading ? 'opacity-0' : 'opacity-100'}`}>
-              <img 
+            <div
+              className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${isFading ? "opacity-0" : "opacity-100"}`}
+            >
+              <img
                 key={heroMovie.id}
-                src={getBackdropUrl(heroMovie.backdropPath)} 
+                src={getBackdropUrl(heroMovie.backdropPath)}
                 alt={heroMovie.title}
                 className="w-full h-full object-cover object-top animate-kenburns origin-center"
               />
-              {/* Degradê inferior suave fundindo com a página */}
-              <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none" />
-              {/* Degradê direcional no lado esquerdo do texto, protegendo a leitura contra fundos claros e preservando a foto na direita */}
-              <div className="absolute inset-y-0 left-0 w-full md:w-3/5 bg-gradient-to-r from-black/95 via-black/75 to-transparent pointer-events-none" />
+              {/* Degradê superior sutil apenas para garantir legibilidade da barra e logo sob o vidro */}
+              <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/60 via-black/20 to-transparent pointer-events-none" />
+
+              {/* Degradê inferior cinematográfico: restrito aos 50% inferiores, mantendo o topo e centro 100% livres e preservando as cores reais da fotografia */}
+              <div
+                className="absolute inset-x-0 bottom-0 h-[55%] pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0.2) 75%, transparent 100%)",
+                }}
+              />
             </div>
-            
-            <div className={`relative z-10 max-w-3xl transition-all duration-700 transform ${isFading ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
-              {/* META-DADOS: Gênero Principal / Ano / Tempo de Duração / Nota */}
-              {(() => {
-                const heroGenre = heroMovie.genres?.[0]?.name || null;
-                const releaseYear = heroMovie.releaseDate ? heroMovie.releaseDate.slice(0, 4) : null;
-                const runtimeFormatted = formatRuntime(heroMovie.runtime);
 
-                return (
-                  <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-2 text-sm md:text-base">
-                    {/* Gênero Principal com destaque vivo */}
-                    {heroGenre && (
-                      <span className="font-bold text-white tracking-wide uppercase text-xs md:text-sm drop-shadow-md">
-                        {heroGenre}
-                      </span>
-                    )}
-
-                    {/* Separador */}
-                    {heroGenre && releaseYear && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block flex-shrink-0 shadow-sm" />
-                    )}
-
-                    {/* Ano */}
-                    {releaseYear && (
-                      <span className="font-semibold text-zinc-200 drop-shadow-sm">
-                        {releaseYear}
-                      </span>
-                    )}
-
-                    {/* Separador */}
-                    {releaseYear && runtimeFormatted && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block flex-shrink-0 shadow-sm" />
-                    )}
-
-                    {/* Duração */}
-                    {runtimeFormatted && (
-                      <span className="font-semibold text-zinc-200 drop-shadow-sm">
-                        {runtimeFormatted}
-                      </span>
-                    )}
-
-                    {/* Separador */}
-                    {(heroGenre || releaseYear || runtimeFormatted) && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block flex-shrink-0 shadow-sm" />
-                    )}
-
-                    {/* Nota IMDb */}
-                    <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/20">
-                      <span className="bg-[#f5c518] text-black text-xs md:text-sm font-black px-2 py-0.5 tracking-wider uppercase">
-                        IMDb
-                      </span>
-                      <span className="bg-black/90 text-white text-xs md:text-sm font-bold px-2 py-0.5 backdrop-blur-md">
-                        {heroMovie.voteAverage.toFixed(1)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* TÍTULO PRINCIPAL: se contiver dois pontos (:), quebra a linha mantendo a mesma formatação e tamanho */}
+            <div
+              className={`relative z-10 max-w-3xl transition-all duration-700 transform ${isFading ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}
+            >
+              {/* 1. TÍTULO PRINCIPAL: se contiver dois pontos (:), quebra a linha mantendo a mesma formatação e tamanho */}
               {(() => {
                 const colonIndex = heroMovie.title.indexOf(":");
                 if (colonIndex !== -1) {
@@ -192,7 +179,7 @@ export default function App() {
 
                   return (
                     <h2
-                      className={`font-black tracking-tight text-white mb-2 leading-[1.08] drop-shadow-2xl max-w-3xl ${
+                      className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl max-w-3xl ${
                         longestPart > 24
                           ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
                           : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
@@ -210,13 +197,13 @@ export default function App() {
                 }
 
                 return (
-                  <h2 
-                    className={`font-black tracking-tight text-white mb-2 leading-[1.08] drop-shadow-2xl ${
+                  <h2
+                    className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl ${
                       heroMovie.title.length > 32
                         ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl max-w-2xl"
                         : heroMovie.title.length > 18
-                        ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-2xl"
-                        : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-xl"
+                          ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-2xl"
+                          : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-xl"
                     }`}
                   >
                     {heroMovie.title}
@@ -224,10 +211,72 @@ export default function App() {
                 );
               })()}
 
-              {/* TAGLINE OFICIAL DO FILME (substitui a sinopse no Hero) */}
+              {/* 2. META-DADOS LIMPOS: Tipografia pura, alinhada à esquerda, com branco uniforme e pontos de destaque */}
+              {(() => {
+                const rawGenre = heroMovie.genres?.[0]?.name || null;
+                const heroGenre = rawGenre ? rawGenre.toUpperCase() : null;
+                const releaseYear = heroMovie.releaseDate
+                  ? heroMovie.releaseDate.slice(0, 4)
+                  : null;
+                const runtimeFormatted = formatRuntime(heroMovie.runtime);
+
+                return (
+                  <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-3 text-sm md:text-base">
+                    {/* Gênero Principal em Capslock com destaque */}
+                    {heroGenre && (
+                      <span className="font-bold text-white tracking-wider uppercase text-xs md:text-sm drop-shadow-md">
+                        {heroGenre}
+                      </span>
+                    )}
+
+                    {/* Separador nítido em branco */}
+                    {heroGenre && releaseYear && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                    )}
+
+                    {/* Ano em branco puro uniforme */}
+                    {releaseYear && (
+                      <span className="font-semibold text-white text-xs md:text-sm drop-shadow-md">
+                        {releaseYear}
+                      </span>
+                    )}
+
+                    {/* Separador nítido em branco */}
+                    {releaseYear && runtimeFormatted && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                    )}
+
+                    {/* Duração em branco puro uniforme */}
+                    {runtimeFormatted && (
+                      <span className="font-semibold text-white text-xs md:text-sm drop-shadow-md">
+                        {runtimeFormatted}
+                      </span>
+                    )}
+
+                    {/* Separador nítido em branco */}
+                    {(heroGenre || releaseYear || runtimeFormatted) && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                    )}
+
+                    {/* Nota IMDb clássica de alto contraste */}
+                    <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
+                      <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
+                        IMDb
+                      </span>
+                      <span className="bg-black/75 text-white text-xs font-bold px-2 py-0.5 backdrop-blur-md">
+                        {heroMovie.voteAverage.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 3. TAGLINE OFICIAL DO FILME: logo abaixo dos metadados, servindo de ponte para os botões */}
               {heroMovie.tagline && (
-                <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-5 drop-shadow-md max-w-2xl">
-                  {heroMovie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}
+                <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-6 drop-shadow-md max-w-2xl">
+                  {heroMovie.tagline
+                    .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
+                    .trim()}
                 </p>
               )}
 
@@ -257,12 +306,11 @@ export default function App() {
 
       {/* Main Content */}
       <main className="relative z-10 px-6 md:px-12 flex flex-col gap-10">
-        
         {/* Pílulas de Gênero */}
         <section>
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
             {GENRES.map((genre) => (
-              <button 
+              <button
                 key={genre}
                 className="snap-start flex-shrink-0 px-8 py-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/5 hover:border-zinc-400 hover:bg-zinc-800 transition-all duration-300 text-base font-medium text-zinc-400 hover:text-white"
               >
@@ -275,12 +323,15 @@ export default function App() {
         {/* Carrossel Em Alta */}
         <section>
           {/* TÍTULO EM ALTA: Margem inferior restaurada para mb-6 para dar espaço aos cards */}
-          <h3 className="text-3xl font-semibold mb-6 text-white tracking-tight">Em Alta</h3>
-          
+          <h3 className="text-3xl font-semibold mb-6 text-white tracking-tight">
+            Em Alta
+          </h3>
+
           {isErrorTrending && (
             <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-8 text-center backdrop-blur-sm">
               <p className="text-zinc-400">
-                Ocorreu um erro ao carregar os filmes. Tente novamente mais tarde.
+                Ocorreu um erro ao carregar os filmes. Tente novamente mais
+                tarde.
               </p>
             </div>
           )}
@@ -288,7 +339,10 @@ export default function App() {
           {isLoadingTrending ? (
             <div className="flex gap-4 md:gap-6 overflow-hidden">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex-shrink-0 w-36 md:w-48 lg:w-56 flex flex-col gap-3 animate-pulse">
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-36 md:w-48 lg:w-56 flex flex-col gap-3 animate-pulse"
+                >
                   <div className="aspect-[2/3] w-full rounded-xl bg-zinc-900"></div>
                   <div className="h-4 w-3/4 rounded bg-zinc-900"></div>
                   <div className="h-3 w-1/4 rounded bg-zinc-900"></div>
@@ -314,8 +368,12 @@ export default function App() {
                       />
                     ) : (
                       <div className="flex flex-col h-full w-full items-center justify-center bg-zinc-900 text-zinc-500 text-center p-4">
-                        <span className="text-[10px] uppercase tracking-widest mb-2 font-mono">Sem Imagem</span>
-                        <span className="font-semibold text-sm leading-tight text-zinc-400">{movie.title}</span>
+                        <span className="text-[10px] uppercase tracking-widest mb-2 font-mono">
+                          Sem Imagem
+                        </span>
+                        <span className="font-semibold text-sm leading-tight text-zinc-400">
+                          {movie.title}
+                        </span>
                       </div>
                     )}
 
@@ -344,7 +402,6 @@ export default function App() {
             </div>
           )}
         </section>
-
       </main>
 
       {/* Modal de Trailer com Título Centralizado */}
@@ -369,7 +426,9 @@ export default function App() {
               {isLoadingTrailer && (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <span className="text-sm text-zinc-400">Carregando trailer...</span>
+                  <span className="text-sm text-zinc-400">
+                    Carregando trailer...
+                  </span>
                 </div>
               )}
               {!isLoadingTrailer && trailerKey ? (
@@ -382,10 +441,13 @@ export default function App() {
                 />
               ) : !isLoadingTrailer ? (
                 <div className="p-8 text-center text-zinc-400">
-                  <p>Nenhum trailer encontrado diretamente na API para este filme.</p>
+                  <p>
+                    Nenhum trailer encontrado diretamente na API para este
+                    filme.
+                  </p>
                   <a
                     href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
-                      `${heroMovie?.title || ""} trailer oficial`
+                      `${heroMovie?.title || ""} trailer oficial`,
                     )}`}
                     target="_blank"
                     rel="noreferrer"
