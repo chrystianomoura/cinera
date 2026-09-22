@@ -40,7 +40,9 @@ export function MovieCarousel({
     const el = rowRef.current;
     if (!el) return;
 
-    updateMeasurements();
+    const rafId = requestAnimationFrame(() => {
+      updateMeasurements();
+    });
 
     let lastLeft = el.scrollLeft > 2;
     let lastRight = el.scrollLeft < maxScrollRef.current - 2;
@@ -90,6 +92,7 @@ export function MovieCarousel({
     window.addEventListener("resize", onResize);
 
     return () => {
+      cancelAnimationFrame(rafId);
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
       if (timer) clearTimeout(timer);
       el.removeEventListener("scroll", onScroll);

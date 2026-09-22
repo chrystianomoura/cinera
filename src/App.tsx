@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   useTrendingMovies,
   useNewReleasesMovies,
@@ -93,9 +93,15 @@ export default function App() {
 
   // Controle de Navegação por Gênero
   const [selectedGenre, setSelectedGenre] = useState<string>("Todos");
+  // Controle coreografado dos cards: o Hero desce PRIMEIRO, e os carrosséis entram depois
+  const [activeCatalogView, setActiveCatalogView] = useState<"todos" | "genre">("todos");
+  const [lastCategoryGenre, setLastCategoryGenre] = useState<string>("Ação");
+  const [isFadingOutGenre, setIsFadingOutGenre] = useState(false);
+  const transitionTimerRef = useRef<number | null>(null);
 
-  const genreId =
-    selectedGenre !== "Todos" ? GENRE_NAME_TO_ID[selectedGenre] ?? null : null;
+  // Mantém a categoria anterior viva na memória durante a descida do Hero
+  const categoryToQuery = selectedGenre !== "Todos" ? selectedGenre : lastCategoryGenre;
+  const genreId = GENRE_NAME_TO_ID[categoryToQuery] ?? null;
 
   const {
     data: genreInfiniteData,
@@ -145,9 +151,35 @@ export default function App() {
   };
 
   const handleSelectGenre = (genre: string) => {
-    setSelectedGenre(genre);
-    if (genre === "Todos" && window.scrollY > 0) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
+
+    if (genre === "Todos") {
+      // 1. O Hero começa a descer IMEDIATAMENTE (isHomeView = true)
+      setSelectedGenre("Todos");
+
+      // 2. Dissolve suavemente a grade da categoria em 300ms (evita ver a troca de cards)
+      setIsFadingOutGenre(true);
+
+      // 3. Se a tela estiver rolada, sobe suavemente
+      if (window.scrollY > 0) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // 4. CIRÚRGICO: Aos 550ms (com a grade anterior já dissolvida e o Hero cobrindo a tela),
+      // alternamos para os carrosséis da Home com fade-in macio.
+      transitionTimerRef.current = window.setTimeout(() => {
+        setActiveCatalogView("todos");
+        setIsFadingOutGenre(false);
+      }, 550);
+    } else {
+      // Indo de Todos (ou de outro gênero) para uma categoria: imediato
+      setIsFadingOutGenre(false);
+      setSelectedGenre(genre);
+      setLastCategoryGenre(genre);
+      setActiveCatalogView("genre");
     }
   };
 
@@ -157,12 +189,12 @@ export default function App() {
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
       <Header />
 
-      {/* Hero Full-Bleed: Transição aveludada de 700ms com curva natural */}
+      {/* Hero Full-Bleed: Transição suave sem tranco ao descer, mantendo saída rápida aprovada para categorias */}
       <div
-        className={`transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] overflow-hidden ${
+        className={`overflow-hidden ${
           isHomeView
-            ? "max-h-[88vh] opacity-100 scale-100"
-            : "max-h-0 opacity-0 scale-[0.98] pointer-events-none"
+            ? "transition-[max-height,opacity] duration-700 ease-[cubic-bezier(0.35,0,0.25,1)] max-h-[88vh] opacity-100"
+            : "transition-[max-height,opacity] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] max-h-0 opacity-0 pointer-events-none"
         }`}
       >
         <HeroFeatured
@@ -174,10 +206,12 @@ export default function App() {
         />
       </div>
 
-      {/* Conteúdo Principal com transição isolada de padding */}
+      {/* Conteúdo Principal com transição harmonizada de padding */}
       <main
-        className={`relative z-10 px-6 md:px-12 flex flex-col gap-10 transition-[padding-top] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${
-          !isHomeView ? "pt-24 md:pt-28" : "pt-0"
+        className={`relative z-10 px-6 md:px-12 flex flex-col gap-10 ${
+          isHomeView
+            ? "transition-[padding-top] duration-700 ease-[cubic-bezier(0.35,0,0.25,1)] pt-0"
+            : "transition-[padding-top] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] pt-24 md:pt-28"
         }`}
       >
         {/* Pílulas de Navegação por Gênero: Sempre visíveis no topo */}
@@ -187,8 +221,8 @@ export default function App() {
         />
 
         {/* MODO 1: Vitrine Principal ("Todos") com os 5 Carrosséis Temáticos a 120 FPS */}
-        {isHomeView ? (
-          <div className="flex flex-col gap-10 md:gap-14 animate-in fade-in duration-700">
+        {activeCatalogView === "todos" ? (
+          <div className="flex flex-col gap-10 md:gap-14 animate-in fade-in duration-500">
             {/* 1. Em Alta */}
             <MovieCarousel
               title="Em Alta"
@@ -236,10 +270,16 @@ export default function App() {
             />
           </div>
         ) : (
-          /* MODO 2: Modo de Exploração por Gênero (Grade Responsiva com Paginação) */
-          <div className="animate-in fade-in slide-in-from-bottom-3 duration-500">
+          /* MODO 2: Modo de Exploração por Gênero com dissolução suave ao sair */
+          <div
+            className={`transition-opacity duration-300 ${
+              isFadingOutGenre
+                ? "opacity-0"
+                : "opacity-100 animate-in fade-in slide-in-from-bottom-3 duration-500"
+            }`}
+          >
             <GenreCatalogGrid
-              genreName={selectedGenre}
+              genreName={lastCategoryGenre}
               movies={genreMovies}
               isLoading={isLoadingGenre}
               isError={isErrorGenre}
