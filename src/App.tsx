@@ -132,7 +132,7 @@ export default function App() {
                 const runtimeFormatted = formatRuntime(heroMovie.runtime);
 
                 return (
-                  <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-4 text-sm md:text-base">
+                  <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-2 text-sm md:text-base">
                     {/* Gênero Principal com destaque vivo */}
                     {heroGenre && (
                       <span className="font-bold text-white tracking-wide uppercase text-xs md:text-sm drop-shadow-md">
@@ -192,7 +192,7 @@ export default function App() {
 
                   return (
                     <h2
-                      className={`font-black tracking-tight text-white mb-4 leading-[1.08] drop-shadow-2xl max-w-3xl ${
+                      className={`font-black tracking-tight text-white mb-2 leading-[1.08] drop-shadow-2xl max-w-3xl ${
                         longestPart > 24
                           ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
                           : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
@@ -211,7 +211,7 @@ export default function App() {
 
                 return (
                   <h2 
-                    className={`font-black tracking-tight text-white mb-4 leading-[1.08] drop-shadow-2xl ${
+                    className={`font-black tracking-tight text-white mb-2 leading-[1.08] drop-shadow-2xl ${
                       heroMovie.title.length > 32
                         ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl max-w-2xl"
                         : heroMovie.title.length > 18
@@ -226,7 +226,7 @@ export default function App() {
 
               {/* TAGLINE OFICIAL DO FILME (substitui a sinopse no Hero) */}
               {heroMovie.tagline && (
-                <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-8 drop-shadow-md max-w-2xl">
+                <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-5 drop-shadow-md max-w-2xl">
                   {heroMovie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}
                 </p>
               )}
