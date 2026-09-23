@@ -12,7 +12,8 @@ export function Header({ searchQuery = "", onSearchChange }: HeaderProps) {
   // Monitora a rolagem para adensar o Header dinamicamente durante a navegação
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 25);
+      const scrolled = window.scrollY > 25;
+      setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -20,10 +21,10 @@ export function Header({ searchQuery = "", onSearchChange }: HeaderProps) {
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 px-6 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b ${
+      className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 px-6 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b backdrop-blur-xl ${
         isScrolled
-          ? "bg-black/85 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]"
-          : "bg-black/15 backdrop-blur-md border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
+          ? "bg-black/85 border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]"
+          : "bg-black/15 border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
       }`}
     >
       {/* LOGO Cinera: Fonte ampliada, leading-none para respiro vertical perfeito e sombra composta */}
