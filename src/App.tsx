@@ -253,7 +253,11 @@ export default function App() {
         setIsFadingOutGenre(false);
       }, 550);
     } else {
-      // Indo de Todos (ou de outro gênero) para uma categoria: imediato
+      // Indo de Todos (ou de outro gênero) para uma categoria:
+      // Sobe a rolagem suavemente para mostrar o topo do novo catálogo (com a mesma animação da categoria)
+      if (window.scrollY > 0) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       setIsFadingOutGenre(false);
       setSelectedGenre(genre);
       setLastCategoryGenre(genre);
