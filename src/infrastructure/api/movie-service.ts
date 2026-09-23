@@ -112,6 +112,7 @@ const mapTMDBMovie = (raw: TMDBMovieRaw): Movie => {
   };
 };
 
+
 /**
  * Filtra filmes estritamente qualificados para a vitrine:
  * - Deve ter nota válida maior ou igual ao piso (padrão: 6.0)
@@ -687,35 +688,100 @@ class MovieService {
   }
 
   /**
-   * Retorna filmes filtrados por gênero com paginação e ordenação por popularidade.
+   * Retorna filmes filtrados por macrogênero de streaming (suporta união com '|', ex: '28|12').
+   * Aplica critérios rigorosos de qualidade:
+   * - Cartaz oficial obrigatório (posterPath != null)
+   * - Avaliação mínima de 6.5 (voteAverage >= 6.5)
+   * - Contagem mínima de 30 votos (voteCount >= 30)
+   * - Ordenação decrescente por popularidade
+   * - Sem animações em categorias live-action (without_genres=16)
+   * Busca paralela concorrente via Promise.all para carregamento instantâneo.
    */
-  async getMoviesByGenre(genreId: number, page: number = 1): Promise<PaginatedResponse<Movie>> {
+  async getMoviesByGenre(genreQuery: string | number, page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (API_TOKEN || API_KEY) {
-        const data = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-          `/discover/movie?language=pt-BR&with_genres=${genreId}&sort_by=popularity.desc&vote_count.gte=10&page=${page}`
-        );
+        const queryStr = String(genreQuery);
+        // Exclui animações de categorias live-action (salvo quando o usuário está na própria categoria Animação '16')
+        const withoutParam = queryStr.includes("16") ? "" : "&without_genres=16";
+        let currentTmdbPage = page;
+        const collectedMovies: Movie[] = [];
+        let totalPages = Infinity;
+        let totalResults = 0;
+        const targetBatchCount = 18;
+        let chunksFetched = 0;
+        const maxChunks = 2; // Até 4 páginas em paralelo
+
+        while (
+          collectedMovies.length < targetBatchCount &&
+          currentTmdbPage <= totalPages &&
+          chunksFetched < maxChunks
+        ) {
+          const pagesToFetch = [currentTmdbPage];
+          if (currentTmdbPage + 1 <= totalPages) {
+            pagesToFetch.push(currentTmdbPage + 1);
+          }
+
+          const pageResponses = await Promise.all(
+            pagesToFetch.map((p) =>
+              fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
+                `/discover/movie?language=pt-BR&with_genres=${queryStr}${withoutParam}&sort_by=popularity.desc&vote_count.gte=30&vote_average.gte=6.5&page=${p}`
+              )
+            )
+          );
+
+          for (const data of pageResponses) {
+            totalPages = Math.min(totalPages, data.total_pages);
+            totalResults = Math.max(totalResults, data.total_results);
+
+            const qualified = filterQualifiedMovies(
+              data.results.map(mapTMDBMovie),
+              6.5,
+              30
+            );
+
+            collectedMovies.push(...qualified);
+          }
+
+          currentTmdbPage += pagesToFetch.length;
+          chunksFetched++;
+        }
+
+        // Deduplicação de segurança por ID
+        const seenIds = new Set<number>();
+        const uniqueMovies: Movie[] = [];
+        for (const m of collectedMovies) {
+          if (!seenIds.has(m.id)) {
+            seenIds.add(m.id);
+            uniqueMovies.push(m);
+          }
+        }
+
+        const hasNext = currentTmdbPage <= totalPages && (uniqueMovies.length > 0 || currentTmdbPage < totalPages);
 
         return {
-          page: data.page,
-          results: filterQualifiedMovies(data.results.map(mapTMDBMovie), 5.5, 10),
-          totalPages: data.total_pages,
-          totalResults: data.total_results,
+          page,
+          results: uniqueMovies,
+          totalPages,
+          totalResults,
+          nextPage: hasNext ? currentTmdbPage : undefined,
         };
       }
     } catch (error) {
-      console.warn(`Falha ao obter filmes do gênero ${genreId} do TMDB:`, error);
+      console.warn(`Falha ao obter filmes do gênero ${genreQuery} do TMDB:`, error);
     }
 
+    // Fallback Mock
+    const queryIds = new Set(String(genreQuery).split('|').map(Number));
     const filtered = moviesMock.filter((m) =>
-      m.genres?.some((g) => g.id === genreId)
+      m.genres?.some((g) => queryIds.has(g.id))
     );
-    const results = filterQualifiedMovies(filtered.length > 0 ? filtered : moviesMock);
+    const results = filterQualifiedMovies(filtered.length > 0 ? filtered : moviesMock, 6.5, 20);
     return {
       page,
       results,
       totalPages: 1,
       totalResults: results.length,
+      nextPage: undefined,
     };
   }
 

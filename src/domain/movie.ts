@@ -33,4 +33,5 @@ export interface PaginatedResponse<T> {
   results: T[];
   totalPages: number;
   totalResults: number;
+  nextPage?: number;
 }

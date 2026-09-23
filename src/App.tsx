@@ -95,13 +95,13 @@ export default function App() {
   const [selectedGenre, setSelectedGenre] = useState<string>("Todos");
   // Controle coreografado dos cards: o Hero desce PRIMEIRO, e os carrosséis entram depois
   const [activeCatalogView, setActiveCatalogView] = useState<"todos" | "genre">("todos");
-  const [lastCategoryGenre, setLastCategoryGenre] = useState<string>("Ação");
+  const [lastCategoryGenre, setLastCategoryGenre] = useState<string>("Ação & Aventura");
   const [isFadingOutGenre, setIsFadingOutGenre] = useState(false);
   const transitionTimerRef = useRef<number | null>(null);
 
   // Mantém a categoria anterior viva na memória durante a descida do Hero
   const categoryToQuery = selectedGenre !== "Todos" ? selectedGenre : lastCategoryGenre;
-  const genreId = GENRE_NAME_TO_ID[categoryToQuery] ?? null;
+  const genreQuery = GENRE_NAME_TO_ID[categoryToQuery] ?? null;
 
   const {
     data: genreInfiniteData,
@@ -110,11 +110,17 @@ export default function App() {
     hasNextPage,
     fetchNextPage,
     isError: isErrorGenre,
-  } = useInfiniteGenreMovies(genreId);
+  } = useInfiniteGenreMovies(genreQuery);
 
-  // Derivação dos filmes do gênero paginado
+  // Derivação dos filmes do gênero paginado com garantia estrita de unicidade
   const genreMovies = useMemo(() => {
-    return genreInfiniteData?.pages.flatMap((page) => page.results) ?? [];
+    const rawList = genreInfiniteData?.pages.flatMap((page) => page.results) ?? [];
+    const seen = new Set<number>();
+    return rawList.filter((m) => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
   }, [genreInfiniteData]);
 
   // Modal de Trailer
@@ -368,6 +374,7 @@ export default function App() {
               isLoadingMore={isFetchingNextPage}
               hasMore={Boolean(hasNextPage)}
               onLoadMore={() => fetchNextPage()}
+              onSelectMovie={handleOpenTrailer}
             />
           </div>
         )}

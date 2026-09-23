@@ -64,17 +64,16 @@ export function usePopularMovies(page: number = 1) {
 /**
  * Hook customizado com paginação infinita para o catálogo de gênero.
  */
-export function useInfiniteGenreMovies(genreId: number | null) {
+export function useInfiniteGenreMovies(genreQuery: string | number | null) {
   return useInfiniteQuery<PaginatedResponse<Movie>>({
-    queryKey: ['movies', 'genre-infinite', genreId],
+    queryKey: ['movies', 'genre-infinite', genreQuery],
     queryFn: ({ pageParam = 1 }) =>
-      genreId
-        ? movieService.getMoviesByGenre(genreId, pageParam as number)
+      genreQuery
+        ? movieService.getMoviesByGenre(genreQuery, pageParam as number)
         : Promise.resolve({ page: 1, results: [], totalPages: 1, totalResults: 0 }),
     initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
-    enabled: Boolean(genreId),
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    enabled: Boolean(genreQuery),
   });
 }
 

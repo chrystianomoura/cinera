@@ -1,48 +1,34 @@
 /**
- * Lista oficial de gêneros para filtros do catálogo.
+ * Lista oficial de macrogêneros de streaming para o catálogo do Cinera.
+ * Consolidação elegante baseada no padrão dos maiores serviços mundiais (Netflix, HBO Max, Disney+).
  */
 export const GENRES = [
-  "Ação",
-  "Aventura",
-  "Animação",
+  "Ação & Aventura",
+  "Ficção & Fantasia",
   "Comédia",
-  "Crime",
-  "Documentário",
-  "Drama",
-  "Família",
-  "Fantasia",
-  "História",
+  "Suspense & Crime",
   "Terror",
-  "Música",
-  "Mistério",
-  "Ficção Científica",
-  "Cinema TV",
-  "Thriller",
-  "Guerra",
-  "Faroeste",
+  "Animação",
+  "Drama",
+  "Romance",
+  "Documentário",
 ] as const;
 
 /**
- * Mapeamento de nome de gênero em pt-BR para o ID oficial do TMDB.
+ * Mapeamento das categorias consolidadas para os IDs do TMDB.
+ * Utiliza o operador OR nativo ('|') do TMDB para unir gêneros complementares sem ifs artificiais.
  */
-export const GENRE_NAME_TO_ID: Record<string, number> = {
-  "Ação": 28,
-  "Aventura": 12,
-  "Animação": 16,
-  "Comédia": 35,
-  "Crime": 80,
-  "Documentário": 99,
-  "Drama": 18,
-  "Família": 10751,
-  "Fantasia": 14,
-  "História": 36,
-  "Terror": 27,
-  "Música": 10402,
-  "Mistério": 9648,
-  "Romance": 10749,
-  "Ficção Científica": 878,
-  "Cinema TV": 10770,
-  "Thriller": 53,
-  "Guerra": 10752,
-  "Faroeste": 37,
+export const GENRE_NAME_TO_QUERY: Record<string, string> = {
+  "Ação & Aventura": "28|12",
+  "Ficção & Fantasia": "878|14",
+  "Comédia": "35",
+  "Suspense & Crime": "53|80",
+  "Terror": "27",
+  "Animação": "16",
+  "Drama": "18",
+  "Romance": "10749",
+  "Documentário": "99",
 };
+
+export const GENRE_NAME_TO_ID = GENRE_NAME_TO_QUERY;
+

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
@@ -23,24 +24,46 @@ export function GenreCatalogGrid({
   onLoadMore,
   onSelectMovie,
 }: GenreCatalogGridProps) {
-  return (
-    <section className="flex flex-col gap-6 pt-2 pb-12 animate-in fade-in duration-300">
-      {/* Cabeçalho do Catálogo com contagem e destaque */}
-      <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Catálogo de {genreName}
-          </h2>
-          <p className="text-sm md:text-base text-zinc-400 mt-1">
-            Explorando os títulos mais populares e aclamados deste gênero
-          </p>
-        </div>
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-        {movies.length > 0 && (
-          <span className="text-xs md:text-sm font-mono text-zinc-400 bg-zinc-900 border border-white/10 px-3 py-1.5 rounded-full">
-            {movies.length} {movies.length === 1 ? "título" : "títulos"} encontrados
-          </span>
-        )}
+  // Rolagem infinita contínua e suave via IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || isLoading || isLoadingMore || !onLoadMore) return;
+
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !isLoadingMore && hasMore) {
+          onLoadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "400px", // Dispara com antecedência para navegação transparente
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoading, isLoadingMore, onLoadMore]);
+
+  return (
+    <section className="flex flex-col gap-6 pt-2 pb-16 animate-in fade-in duration-300">
+      {/* Cabeçalho do Catálogo limpo e sofisticado */}
+      <div className="border-b border-white/10 pb-4">
+        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+          Catálogo de {genreName}
+        </h2>
+        <p className="text-sm md:text-base text-zinc-400 mt-1">
+          Explorando os títulos mais populares e aclamados deste gênero
+        </p>
       </div>
 
       {isError && (
@@ -83,22 +106,31 @@ export function GenreCatalogGrid({
             </div>
           )}
 
+          {/* Sentinela invisível para disparar carregamento infinito */}
           {hasMore && (
-            <div className="flex justify-center pt-6">
-              <button
-                onClick={onLoadMore}
-                disabled={isLoadingMore}
-                className="px-8 py-3.5 rounded-full bg-zinc-900 hover:bg-white text-zinc-300 hover:text-black border border-white/15 hover:border-white font-semibold text-sm transition-all duration-300 cursor-pointer shadow-lg hover:scale-105 active:scale-95 flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Carregando mais filmes...</span>
-                  </>
-                ) : (
-                  <span>Carregar Mais Filmes</span>
-                )}
-              </button>
+            <div
+              ref={sentinelRef}
+              className="h-10 w-full pointer-events-none opacity-0"
+              aria-hidden="true"
+            />
+          )}
+
+          {/* Feedback de carregamento elegante e discreto durante a rolagem */}
+          {isLoadingMore && (
+            <div className="flex items-center justify-center py-8 gap-3 text-zinc-400">
+              <Loader2 className="w-5 h-5 animate-spin text-white/70" />
+              <span className="text-sm font-medium tracking-wide">
+                Carregando mais títulos...
+              </span>
+            </div>
+          )}
+
+          {/* Indicador de fim de catálogo elegante */}
+          {!hasMore && movies.length > 0 && (
+            <div className="text-center py-10 border-t border-white/5 mt-6">
+              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold">
+                Você chegou ao fim dos títulos deste gênero
+              </p>
             </div>
           )}
         </>
