@@ -55,12 +55,12 @@ export const MovieCard = memo(function MovieCard({
         </div>
       </div>
 
-      {/* Detalhes Textuais */}
-      <div className="flex flex-col px-1">
-        <h4 className="truncate text-sm md:text-base font-semibold text-zinc-300 group-hover/card:text-white transition-colors duration-200">
+      {/* Detalhes Textuais Estáveis e Vivos */}
+      <div className="flex flex-col px-0.5 pt-1">
+        <h4 className="truncate text-sm md:text-base font-bold text-white tracking-tight leading-snug">
           {movie.title}
         </h4>
-        <span className="text-xs text-zinc-500 mt-1">
+        <span className="text-xs md:text-[13px] font-medium text-zinc-400 mt-0.5 tracking-normal">
           {movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : "—"}
         </span>
       </div>
