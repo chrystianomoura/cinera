@@ -16,7 +16,6 @@ import { GenrePills } from "@/features/catalog/GenrePills";
 import { MovieCarousel } from "@/features/catalog/MovieCarousel";
 import { GenreCatalogGrid } from "@/features/catalog/GenreCatalogGrid";
 import { TrailerModal } from "@/features/trailer/TrailerModal";
-import { GENRE_NAME_TO_ID } from "@/features/catalog/constants";
 
 export default function App() {
   // Dados do Hero e Carrosséis Temáticos
@@ -103,7 +102,7 @@ export default function App() {
 
   // Mantém a categoria anterior viva na memória durante a descida do Hero
   const categoryToQuery = selectedGenre !== "Todos" ? selectedGenre : lastCategoryGenre;
-  const genreQuery = GENRE_NAME_TO_ID[categoryToQuery] ?? null;
+  const genreQuery = categoryToQuery;
 
   const {
     data: genreInfiniteData,

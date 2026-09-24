@@ -74,6 +74,8 @@ export function useInfiniteGenreMovies(genreQuery: string | number | null) {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: Boolean(genreQuery),
+    staleTime: 1000 * 60 * 30, // 30 minutos
+    gcTime: 1000 * 60 * 60 * 2, // 2 horas
   });
 }
 

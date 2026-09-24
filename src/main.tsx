@@ -7,8 +7,10 @@ import App from './App'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos
-      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 30, // 30 minutos de frescor (catálogo estável)
+      gcTime: 1000 * 60 * 60 * 2, // 2 horas de retenção em memória
+      refetchOnWindowFocus: false, // Sem refetch desnecessário ao alternar abas
+      retry: 1,
     },
   },
 })

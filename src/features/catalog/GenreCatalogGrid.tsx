@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
+import { GENRE_PROFILES } from "./constants";
 
 interface GenreCatalogGridProps {
   genreName: string;
@@ -25,6 +26,8 @@ export function GenreCatalogGrid({
   onSelectMovie,
 }: GenreCatalogGridProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const profile = GENRE_PROFILES[genreName];
+  const description = profile?.description || "Explorando os títulos mais populares e aclamados deste gênero";
 
   // Rolagem infinita contínua e suave via IntersectionObserver
   useEffect(() => {
@@ -62,7 +65,7 @@ export function GenreCatalogGrid({
           Catálogo de {genreName}
         </h2>
         <p className="text-sm md:text-base text-zinc-400 mt-1.5">
-          Explorando os títulos mais populares e aclamados deste gênero
+          {description}
         </p>
       </div>
 
@@ -87,11 +90,11 @@ export function GenreCatalogGrid({
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-            {movies.map((movie) => (
+            {movies.map((movie, index) => (
               <MovieCard
                 key={movie.id}
                 movie={movie}
-                isEager={false}
+                isEager={index < 12}
                 className="w-full"
                 onClick={onSelectMovie}
               />

@@ -1,4 +1,5 @@
-import { memo } from "react";
+import { memo, useState } from "react";
+import { Film } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
 
@@ -15,6 +16,12 @@ export const MovieCard = memo(function MovieCard({
   className,
   onClick,
 }: MovieCardProps) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  // Utiliza w342 para carregamento instantâneo e leve sem sobrecarregar a rede
+  const posterUrl = movie.posterPath ? getPosterUrl(movie.posterPath, "w342") : "";
+
   return (
     <div
       onClick={() => onClick?.(movie)}
@@ -25,20 +32,35 @@ export const MovieCard = memo(function MovieCard({
       {/* Card do Pôster */}
       {/* ANIMAÇÃO: Subida suave e aveludada (-translate-y-3) com sombra difusa elegante */}
       <div className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-zinc-900 border border-white/5 relative transition-all duration-300 ease-out group-hover/card:-translate-y-3 group-hover/card:shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
-        {movie.posterPath ? (
+        {/* Shimmer Skeleton enquanto a imagem carrega */}
+        {!isLoaded && !hasError && (
+          <div className="absolute inset-0 bg-zinc-800/60 animate-pulse flex items-center justify-center">
+            <Film className="w-8 h-8 text-zinc-700/60" />
+          </div>
+        )}
+
+        {posterUrl && !hasError ? (
           <img
-            src={getPosterUrl(movie.posterPath)}
+            src={posterUrl}
             alt={movie.title}
-            className="h-full w-full object-cover"
+            className={`h-full w-full object-cover transition-opacity duration-300 ${
+              isLoaded ? "opacity-100" : "opacity-0"
+            }`}
             loading={isEager ? "eager" : "lazy"}
             decoding="async"
+            onLoad={() => setIsLoaded(true)}
+            onError={() => {
+              setHasError(true);
+              setIsLoaded(true);
+            }}
           />
         ) : (
           <div className="flex flex-col h-full w-full items-center justify-center bg-zinc-900 text-zinc-500 text-center p-4">
-            <span className="text-[10px] uppercase tracking-widest mb-2 font-mono">
+            <Film className="w-8 h-8 mb-2 text-zinc-600" />
+            <span className="text-[10px] uppercase tracking-widest mb-1 font-mono text-zinc-500">
               Sem Imagem
             </span>
-            <span className="font-semibold text-sm leading-tight text-zinc-400">
+            <span className="font-semibold text-xs leading-tight text-zinc-400 line-clamp-2">
               {movie.title}
             </span>
           </div>

@@ -1,5 +1,6 @@
 import type { Movie, MovieCredits, MovieWatchProviders, PaginatedResponse } from '@/domain';
 import { moviesMock, creditsMock, providersMock } from '../mock/movies.mock';
+import { GENRE_PROFILES, type GenreProfile } from '@/features/catalog/constants';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const API_TOKEN = import.meta.env.VITE_TMDB_API_TOKEN;
@@ -122,14 +123,16 @@ const mapTMDBMovie = (raw: TMDBMovieRaw): Movie => {
 export const filterQualifiedMovies = (
   movies: Movie[],
   minVoteAverage: number = 6.0,
-  minVoteCount: number = 20
+  minVoteCount: number = 20,
+  requireOverview: boolean = false
 ): Movie[] => {
   return movies.filter(
     (m) =>
       Boolean(
         m.posterPath &&
         m.voteAverage >= minVoteAverage &&
-        m.voteCount >= minVoteCount
+        m.voteCount >= minVoteCount &&
+        (!requireOverview || (m.overview && m.overview.trim().length >= 20))
       )
   );
 };
@@ -692,17 +695,52 @@ class MovieService {
    * Aplica critérios rigorosos de qualidade:
    * - Cartaz oficial obrigatório (posterPath != null)
    * - Avaliação mínima de 6.5 (voteAverage >= 6.5)
-   * - Contagem mínima de 30 votos (voteCount >= 30)
-   * - Ordenação decrescente por popularidade
-   * - Sem animações em categorias live-action (without_genres=16)
-   * Busca paralela concorrente via Promise.all para carregamento instantâneo.
+   * - Curadoria editorial por perfil de gênero (GenreProfile)
+   * - Exclusão cruzada (without_genres) para eliminar contaminação entre categorias
+   * - Ordenação sob medida (sortBy) para valorizar obras aclamadas ou novidades
+   * - Prioridade estável para filmes cujo primeiro gênero é a categoria selecionada
+   * - Busca paralela concorrente via Promise.all para carregamento instantâneo
    */
-  async getMoviesByGenre(genreQuery: string | number, page: number = 1): Promise<PaginatedResponse<Movie>> {
+  async getMoviesByGenre(
+    categoryOrQuery: string | number,
+    page: number = 1
+  ): Promise<PaginatedResponse<Movie>> {
     try {
       if (API_TOKEN || API_KEY) {
-        const queryStr = String(genreQuery);
-        // Exclui animações de categorias live-action (salvo quando o usuário está na própria categoria Animação '16')
-        const withoutParam = queryStr.includes("16") ? "" : "&without_genres=16";
+        const inputKey = String(categoryOrQuery).trim();
+
+        // Localiza o perfil editorial da categoria (seja pelo nome "Comédia" ou pelo ID/Query "35")
+        let profile: GenreProfile | undefined = GENRE_PROFILES[inputKey];
+        if (!profile) {
+          // Busca reversa caso tenha sido passado o ID legado (ex: "35" ou "28|12")
+          profile = Object.values(GENRE_PROFILES).find(
+            (p) => p.withGenres === inputKey
+          );
+        }
+
+        // Perfil de fallback caso seja um gênero avulso desconhecido
+        const effectiveProfile: GenreProfile = profile || {
+          withGenres: inputKey,
+          withoutGenres: inputKey.includes("16") ? undefined : "16",
+          sortBy: "popularity.desc",
+          minVoteAverage: 6.0,
+          minVoteCount: 30,
+          description: "Explorando os títulos deste gênero",
+        };
+
+        const withoutParam = effectiveProfile.withoutGenres
+          ? `&without_genres=${effectiveProfile.withoutGenres}`
+          : "";
+        const withoutKeywordsParam = effectiveProfile.withoutKeywords
+          ? `&without_keywords=${effectiveProfile.withoutKeywords}`
+          : "";
+        const sortParam = `&sort_by=${effectiveProfile.sortBy || "popularity.desc"}`;
+        const minVoteCount = effectiveProfile.minVoteCount || 30;
+        const minVoteAvg = effectiveProfile.minVoteAverage || 6.0;
+        const targetGenreIds = new Set(
+          String(effectiveProfile.withGenres).split("|").map(Number)
+        );
+
         let currentTmdbPage = page;
         const collectedMovies: Movie[] = [];
         let totalPages = Infinity;
@@ -721,13 +759,20 @@ class MovieService {
             pagesToFetch.push(currentTmdbPage + 1);
           }
 
-          const pageResponses = await Promise.all(
+          const settledResponses = await Promise.allSettled(
             pagesToFetch.map((p) =>
               fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-                `/discover/movie?language=pt-BR&with_genres=${queryStr}${withoutParam}&sort_by=popularity.desc&vote_count.gte=30&vote_average.gte=6.5&page=${p}`
+                `/discover/movie?language=pt-BR&with_genres=${effectiveProfile.withGenres}${withoutParam}${withoutKeywordsParam}${sortParam}&vote_count.gte=${minVoteCount}&vote_average.gte=${minVoteAvg}&page=${p}`
               )
             )
           );
+
+          const pageResponses = settledResponses
+            .filter(
+              (r): r is PromiseFulfilledResult<TMDBPaginatedResponse<TMDBMovieRaw>> =>
+                r.status === "fulfilled"
+            )
+            .map((r) => r.value);
 
           for (const data of pageResponses) {
             totalPages = Math.min(totalPages, data.total_pages);
@@ -735,18 +780,41 @@ class MovieService {
 
             const qualified = filterQualifiedMovies(
               data.results.map(mapTMDBMovie),
-              6.5,
-              30
+              minVoteAvg,
+              minVoteCount,
+              true // Exige sinopse real em português (filtro anti-trash)
             );
 
-            collectedMovies.push(...qualified);
+            // Heurística de Afinidade Ponderada:
+            // - Posição 1 ou 2: alta afinidade (sempre aprovado)
+            // - Posição 3: resgate de obras-primas com alta aclamação (nota >= 7.0 e votos >= 200)
+            //   Evita descartar injustamente clássicos híbridos como Garota Exemplar ou O Diabo Veste Prada
+            // - Posição 4 em diante: descartado (elimina casos periféricos como Romance em O Máskara)
+            const affinityMovies = qualified.filter((m) => {
+              if (!m.genres || m.genres.length === 0) return true;
+              const genreIds = m.genres.map((g) => g.id);
+              const bestIndex = genreIds.findIndex((id) => targetGenreIds.has(id));
+              if (bestIndex === -1) return false;
+
+              // 1ª ou 2ª tag principal: aprovado diretamente
+              if (bestIndex < 2) return true;
+
+              // 3ª tag: resgatado para obras de alta aclamação e relevância
+              if (bestIndex === 2 && m.voteAverage >= 7.0 && m.voteCount >= 200) {
+                return true;
+              }
+
+              return false;
+            });
+
+            collectedMovies.push(...affinityMovies);
           }
 
           currentTmdbPage += pagesToFetch.length;
           chunksFetched++;
         }
 
-        // Deduplicação de segurança por ID
+        // Deduplicação estrita de segurança por ID
         const seenIds = new Set<number>();
         const uniqueMovies: Movie[] = [];
         for (const m of collectedMovies) {
@@ -756,7 +824,20 @@ class MovieService {
           }
         }
 
-        const hasNext = currentTmdbPage <= totalPages && (uniqueMovies.length > 0 || currentTmdbPage < totalPages);
+        // Prioridade editorial sênior: se o filme tem o gênero solicitado como primeira tag (identidade principal),
+        // ele ganha prioridade no topo do lote preservando a estabilidade da ordenação
+        if (effectiveProfile.primaryGenreId) {
+          const targetPrimaryId = effectiveProfile.primaryGenreId;
+          uniqueMovies.sort((a, b) => {
+            const aIsPrimary = a.genres?.[0]?.id === targetPrimaryId ? 1 : 0;
+            const bIsPrimary = b.genres?.[0]?.id === targetPrimaryId ? 1 : 0;
+            return bIsPrimary - aIsPrimary;
+          });
+        }
+
+        const hasNext =
+          currentTmdbPage <= totalPages &&
+          (uniqueMovies.length > 0 || currentTmdbPage < totalPages);
 
         return {
           page,
@@ -767,15 +848,18 @@ class MovieService {
         };
       }
     } catch (error) {
-      console.warn(`Falha ao obter filmes do gênero ${genreQuery} do TMDB:`, error);
+      console.warn(`Falha ao obter filmes do gênero ${categoryOrQuery} do TMDB:`, error);
     }
 
     // Fallback Mock
-    const queryIds = new Set(String(genreQuery).split('|').map(Number));
+    const inputKey = String(categoryOrQuery).trim();
+    const profile = GENRE_PROFILES[inputKey];
+    const withIds = profile ? profile.withGenres : inputKey;
+    const queryIds = new Set(String(withIds).split('|').map(Number));
     const filtered = moviesMock.filter((m) =>
       m.genres?.some((g) => queryIds.has(g.id))
     );
-    const results = filterQualifiedMovies(filtered.length > 0 ? filtered : moviesMock, 6.5, 20);
+    const results = filterQualifiedMovies(filtered.length > 0 ? filtered : moviesMock, 6.0, 20);
     return {
       page,
       results,
