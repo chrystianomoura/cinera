@@ -55,13 +55,13 @@ export function GenreCatalogGrid({
   }, [hasMore, isLoading, isLoadingMore, onLoadMore]);
 
   return (
-    <section className="flex flex-col gap-5 pb-16 animate-in fade-in duration-300">
-      {/* Cabeçalho do Catálogo limpo e sofisticado */}
-      <div className="border-b border-white/10 pb-3 text-center">
+    <section className="flex flex-col gap-8 md:gap-9 pb-16 animate-in fade-in duration-300">
+      {/* Cabeçalho do Catálogo limpo e sofisticado sem linha divisória */}
+      <div className="text-center">
         <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
           Catálogo de {genreName}
         </h2>
-        <p className="text-sm md:text-base text-zinc-400 mt-1">
+        <p className="text-sm md:text-base text-zinc-400 mt-1.5">
           Explorando os títulos mais populares e aclamados deste gênero
         </p>
       </div>

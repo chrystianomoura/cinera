@@ -93,10 +93,12 @@ export default function App() {
 
   // Controle de Navegação por Gênero
   const [selectedGenre, setSelectedGenre] = useState<string>("Todos");
+  const [pendingGenre, setPendingGenre] = useState<string | null>(null);
   // Controle coreografado dos cards: o Hero desce PRIMEIRO, e os carrosséis entram depois
   const [activeCatalogView, setActiveCatalogView] = useState<"todos" | "genre">("todos");
   const [lastCategoryGenre, setLastCategoryGenre] = useState<string>("Ação & Aventura");
   const [isFadingOutGenre, setIsFadingOutGenre] = useState(false);
+  const [isFadingOutHome, setIsFadingOutHome] = useState(false);
   const transitionTimerRef = useRef<number | null>(null);
 
   // Mantém a categoria anterior viva na memória durante a descida do Hero
@@ -239,8 +241,15 @@ export default function App() {
       clearTimeout(transitionTimerRef.current);
       transitionTimerRef.current = null;
     }
+    if (scrollRafRef.current) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
 
     if (genre === "Todos") {
+      setPendingGenre(null);
+      setIsFadingOutHome(false);
+
       // 1. O Hero começa a descer IMEDIATAMENTE (isHomeView = true)
       setSelectedGenre("Todos");
 
@@ -260,14 +269,32 @@ export default function App() {
       }, 550);
     } else {
       // Indo de Todos (ou de outro gênero) para uma categoria:
-      // Sobe a rolagem suavemente para mostrar o topo do novo catálogo (com a mesma animação da categoria)
-      if (window.scrollY > 0) {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      if (selectedGenre === "Todos") {
+        // Ao clicar numa categoria, a foto NÃO percorre a tela e NÃO fecha como sanfona.
+        // Ela simplesmente dissolve suavemente no lugar (fade-out puro de 300ms, sem piscar e sem se mexer).
+        // Quando apaga no preto, montamos a categoria já perfeitamente assentada no topo.
+        setPendingGenre(genre);
+        setIsFadingOutHome(true);
+
+        transitionTimerRef.current = window.setTimeout(() => {
+          window.scrollTo(0, 0);
+          setSelectedGenre(genre);
+          setPendingGenre(null);
+          setLastCategoryGenre(genre);
+          setActiveCatalogView("genre");
+          setIsFadingOutHome(false);
+        }, 320);
+      } else {
+        // Já estava em outra categoria (Hero já fechado): rolagem suave até o topo da nova categoria
+        if (window.scrollY > 0) {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        setPendingGenre(null);
+        setIsFadingOutGenre(false);
+        setSelectedGenre(genre);
+        setLastCategoryGenre(genre);
+        setActiveCatalogView("genre");
       }
-      setIsFadingOutGenre(false);
-      setSelectedGenre(genre);
-      setLastCategoryGenre(genre);
-      setActiveCatalogView("genre");
     }
   };
 
@@ -277,19 +304,21 @@ export default function App() {
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
       <Header />
 
-      {/* Hero Full-Bleed: Transição suave sem tranco ao descer, mantendo saída rápida aprovada para categorias */}
+      {/* Hero Full-Bleed: Dissolve suave no lugar sem percorrer nem piscar */}
       <div
-        className={`overflow-hidden ${
-          isHomeView
-            ? "transition-[max-height,opacity] duration-700 ease-[cubic-bezier(0.35,0,0.25,1)] max-h-[88vh] opacity-100"
-            : "transition-[max-height,opacity] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] max-h-0 opacity-0 pointer-events-none"
+        className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 ${
+          isHomeView && !isFadingOutHome
+            ? "max-h-[88vh] opacity-100"
+            : isHomeView && isFadingOutHome
+            ? "max-h-[88vh] opacity-0"
+            : "max-h-0 opacity-0 pointer-events-none"
         }`}
       >
         <HeroFeatured
           candidates={heroMovies || []}
           isLoading={isLoadingHero}
           isTrailerOpen={isTrailerOpen}
-          isVisible={isHomeView}
+          isVisible={isHomeView && !isFadingOutHome}
           onOpenTrailer={handleOpenTrailer}
         />
       </div>
@@ -298,19 +327,25 @@ export default function App() {
       <main
         className={`relative z-10 px-6 md:px-12 flex flex-col gap-5 md:gap-6 ${
           isHomeView
-            ? "transition-[padding-top] duration-700 ease-[cubic-bezier(0.35,0,0.25,1)] pt-0"
-            : "transition-[padding-top] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] pt-[4.25rem] md:pt-[5.25rem]"
+            ? "pt-0"
+            : "pt-[4.25rem] md:pt-[5.25rem]"
         }`}
       >
         {/* Pílulas de Navegação por Gênero: Sempre visíveis no topo */}
         <GenrePills
-          selectedGenre={selectedGenre}
+          selectedGenre={pendingGenre ?? selectedGenre}
           onSelectGenre={handleSelectGenre}
         />
 
         {/* MODO 1: Vitrine Principal ("Todos") com os 5 Carrosséis Temáticos a 120 FPS */}
         {activeCatalogView === "todos" ? (
-          <div className="flex flex-col gap-6 md:gap-7 animate-in fade-in duration-500">
+          <div
+            className={`flex flex-col gap-6 md:gap-7 transition-opacity duration-300 ${
+              isFadingOutHome
+                ? "opacity-0 pointer-events-none"
+                : "opacity-100 animate-in fade-in duration-500"
+            }`}
+          >
             {/* 1. Em Alta */}
             <MovieCarousel
               title="Em Alta"
