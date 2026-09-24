@@ -92,6 +92,7 @@ export function MovieDetailsView({
   const originalTitle = movie.originalTitle;
   const formattedBudget = formatCurrencyUSD(movie.budget);
   const formattedRevenue = formatCurrencyUSD(movie.revenue);
+  const hasFinancialContrast = Boolean(formattedBudget && formattedRevenue);
 
   const countries = movie.productionCountries?.map((c) => c.name).filter(Boolean);
   const countriesList = countries && countries.length > 0 ? countries.join(", ") : null;
@@ -309,13 +310,11 @@ export function MovieDetailsView({
             </div>
 
             {/* Onde Assistir (Watch Providers Brasil com título visível em destaque) */}
-            <div className="pt-2">
-              <WatchProvidersRow
-                providers={providers}
-                isLoading={isLoadingProviders}
-                movieTitle={movie.title}
-              />
-            </div>
+            <WatchProvidersRow
+              providers={providers}
+              isLoading={isLoadingProviders}
+              movieTitle={movie.title}
+            />
 
             {/* Direção e Roteiro (Condicional com rótulos padronizados no Design System) */}
             {(credits?.directors || credits?.writers) ? (
@@ -346,7 +345,7 @@ export function MovieDetailsView({
             {/* Ficha de Produção & Finanças (Orçamento & Bilheteria na mesma linha, País, Título Original, Produtoras) */}
             {hasProductionDetails && (
               <div className="flex flex-col gap-2 pt-2.5 border-t border-white/10 text-xs sm:text-sm">
-                {/* Linha 1: Orçamento e Bilheteria SEMPRE juntos e primeiro, com cores semânticas (vermelho e verde) */}
+                {/* Linha 1: Orçamento e Bilheteria SEMPRE juntos e primeiro, com cores semânticas apenas quando ambos existem */}
                 {(formattedBudget || formattedRevenue) && (
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-1.5">
                     {formattedBudget && (
@@ -354,7 +353,11 @@ export function MovieDetailsView({
                         <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
                           Orçamento:
                         </span>
-                        <span className="font-semibold text-rose-400 ml-1.5">
+                        <span
+                          className={`font-semibold ml-1.5 ${
+                            hasFinancialContrast ? "text-rose-400" : "text-zinc-100"
+                          }`}
+                        >
                           {formattedBudget}
                         </span>
                       </div>
@@ -365,7 +368,11 @@ export function MovieDetailsView({
                         <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
                           Bilheteria:
                         </span>
-                        <span className="font-semibold text-emerald-400 ml-1.5">
+                        <span
+                          className={`font-semibold ml-1.5 ${
+                            hasFinancialContrast ? "text-emerald-400" : "text-zinc-100"
+                          }`}
+                        >
                           {formattedRevenue}
                         </span>
                       </div>
