@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Loader2, ArrowUp } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
 import { GENRE_PROFILES } from "./constants";
-import { smoothScrollToTop } from "@/lib/smooth-scroll";
+import { useScrollTopButton } from "@/hooks/use-scroll-top-button";
 
 interface GenreCatalogGridProps {
   genreName: string;
@@ -27,39 +27,9 @@ export function GenreCatalogGrid({
   onSelectMovie,
 }: GenreCatalogGridProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const isVisibleRef = useRef(false);
+  const { showScrollTop, scrollToTop } = useScrollTopButton(400);
   const profile = GENRE_PROFILES[genreName];
   const description = profile?.description || "Explorando os títulos mais populares e aclamados deste gênero";
-
-  // Monitora a rolagem para exibir o botão flutuante apenas após 400px de scroll
-  // Otimizado com RAF e flag de estado para evitar re-renders repetitivos a cada pixel
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const isOver = window.scrollY > 400;
-          if (isOver !== isVisibleRef.current) {
-            isVisibleRef.current = isOver;
-            setShowScrollTop(isOver);
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  const handleScrollToTop = () => {
-    smoothScrollToTop();
-  };
 
   // Rolagem infinita contínua e suave via IntersectionObserver
   useEffect(() => {
@@ -174,7 +144,7 @@ export function GenreCatalogGrid({
       {/* Botão Flutuante Voltar ao Topo (apenas quando rolar > 400px na categoria) */}
       <button
         type="button"
-        onClick={handleScrollToTop}
+        onClick={scrollToTop}
         aria-label="Voltar ao topo do catálogo"
         title="Voltar ao topo"
         className={`fixed bottom-7 right-7 z-40 transform-gpu flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white backdrop-blur-md border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.6)] hover:border-white/30 hover:scale-110 active:scale-95 transition-all duration-300 ease-out cursor-pointer group ${

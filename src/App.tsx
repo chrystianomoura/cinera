@@ -1,10 +1,5 @@
 import { useState, useMemo, useRef } from "react";
 import {
-  useTrendingMovies,
-  useNewReleasesMovies,
-  useTopRatedMovies,
-  useClassicMovies,
-  usePopularMovies,
   useInfiniteGenreMovies,
   useHeroFeaturedMovies,
 } from "@/hooks/use-movies";
@@ -13,83 +8,14 @@ import type { Movie } from "@/domain";
 import { Header } from "@/features/header/Header";
 import { HeroFeatured } from "@/features/hero/HeroFeatured";
 import { GenrePills } from "@/features/catalog/GenrePills";
-import { MovieCarousel } from "@/features/catalog/MovieCarousel";
+import { HomeFeed } from "@/features/catalog/HomeFeed";
 import { GenreCatalogGrid } from "@/features/catalog/GenreCatalogGrid";
 import { TrailerModal } from "@/features/trailer/TrailerModal";
 import { smoothScrollToTop } from "@/lib/smooth-scroll";
 
 export default function App() {
-  // Dados do Hero e Carrosséis Temáticos
+  // Dados do Hero em Destaque
   const { data: heroMovies, isLoading: isLoadingHero } = useHeroFeaturedMovies();
-  const {
-    data: trendingData,
-    isLoading: isLoadingTrending,
-    isError: isErrorTrending,
-  } = useTrendingMovies(1);
-  const {
-    data: newReleasesData,
-    isLoading: isLoadingNewReleases,
-    isError: isErrorNewReleases,
-  } = useNewReleasesMovies(1);
-  const {
-    data: topRatedData,
-    isLoading: isLoadingTopRated,
-    isError: isErrorTopRated,
-  } = useTopRatedMovies(1);
-  const {
-    data: classicsData,
-    isLoading: isLoadingClassics,
-    isError: isErrorClassics,
-  } = useClassicMovies(1);
-  const {
-    data: popularData,
-    isLoading: isLoadingPopular,
-    isError: isErrorPopular,
-  } = usePopularMovies(1);
-
-  // Deduplicação inteligente em cascata: 100% de filmes únicos entre os 5 carrosséis
-  const {
-    trendingMovies,
-    newReleasesMovies,
-    topRatedMovies,
-    classicMovies,
-    popularMovies,
-  } = useMemo(() => {
-    const seenIds = new Set<number>();
-
-    const dedupe = (list?: Movie[], limit: number = 20) => {
-      if (!list) return [];
-      const result: Movie[] = [];
-      for (const m of list) {
-        if (!seenIds.has(m.id)) {
-          seenIds.add(m.id);
-          result.push(m);
-          if (result.length >= limit) break;
-        }
-      }
-      return result;
-    };
-
-    const trending = dedupe(trendingData?.results);
-    const newReleases = dedupe(newReleasesData?.results);
-    const topRated = dedupe(topRatedData?.results);
-    const classics = dedupe(classicsData?.results);
-    const popular = dedupe(popularData?.results);
-
-    return {
-      trendingMovies: trending,
-      newReleasesMovies: newReleases,
-      topRatedMovies: topRated,
-      classicMovies: classics,
-      popularMovies: popular,
-    };
-  }, [
-    trendingData?.results,
-    newReleasesData?.results,
-    topRatedData?.results,
-    classicsData?.results,
-    popularData?.results,
-  ]);
 
   // Controle de Navegação por Gênero
   const [selectedGenre, setSelectedGenre] = useState<string>("Todos");
@@ -266,59 +192,10 @@ export default function App() {
 
         {/* MODO 1: Vitrine Principal ("Todos") com os 5 Carrosséis Temáticos a 120 FPS */}
         {activeCatalogView === "todos" ? (
-          <div
-            className={`flex flex-col gap-6 md:gap-7 transition-opacity duration-300 ${
-              isFadingOutHome
-                ? "opacity-0 pointer-events-none"
-                : "opacity-100 animate-in fade-in duration-500"
-            }`}
-          >
-            {/* 1. Em Alta */}
-            <MovieCarousel
-              title="Em Alta"
-              icon="🔥"
-              movies={trendingMovies}
-              isLoading={isLoadingTrending}
-              isError={isErrorTrending}
-              isEager={true}
-            />
-
-            {/* 2. Novidades */}
-            <MovieCarousel
-              title="Novidades"
-              icon="✨"
-              movies={newReleasesMovies}
-              isLoading={isLoadingNewReleases}
-              isError={isErrorNewReleases}
-            />
-
-            {/* 3. Aclamados pela Crítica */}
-            <MovieCarousel
-              title="Aclamados pela Crítica"
-              icon="⭐"
-              movies={topRatedMovies}
-              isLoading={isLoadingTopRated}
-              isError={isErrorTopRated}
-            />
-
-            {/* 4. Clássicos Indispensáveis */}
-            <MovieCarousel
-              title="Clássicos Indispensáveis"
-              icon="🏆"
-              movies={classicMovies}
-              isLoading={isLoadingClassics}
-              isError={isErrorClassics}
-            />
-
-            {/* 5. Populares no Brasil */}
-            <MovieCarousel
-              title="Populares no Brasil"
-              icon="🇧🇷"
-              movies={popularMovies}
-              isLoading={isLoadingPopular}
-              isError={isErrorPopular}
-            />
-          </div>
+          <HomeFeed
+            isFadingOut={isFadingOutHome}
+            onSelectMovie={handleOpenTrailer}
+          />
         ) : (
           /* MODO 2: Modo de Exploração por Gênero com dissolução suave ao sair */
           <div

@@ -1,235 +1,32 @@
 import type { Movie, MovieCredits, MovieWatchProviders, PaginatedResponse } from '@/domain';
 import { moviesMock, creditsMock, providersMock } from '../mock/movies.mock';
-import { GENRE_PROFILES, type GenreProfile } from '@/features/catalog/constants';
+import { fetchFromTMDB, isTmdbConfigured, getPosterUrl, getBackdropUrl, getProfileUrl } from './tmdb-client';
+import { mapTMDBMovie, mapTMDBCredits, mapTMDBWatchProviders } from './tmdb-mappers';
+import { filterQualifiedMovies, dedupeFranchises, getFranchiseKey } from './curation-filters';
+import { fetchGenreMoviesPage } from './genre-discovery.service';
+import type {
+  TMDBMovieRaw,
+  TMDBPaginatedResponse,
+  TMDBCreditsRaw,
+  TMDBProvidersResponse,
+  MovieVideo,
+} from './tmdb-types';
 
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const API_TOKEN = import.meta.env.VITE_TMDB_API_TOKEN;
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-
-/**
- * Função utilitária para obter o URL do poster do filme no TMDB.
- */
-export const getPosterUrl = (path: string | null, size: 'w342' | 'w500' | 'w780' = 'w500'): string => {
-  if (!path) return '';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
+// Re-exporta utilitários e tipos para 100% de compatibilidade retroativa
+export {
+  getPosterUrl,
+  getBackdropUrl,
+  getProfileUrl,
+  filterQualifiedMovies,
+  getFranchiseKey,
+  dedupeFranchises,
 };
+export { TMDB_GENRE_MAP } from './tmdb-types';
+export type { MovieVideo } from './tmdb-types';
 
 /**
- * Função utilitária para obter o URL do backdrop (imagem de fundo) do filme no TMDB.
- */
-export const getBackdropUrl = (path: string | null, size: 'w780' | 'w1280' | 'original' = 'original'): string => {
-  if (!path) return '';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
-};
-
-/**
- * Função utilitária para obter o URL da foto de perfil de membros do elenco ou equipa no TMDB.
- */
-export const getProfileUrl = (path: string | null, size: 'w185' | 'h632' = 'w185'): string => {
-  if (!path) return '';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
-};
-
-/**
- * Mapeamento oficial dos IDs de gêneros do TMDB para pt-BR.
- */
-export const TMDB_GENRE_MAP: Record<number, string> = {
-  28: "Ação",
-  12: "Aventura",
-  16: "Animação",
-  35: "Comédia",
-  80: "Crime",
-  99: "Documentário",
-  18: "Drama",
-  10751: "Família",
-  14: "Fantasia",
-  36: "História",
-  27: "Terror",
-  10402: "Música",
-  9648: "Mistério",
-  10749: "Romance",
-  878: "Ficção científica",
-  10770: "Cinema TV",
-  53: "Thriller",
-  10752: "Guerra",
-  37: "Faroeste",
-};
-
-export interface MovieVideo {
-  id: string;
-  key: string;
-  name: string;
-  site: string;
-  type: string;
-  official: boolean;
-}
-
-/**
- * Interface para os dados brutos de filme retornados pela API do TMDB.
- */
-interface TMDBMovieRaw {
-  id: number;
-  title: string;
-  original_title?: string;
-  overview: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  vote_average: number;
-  vote_count: number;
-  release_date: string;
-  runtime?: number;
-  tagline?: string;
-  genre_ids?: number[];
-  genres?: { id: number; name: string }[];
-  status?: string;
-}
-
-interface TMDBPaginatedResponse<T> {
-  page: number;
-  results: T[];
-  total_pages: number;
-  total_results: number;
-}
-
-/**
- * Converte o formato retornado pelo TMDB (snake_case) para o domínio da aplicação (camelCase).
- */
-const mapTMDBMovie = (raw: TMDBMovieRaw): Movie => {
-  const genres = raw.genres || (raw.genre_ids ? raw.genre_ids.map(id => ({ id, name: TMDB_GENRE_MAP[id] })).filter(g => Boolean(g.name)) : undefined);
-  return {
-    id: raw.id,
-    title: raw.title,
-    originalTitle: raw.original_title,
-    overview: raw.overview || '',
-    posterPath: raw.poster_path,
-    backdropPath: raw.backdrop_path,
-    voteAverage: Number((raw.vote_average || 0).toFixed(1)),
-    voteCount: raw.vote_count || 0,
-    releaseDate: raw.release_date || '',
-    runtime: raw.runtime,
-    tagline: raw.tagline,
-    genres,
-    status: raw.status,
-  };
-};
-
-
-/**
- * Filtra filmes estritamente qualificados para a vitrine:
- * - Deve ter nota válida maior ou igual ao piso (padrão: 6.0)
- * - Deve ter contagem de votos relevante (padrão: 20)
- * - Deve ter cartaz de exibição oficial (posterPath)
- */
-export const filterQualifiedMovies = (
-  movies: Movie[],
-  minVoteAverage: number = 6.0,
-  minVoteCount: number = 20,
-  requireOverview: boolean = false
-): Movie[] => {
-  return movies.filter(
-    (m) =>
-      Boolean(
-        m.posterPath &&
-        m.voteAverage >= minVoteAverage &&
-        m.voteCount >= minVoteCount &&
-        (!requireOverview || (m.overview && m.overview.trim().length >= 20))
-      )
-  );
-};
-
-/**
- * Normaliza o título ou saga para identificar filmes pertencentes à mesma franquia.
- */
-export function getFranchiseKey(title: string, originalTitle?: string): string {
-  const normalize = (t: string) => {
-    let s = t.toLowerCase().trim();
-    if (s.includes("harry potter")) return "harry potter";
-    if (s.includes("senhor dos anéis") || s.includes("lord of the rings")) return "lord of the rings";
-    if (s.includes("poderoso chefão") || s.includes("godfather")) return "the godfather";
-    if (s.includes("vingadores") || s.includes("avengers")) return "avengers";
-    if (s.includes("star wars") || s.includes("guerra nas estrelas")) return "star wars";
-    if (s.includes("homem-aranha") || s.includes("spider-man")) return "spider-man";
-    if (s.includes("batman") || s.includes("cavaleiro das trevas") || s.includes("dark knight")) return "batman";
-    if (s.includes("de volta para o futuro") || s.includes("back to the future")) return "back to the future";
-    if (s.includes("toy story")) return "toy story";
-    if (s.includes("kill bill")) return "kill bill";
-    if (s.includes("matrix")) return "matrix";
-    if (s.includes("alien")) return "alien";
-    if (s.includes("gladiador") || s.includes("gladiator")) return "gladiator";
-    if (s.includes("exterminador do futuro") || s.includes("terminator")) return "terminator";
-    if (s.includes("indiana jones")) return "indiana jones";
-    if (s.includes("shrek")) return "shrek";
-    if (s.includes("mad max")) return "mad max";
-    if (s.includes("jurassic")) return "jurassic";
-    if (s.includes("duna") || s.includes("dune")) return "dune";
-    if (s.includes("blade runner")) return "blade runner";
-    if (s.includes("top gun")) return "top gun";
-    if (s.includes("avatar")) return "avatar";
-    if (s.includes("planeta dos macacos") || s.includes("planet of the apes")) return "planet of the apes";
-    if (s.includes("missão: impossível") || s.includes("missao impossivel") || s.includes("mission: impossible")) return "mission impossible";
-
-    if (s.includes(":")) {
-      s = s.split(":")[0].trim();
-    }
-    if (s.includes(" - ")) {
-      s = s.split(" - ")[0].trim();
-    }
-    s = s.replace(/\s+(parte\s+[ivx\d]+|vol\.\s*\d+|\d+|[ivx]+)$/i, "").trim();
-    return s;
-  };
-
-  const key1 = normalize(title);
-  if (originalTitle) {
-    const key2 = normalize(originalTitle);
-    if (key2.length < key1.length && key2.length > 3) return key2;
-  }
-  return key1;
-}
-
-/**
- * Deduplica títulos pertencentes à mesma franquia, mantendo estritamente
- * o filme com a maior nota (já que a lista original vem ordenada decrescente por nota).
- */
-export function dedupeFranchises(movies: Movie[]): Movie[] {
-  const seenFranchises = new Set<string>();
-  const result: Movie[] = [];
-  for (const m of movies) {
-    const key = getFranchiseKey(m.title, m.originalTitle);
-    if (!seenFranchises.has(key)) {
-      seenFranchises.add(key);
-      result.push(m);
-    }
-  }
-  return result;
-}
-
-/**
- * Executa requisições autenticadas para a API do TMDB.
- */
-async function fetchFromTMDB<T>(pathWithQuery: string): Promise<T> {
-  const separator = pathWithQuery.includes('?') ? '&' : '?';
-  let fullUrl = `${TMDB_BASE_URL}${pathWithQuery}`;
-
-  const headers: HeadersInit = {
-    accept: 'application/json',
-  };
-
-  if (API_TOKEN) {
-    headers.Authorization = `Bearer ${API_TOKEN}`;
-  } else if (API_KEY) {
-    fullUrl += `${separator}api_key=${API_KEY}`;
-  }
-
-  const response = await fetch(fullUrl, { headers });
-  if (!response.ok) {
-    throw new Error(`Erro na chamada da API TMDB (${response.status}): ${response.statusText}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
-/**
- * Classe responsável pelas chamadas da API do TMDB para o domínio de filmes.
+ * Serviço central de filmes (Fachada do Domínio de Catálogo).
+ * Orquestra chamadas de API, curadoria editorial e fallbacks offline.
  */
 class MovieService {
   /**
@@ -237,7 +34,7 @@ class MovieService {
    */
   async getTrendingMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (API_TOKEN || API_KEY) {
+      if (isTmdbConfigured()) {
         const pagesToFetch = page === 1 ? [1, 2] : [page];
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
@@ -259,10 +56,9 @@ class MovieService {
         };
       }
     } catch (error) {
-      console.warn('Falha ao obter filmes em tendência da API do TMDB, usando fallback mock:', error);
+      console.warn('Falha ao obter filmes em tendência do TMDB, usando fallback mock:', error);
     }
 
-    // Fallback para mock se a API falhar ou não houver credenciais
     const itemsPerPage = 20;
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -278,32 +74,27 @@ class MovieService {
 
   /**
    * Retorna filmes em destaque para o Hero com critérios rígidos:
-   * Possuir backdrop de alta resolução, nota IMDb mínima (>= 6.5),
-   * contagem de votos real (>= 10) e OBRIGATORIAMENTE possuir tagline oficial.
+   * Backdrop horizontal, nota IMDb mínima, votos reais e tagline oficial.
    */
   async getHeroFeaturedMovies(): Promise<Movie[]> {
     try {
-      if (API_TOKEN || API_KEY) {
+      if (isTmdbConfigured()) {
         const trending = await this.getTrendingMovies(1);
-        
-        // Padrão Ouro: Nota mínima elevada para >= 7.0, votos >= 10 e backdrop horizontal
+
         let candidates = trending.results.filter(
           (m) => Boolean(m.backdropPath && m.voteAverage >= 7.0 && m.voteCount >= 10)
         );
 
-        // Fallback de Segurança: Se menos de 3 filmes atingirem 7.0, relaxa suavemente para >= 6.5 para nunca faltar filme
         if (candidates.length < 3) {
           candidates = trending.results.filter(
             (m) => Boolean(m.backdropPath && m.voteAverage >= 6.5 && m.voteCount >= 10)
           );
         }
 
-        // Busca detalhes completos em paralelo para obter a tagline oficial e metadados
         const detailedMovies = await Promise.all(
           candidates.slice(0, 10).map((m) => this.getMovieById(m.id))
         );
 
-        // REGRA ESTRITA: Prioriza filmes com tagline oficial
         const heroValid = detailedMovies.filter(
           (m): m is Movie => Boolean(m && m.tagline && m.tagline.trim().length > 0)
         );
@@ -312,7 +103,6 @@ class MovieService {
           return heroValid;
         }
 
-        // Fallback de segurança: Se menos de 3 tiverem tagline, inclui os candidatos qualificados
         const validCandidates = detailedMovies.filter((m): m is Movie => Boolean(m));
         if (validCandidates.length > 0) {
           return validCandidates;
@@ -322,7 +112,6 @@ class MovieService {
       console.warn('Falha ao obter filmes em destaque para o Hero:', error);
     }
 
-    // Fallback para mock: apenas filmes que possuem tagline oficial
     return moviesMock.filter((m) => Boolean(m.tagline && m.tagline.trim().length > 0));
   }
 
@@ -331,7 +120,7 @@ class MovieService {
    */
   async getMovieById(id: number): Promise<Movie | null> {
     try {
-      if (API_TOKEN || API_KEY) {
+      if (isTmdbConfigured()) {
         const raw = await fetchFromTMDB<TMDBMovieRaw>(`/movie/${id}?language=pt-BR`);
         return mapTMDBMovie(raw);
       }
@@ -339,8 +128,7 @@ class MovieService {
       console.warn(`Falha ao obter filme ${id} do TMDB:`, error);
     }
 
-    const movie = moviesMock.find((m) => m.id === id);
-    return movie || null;
+    return moviesMock.find((m) => m.id === id) || null;
   }
 
   /**
@@ -348,50 +136,15 @@ class MovieService {
    */
   async getMovieCredits(id: number): Promise<MovieCredits | null> {
     try {
-      if (API_TOKEN || API_KEY) {
-        interface TMDBCreditsRaw {
-          id: number;
-          cast: Array<{
-            id: number;
-            name: string;
-            character: string;
-            profile_path: string | null;
-            order: number;
-          }>;
-          crew: Array<{
-            id: number;
-            name: string;
-            job: string;
-            department: string;
-            profile_path: string | null;
-          }>;
-        }
-
+      if (isTmdbConfigured()) {
         const data = await fetchFromTMDB<TMDBCreditsRaw>(`/movie/${id}/credits?language=pt-BR`);
-        return {
-          id: data.id,
-          cast: (data.cast || []).map((c) => ({
-            id: c.id,
-            name: c.name,
-            character: c.character,
-            profilePath: c.profile_path,
-            order: c.order,
-          })),
-          crew: (data.crew || []).map((c) => ({
-            id: c.id,
-            name: c.name,
-            job: c.job,
-            department: c.department,
-            profilePath: c.profile_path,
-          })),
-        };
+        return mapTMDBCredits(data);
       }
     } catch (error) {
       console.warn(`Falha ao obter créditos do filme ${id} do TMDB:`, error);
     }
 
-    const credits = creditsMock[id];
-    return credits || null;
+    return creditsMock[id] || null;
   }
 
   /**
@@ -399,54 +152,15 @@ class MovieService {
    */
   async getMovieWatchProviders(id: number): Promise<MovieWatchProviders | null> {
     try {
-      if (API_TOKEN || API_KEY) {
-        interface TMDBProviderRaw {
-          provider_id: number;
-          provider_name: string;
-          logo_path: string;
-          display_priority: number;
-        }
-        interface TMDBProvidersResponse {
-          id: number;
-          results: {
-            BR?: {
-              flatrate?: TMDBProviderRaw[];
-              rent?: TMDBProviderRaw[];
-              buy?: TMDBProviderRaw[];
-            };
-            US?: {
-              flatrate?: TMDBProviderRaw[];
-              rent?: TMDBProviderRaw[];
-              buy?: TMDBProviderRaw[];
-            };
-          };
-        }
-
+      if (isTmdbConfigured()) {
         const data = await fetchFromTMDB<TMDBProvidersResponse>(`/movie/${id}/watch/providers`);
-        const region = data.results?.BR || data.results?.US;
-
-        if (!region) return null;
-
-        const mapProviderList = (list?: TMDBProviderRaw[]) =>
-          (list || []).map((p) => ({
-            providerId: p.provider_id,
-            providerName: p.provider_name,
-            logoPath: p.logo_path,
-            displayPriority: p.display_priority,
-          }));
-
-        return {
-          flatrate: mapProviderList(region.flatrate),
-          rent: mapProviderList(region.rent),
-          buy: mapProviderList(region.buy),
-        };
+        return mapTMDBWatchProviders(data);
       }
     } catch (error) {
       console.warn(`Falha ao obter provedores de streaming do filme ${id} do TMDB:`, error);
     }
 
-    const providers = providersMock[id];
-    return providers || null;
+    return providersMock[id] || null;
   }
 
   /**
@@ -454,7 +168,7 @@ class MovieService {
    */
   async searchMovies(query: string, page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if ((API_TOKEN || API_KEY) && query.trim()) {
+      if (isTmdbConfigured() && query.trim()) {
         const data = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
           `/search/movie?query=${encodeURIComponent(query)}&language=pt-BR&page=${page}&include_adult=false`
         );
@@ -467,14 +181,14 @@ class MovieService {
         };
       }
     } catch (error) {
-      console.warn(`Falha ao pesquisar filmes no TMDB para o termo "${query}":`, error);
+      console.warn(`Falha ao pesquisar filmes no TMDB para "${query}":`, error);
     }
 
     const normalizedQuery = query.toLowerCase();
     const filteredMovies = moviesMock.filter(
       (movie) =>
         movie.title.toLowerCase().includes(normalizedQuery) ||
-        (movie.originalTitle && movie.originalTitle.toLowerCase().includes(normalizedQuery)),
+        (movie.originalTitle && movie.originalTitle.toLowerCase().includes(normalizedQuery))
     );
 
     const itemsPerPage = 20;
@@ -492,11 +206,10 @@ class MovieService {
 
   /**
    * Retorna lançamentos autênticos e novidades do ano corrente com alta relevância.
-   * Substitui chamadas genéricas de cinema por produções originais recentes.
    */
   async getNewReleasesMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (API_TOKEN || API_KEY) {
+      if (isTmdbConfigured()) {
         const currentYear = new Date().getFullYear();
         const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
         const responses = await Promise.all(
@@ -537,7 +250,7 @@ class MovieService {
   }
 
   /**
-   * Mantém retrocompatibilidade para o nome anterior, redirecionando para as Novidades.
+   * Alias de compatibilidade para lançamentos.
    */
   async getNowPlayingMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     return this.getNewReleasesMovies(page);
@@ -545,13 +258,10 @@ class MovieService {
 
   /**
    * Retorna os filmes aclamados pela crítica contemporânea (Século XXI: 2000 em diante).
-   * Filtro estrito: exclui animações (sem desenhos) para focar puramente em cinema live-action de alta qualidade.
    */
   async getTopRatedMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (API_TOKEN || API_KEY) {
-        // Busca 3 páginas (60 filmes) para que, após a remoção de franquias repetidas e animações,
-        // ainda tenhamos com folga 20 filmes de altíssimo prestígio
+      if (isTmdbConfigured()) {
         const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
@@ -596,13 +306,11 @@ class MovieService {
   }
 
   /**
-   * Retorna os clássicos indispensáveis da história do cinema (obras consagradas até 1999).
-   * Filtro estrito: exclui animações e deduplica franquias (apenas o filme mais bem avaliado de cada saga entra).
+   * Retorna os clássicos indispensáveis da história do cinema (até 1999).
    */
   async getClassicMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (API_TOKEN || API_KEY) {
-        // Busca 3 páginas (60 filmes) para abastecer a deduplicação de franquias pré-2000
+      if (isTmdbConfigured()) {
         const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
@@ -646,16 +354,12 @@ class MovieService {
     };
   }
 
-
   /**
    * Retorna os filmes populares com alta adesão de público.
-   * Filtro estrito: nota mínima 6.0 e pelo menos 50 votos para eliminar filmes medíocres como 3.9.
    */
   async getPopularMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (API_TOKEN || API_KEY) {
-        // Busca 5 páginas (100 filmes) para que, após a deduplicação com Em Alta e Novidades,
-        // ainda sobrem com folga mais de 20 filmes consagrados e populares.
+      if (isTmdbConfigured()) {
         const pagesToFetch = page === 1 ? [1, 2, 3, 4, 5] : [page];
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
@@ -691,182 +395,13 @@ class MovieService {
   }
 
   /**
-   * Retorna filmes filtrados por macrogênero de streaming (suporta união com '|', ex: '28|12').
-   * Aplica critérios rigorosos de qualidade:
-   * - Cartaz oficial obrigatório (posterPath != null)
-   * - Avaliação mínima de 6.5 (voteAverage >= 6.5)
-   * - Curadoria editorial por perfil de gênero (GenreProfile)
-   * - Exclusão cruzada (without_genres) para eliminar contaminação entre categorias
-   * - Ordenação sob medida (sortBy) para valorizar obras aclamadas ou novidades
-   * - Prioridade estável para filmes cujo primeiro gênero é a categoria selecionada
-   * - Busca paralela concorrente via Promise.all para carregamento instantâneo
+   * Retorna filmes filtrados por macrogênero com curadoria editorial e busca paralela.
    */
   async getMoviesByGenre(
     categoryOrQuery: string | number,
     page: number = 1
   ): Promise<PaginatedResponse<Movie>> {
-    try {
-      if (API_TOKEN || API_KEY) {
-        const inputKey = String(categoryOrQuery).trim();
-
-        // Localiza o perfil editorial da categoria (seja pelo nome "Comédia" ou pelo ID/Query "35")
-        let profile: GenreProfile | undefined = GENRE_PROFILES[inputKey];
-        if (!profile) {
-          // Busca reversa caso tenha sido passado o ID legado (ex: "35" ou "28|12")
-          profile = Object.values(GENRE_PROFILES).find(
-            (p) => p.withGenres === inputKey
-          );
-        }
-
-        // Perfil de fallback caso seja um gênero avulso desconhecido
-        const effectiveProfile: GenreProfile = profile || {
-          withGenres: inputKey,
-          withoutGenres: inputKey.includes("16") ? undefined : "16",
-          sortBy: "popularity.desc",
-          minVoteAverage: 6.0,
-          minVoteCount: 30,
-          description: "Explorando os títulos deste gênero",
-        };
-
-        const withoutParam = effectiveProfile.withoutGenres
-          ? `&without_genres=${effectiveProfile.withoutGenres}`
-          : "";
-        const withoutKeywordsParam = effectiveProfile.withoutKeywords
-          ? `&without_keywords=${effectiveProfile.withoutKeywords}`
-          : "";
-        const sortParam = `&sort_by=${effectiveProfile.sortBy || "popularity.desc"}`;
-        const minVoteCount = effectiveProfile.minVoteCount || 30;
-        const minVoteAvg = effectiveProfile.minVoteAverage || 6.0;
-        const targetGenreIds = new Set(
-          String(effectiveProfile.withGenres).split("|").map(Number)
-        );
-
-        let currentTmdbPage = page;
-        const collectedMovies: Movie[] = [];
-        let totalPages = Infinity;
-        let totalResults = 0;
-        const targetBatchCount = 18;
-        let chunksFetched = 0;
-        const maxChunks = 2; // Até 4 páginas em paralelo
-
-        while (
-          collectedMovies.length < targetBatchCount &&
-          currentTmdbPage <= totalPages &&
-          chunksFetched < maxChunks
-        ) {
-          const pagesToFetch = [currentTmdbPage];
-          if (currentTmdbPage + 1 <= totalPages) {
-            pagesToFetch.push(currentTmdbPage + 1);
-          }
-
-          const settledResponses = await Promise.allSettled(
-            pagesToFetch.map((p) =>
-              fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-                `/discover/movie?language=pt-BR&with_genres=${effectiveProfile.withGenres}${withoutParam}${withoutKeywordsParam}${sortParam}&vote_count.gte=${minVoteCount}&vote_average.gte=${minVoteAvg}&page=${p}`
-              )
-            )
-          );
-
-          const pageResponses = settledResponses
-            .filter(
-              (r): r is PromiseFulfilledResult<TMDBPaginatedResponse<TMDBMovieRaw>> =>
-                r.status === "fulfilled"
-            )
-            .map((r) => r.value);
-
-          for (const data of pageResponses) {
-            totalPages = Math.min(totalPages, data.total_pages);
-            totalResults = Math.max(totalResults, data.total_results);
-
-            const qualified = filterQualifiedMovies(
-              data.results.map(mapTMDBMovie),
-              minVoteAvg,
-              minVoteCount,
-              true // Exige sinopse real em português (filtro anti-trash)
-            );
-
-            // Heurística de Afinidade Ponderada:
-            // - Posição 1 ou 2: alta afinidade (sempre aprovado)
-            // - Posição 3: resgate de obras-primas com alta aclamação (nota >= 7.0 e votos >= 200)
-            //   Evita descartar injustamente clássicos híbridos como Garota Exemplar ou O Diabo Veste Prada
-            // - Posição 4 em diante: descartado (elimina casos periféricos como Romance em O Máskara)
-            const affinityMovies = qualified.filter((m) => {
-              if (!m.genres || m.genres.length === 0) return true;
-              const genreIds = m.genres.map((g) => g.id);
-              const bestIndex = genreIds.findIndex((id) => targetGenreIds.has(id));
-              if (bestIndex === -1) return false;
-
-              // 1ª ou 2ª tag principal: aprovado diretamente
-              if (bestIndex < 2) return true;
-
-              // 3ª tag: resgatado para obras de alta aclamação e relevância
-              if (bestIndex === 2 && m.voteAverage >= 7.0 && m.voteCount >= 200) {
-                return true;
-              }
-
-              return false;
-            });
-
-            collectedMovies.push(...affinityMovies);
-          }
-
-          currentTmdbPage += pagesToFetch.length;
-          chunksFetched++;
-        }
-
-        // Deduplicação estrita de segurança por ID
-        const seenIds = new Set<number>();
-        const uniqueMovies: Movie[] = [];
-        for (const m of collectedMovies) {
-          if (!seenIds.has(m.id)) {
-            seenIds.add(m.id);
-            uniqueMovies.push(m);
-          }
-        }
-
-        // Prioridade editorial sênior: se o filme tem o gênero solicitado como primeira tag (identidade principal),
-        // ele ganha prioridade no topo do lote preservando a estabilidade da ordenação
-        if (effectiveProfile.primaryGenreId) {
-          const targetPrimaryId = effectiveProfile.primaryGenreId;
-          uniqueMovies.sort((a, b) => {
-            const aIsPrimary = a.genres?.[0]?.id === targetPrimaryId ? 1 : 0;
-            const bIsPrimary = b.genres?.[0]?.id === targetPrimaryId ? 1 : 0;
-            return bIsPrimary - aIsPrimary;
-          });
-        }
-
-        const hasNext =
-          currentTmdbPage <= totalPages &&
-          (uniqueMovies.length > 0 || currentTmdbPage < totalPages);
-
-        return {
-          page,
-          results: uniqueMovies,
-          totalPages,
-          totalResults,
-          nextPage: hasNext ? currentTmdbPage : undefined,
-        };
-      }
-    } catch (error) {
-      console.warn(`Falha ao obter filmes do gênero ${categoryOrQuery} do TMDB:`, error);
-    }
-
-    // Fallback Mock
-    const inputKey = String(categoryOrQuery).trim();
-    const profile = GENRE_PROFILES[inputKey];
-    const withIds = profile ? profile.withGenres : inputKey;
-    const queryIds = new Set(String(withIds).split('|').map(Number));
-    const filtered = moviesMock.filter((m) =>
-      m.genres?.some((g) => queryIds.has(g.id))
-    );
-    const results = filterQualifiedMovies(filtered.length > 0 ? filtered : moviesMock, 6.0, 20);
-    return {
-      page,
-      results,
-      totalPages: 1,
-      totalResults: results.length,
-      nextPage: undefined,
-    };
+    return fetchGenreMoviesPage(categoryOrQuery, page);
   }
 
   /**
@@ -874,7 +409,7 @@ class MovieService {
    */
   async getMovieVideos(id: number): Promise<MovieVideo[]> {
     try {
-      if (API_TOKEN || API_KEY) {
+      if (isTmdbConfigured()) {
         let data = await fetchFromTMDB<{ id: number; results: MovieVideo[] }>(
           `/movie/${id}/videos?language=pt-BR`
         );

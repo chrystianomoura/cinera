@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
+import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
 
 interface MovieCarouselProps {
   title: string;
@@ -22,97 +23,12 @@ export function MovieCarousel({
   isEager = false,
   onSelectMovie,
 }: MovieCarouselProps) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  // Cache das dimensões para eliminar FORCED LAYOUT (Reflow) durante a rolagem
-  const maxScrollRef = useRef<number>(0);
-  const rafIdRef = useRef<number | null>(null);
-
-  const updateMeasurements = useCallback(() => {
-    const el = rowRef.current;
-    if (!el) return;
-    maxScrollRef.current = el.scrollWidth - el.clientWidth;
-  }, []);
-
-  useEffect(() => {
-    const el = rowRef.current;
-    if (!el) return;
-
-    const rafId = requestAnimationFrame(() => {
-      updateMeasurements();
-    });
-
-    let lastLeft = el.scrollLeft > 2;
-    let lastRight = el.scrollLeft < maxScrollRef.current - 2;
-
-    const syncState = () => {
-      const left = el.scrollLeft > 2;
-      const right = el.scrollLeft < maxScrollRef.current - 2;
-      if (left !== lastLeft) {
-        lastLeft = left;
-        setCanScrollLeft(left);
-      }
-      if (right !== lastRight) {
-        lastRight = right;
-        setCanScrollRight(right);
-      }
-    };
-
-    let timer: number | null = null;
-    const onScroll = () => {
-      // Disparo no frame seguinte via RAF para NÃO competir com a thread do compositor
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = requestAnimationFrame(() => {
-        const left = el.scrollLeft > 2;
-        const right = el.scrollLeft < maxScrollRef.current - 2;
-        if (left !== lastLeft) {
-          lastLeft = left;
-          setCanScrollLeft(left);
-        }
-        if (right !== lastRight) {
-          lastRight = right;
-          setCanScrollRight(right);
-        }
-      });
-
-      if (timer) clearTimeout(timer);
-      timer = window.setTimeout(syncState, 60);
-    };
-
-    const onResize = () => {
-      updateMeasurements();
-      syncState();
-    };
-
-    syncState();
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      if (timer) clearTimeout(timer);
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [movies, updateMeasurements]);
-
-  const scroll = (direction: "left" | "right") => {
-    const el = rowRef.current;
-    if (!el) return;
-    // Ativação instantânea antes de iniciar a rolagem suave
-    if (direction === "right") {
-      setCanScrollLeft(true);
-    }
-    const scrollAmount = Math.max(Math.floor(el.clientWidth * 0.8), 500);
-    el.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
+  const {
+    containerRef: rowRef,
+    canScrollLeft,
+    canScrollRight,
+    scroll,
+  } = useHorizontalScroll({ defaultScrollFraction: 0.8 });
 
   // Máscara com feathering suave não-linear (estilo Apple TV/Netflix) para entrada e saída dos cards
   const carouselMask = useMemo(() => {

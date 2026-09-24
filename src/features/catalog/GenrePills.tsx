@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GENRES } from "./constants";
+import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
 
 interface GenrePillsProps {
   selectedGenre: string;
@@ -8,91 +8,12 @@ interface GenrePillsProps {
 }
 
 export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
-  const genresRowRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeftGenres, setCanScrollLeftGenres] = useState(false);
-  const [canScrollRightGenres, setCanScrollRightGenres] = useState(true);
-
-  const maxScrollRef = useRef<number>(0);
-  const rafIdRef = useRef<number | null>(null);
-
-  const updateMeasurements = useCallback(() => {
-    const el = genresRowRef.current;
-    if (!el) return;
-    maxScrollRef.current = el.scrollWidth - el.clientWidth;
-  }, []);
-
-  useEffect(() => {
-    const el = genresRowRef.current;
-    if (!el) return;
-
-    updateMeasurements();
-
-    let lastLeft = el.scrollLeft > 2;
-    let lastRight = el.scrollLeft < maxScrollRef.current - 2;
-
-    const syncState = () => {
-      const left = el.scrollLeft > 2;
-      const right = el.scrollLeft < maxScrollRef.current - 2;
-      if (left !== lastLeft) {
-        lastLeft = left;
-        setCanScrollLeftGenres(left);
-      }
-      if (right !== lastRight) {
-        lastRight = right;
-        setCanScrollRightGenres(right);
-      }
-    };
-
-    let timer: number | null = null;
-    const onScroll = () => {
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = requestAnimationFrame(() => {
-        const left = el.scrollLeft > 2;
-        const right = el.scrollLeft < maxScrollRef.current - 2;
-        if (left !== lastLeft) {
-          lastLeft = left;
-          setCanScrollLeftGenres(left);
-        }
-        if (right !== lastRight) {
-          lastRight = right;
-          setCanScrollRightGenres(right);
-        }
-      });
-
-      if (timer) clearTimeout(timer);
-      timer = window.setTimeout(syncState, 60);
-    };
-
-    const onResize = () => {
-      updateMeasurements();
-      syncState();
-    };
-
-    syncState();
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      if (timer) clearTimeout(timer);
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [updateMeasurements]);
-
-  const scrollGenres = (direction: "left" | "right") => {
-    const el = genresRowRef.current;
-    if (!el) return;
-    if (direction === "right") {
-      setCanScrollLeftGenres(true);
-    }
-    const scrollAmount = Math.max(Math.floor(el.clientWidth * 0.5), 320);
-    el.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
+  const {
+    containerRef: genresRowRef,
+    canScrollLeft: canScrollLeftGenres,
+    canScrollRight: canScrollRightGenres,
+    scroll: scrollGenres,
+  } = useHorizontalScroll({ defaultScrollFraction: 0.5 });
 
   return (
     <section className="relative group/pills">
