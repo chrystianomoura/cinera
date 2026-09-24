@@ -412,13 +412,13 @@ export function MovieDetailsView({
           </div>
         </section>
 
-        {/* 5. SINOPSE CENTRALIZADA EM SEÇÃO DEDICADA DE LEITURA NOBRE */}
+        {/* 5. SINOPSE: CONTAINER CENTRALIZADO COM TÍTULO NO MEIO E TEXTO À ESQUERDA */}
         {movie.overview ? (
-          <section className="max-w-3xl mx-auto w-full text-center px-4 pt-6 pb-2 flex flex-col items-center gap-3">
-            <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+          <section className="max-w-2xl sm:max-w-3xl mx-auto w-full px-4 sm:px-6 pt-6 pb-2 flex flex-col gap-3">
+            <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center w-full">
               Sinopse
             </h3>
-            <p className="text-base sm:text-lg md:text-xl text-white leading-relaxed font-normal max-w-2xl text-balance">
+            <p className="text-base sm:text-lg md:text-xl text-white leading-relaxed font-normal text-left">
               {movie.overview}
             </p>
           </section>
