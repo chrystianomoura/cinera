@@ -310,7 +310,7 @@ export default function App() {
 
         {/* MODO 1: Vitrine Principal ("Todos") com os 5 Carrosséis Temáticos a 120 FPS */}
         {activeCatalogView === "todos" ? (
-          <div className="flex flex-col gap-10 md:gap-14 animate-in fade-in duration-500">
+          <div className="flex flex-col gap-6 md:gap-7 animate-in fade-in duration-500">
             {/* 1. Em Alta */}
             <MovieCarousel
               title="Em Alta"

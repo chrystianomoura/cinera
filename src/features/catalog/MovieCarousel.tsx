@@ -176,7 +176,7 @@ export function MovieCarousel({
 
           <div
             ref={rowRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide"
+            className="flex gap-4 md:gap-6 overflow-x-auto pb-2 pt-4 scrollbar-hide"
             style={{
               maskImage: carouselMask,
               WebkitMaskImage: carouselMask,
