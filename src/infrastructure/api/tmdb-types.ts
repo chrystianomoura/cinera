@@ -50,6 +50,18 @@ export interface TMDBMovieRaw {
   genre_ids?: number[];
   genres?: { id: number; name: string }[];
   status?: string;
+  budget?: number;
+  revenue?: number;
+  production_companies?: Array<{
+    id: number;
+    name: string;
+    logo_path: string | null;
+    origin_country?: string;
+  }>;
+  production_countries?: Array<{
+    iso_3166_1: string;
+    name: string;
+  }>;
 }
 
 export interface TMDBPaginatedResponse<T> {
@@ -99,3 +111,29 @@ export interface TMDBProvidersResponse {
     };
   };
 }
+
+export interface TMDBReleaseDatesResponse {
+  id: number;
+  results: Array<{
+    iso_3166_1: string;
+    release_dates: Array<{
+      certification: string;
+      type: number;
+      release_date: string;
+    }>;
+  }>;
+}
+
+export interface TMDBImagesResponse {
+  id: number;
+  backdrops: Array<{
+    file_path: string;
+    aspect_ratio: number;
+    width: number;
+    height: number;
+  }>;
+  posters: Array<{
+    file_path: string;
+  }>;
+}
+

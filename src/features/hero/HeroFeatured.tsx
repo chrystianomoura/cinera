@@ -10,6 +10,7 @@ interface HeroFeaturedProps {
   isTrailerOpen: boolean;
   isVisible?: boolean;
   onOpenTrailer: (movie: Movie) => void;
+  onOpenDetails?: (movie: Movie) => void;
 }
 
 export function HeroFeatured({
@@ -18,6 +19,7 @@ export function HeroFeatured({
   isTrailerOpen,
   isVisible = true,
   onOpenTrailer,
+  onOpenDetails,
 }: HeroFeaturedProps) {
   const [heroIndex, setHeroIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
@@ -203,11 +205,10 @@ export function HeroFeatured({
               </button>
 
               <button
-                disabled
-                title="Página de detalhes em desenvolvimento"
-                className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-zinc-900/40 text-zinc-500 font-semibold text-base border border-white/5 cursor-not-allowed select-none"
+                onClick={() => onOpenDetails?.(heroMovie)}
+                className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white font-semibold text-base border border-white/15 hover:border-white/35 transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 cursor-pointer group"
               >
-                <Info className="w-5 h-5 text-zinc-500" />
+                <Info className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
                 <span>Ver Detalhes</span>
               </button>
             </div>

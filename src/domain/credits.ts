@@ -27,4 +27,6 @@ export interface MovieCredits {
   id: number;
   cast: CastMember[];
   crew: CrewMember[];
+  directors?: string[];
+  writers?: string[];
 }

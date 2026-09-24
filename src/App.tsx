@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   useInfiniteGenreMovies,
   useHeroFeaturedMovies,
@@ -10,6 +10,7 @@ import { HeroFeatured } from "@/features/hero/HeroFeatured";
 import { GenrePills } from "@/features/catalog/GenrePills";
 import { HomeFeed } from "@/features/catalog/HomeFeed";
 import { GenreCatalogGrid } from "@/features/catalog/GenreCatalogGrid";
+import { MovieDetailsView } from "@/features/movie-details/MovieDetailsView";
 import { TrailerModal } from "@/features/trailer/TrailerModal";
 import { smoothScrollToTop } from "@/lib/smooth-scroll";
 
@@ -83,6 +84,71 @@ export default function App() {
   const handleCloseTrailer = () => {
     setIsTrailerOpen(false);
   };
+
+  // Tela de Detalhes Completa com Atmosfera Estilo Spotify
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const handleOpenDetails = (movie: Movie) => {
+    setSelectedMovie(movie);
+    setIsDetailsOpen(true);
+    // Sincroniza com a URL preservando o histórico de navegação
+    const url = new URL(window.location.href);
+    url.searchParams.set("filme", String(movie.id));
+    window.history.pushState({ movieId: movie.id }, "", url.toString());
+  };
+
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
+    // Remove o parâmetro da URL de forma limpa sem recarregar a página
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("filme")) {
+      url.searchParams.delete("filme");
+      const cleanUrl = url.pathname + (url.search ? url.search : "");
+      window.history.pushState({}, "", cleanUrl);
+    }
+  };
+
+  // Suporte à navegação do histórico (botão Voltar do navegador ou mouse)
+  useEffect(() => {
+    const handlePopState = () => {
+      const url = new URL(window.location.href);
+      const filmParam = url.searchParams.get("filme");
+      if (!filmParam) {
+        setIsDetailsOpen(false);
+      } else {
+        const id = Number(filmParam);
+        if (id) {
+          movieService.getMovieById(id).then((m) => {
+            if (m) {
+              setSelectedMovie(m);
+              setIsDetailsOpen(true);
+            }
+          });
+        }
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // Leitura inicial de filme na URL caso a página seja aberta diretamente com ?filme=ID
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const filmParam = url.searchParams.get("filme");
+    if (filmParam) {
+      const id = Number(filmParam);
+      if (id) {
+        movieService.getMovieById(id).then((m) => {
+          if (m) {
+            setSelectedMovie(m);
+            setIsDetailsOpen(true);
+          }
+        });
+      }
+    }
+  }, []);
 
   const handleSelectGenre = (genre: string) => {
     // 1. Se clicou no gênero que já está ativo (ex: já está em "Todos" e clicou em "Todos" para voltar ao topo):
@@ -173,6 +239,7 @@ export default function App() {
           isTrailerOpen={isTrailerOpen}
           isVisible={isHomeView && !isFadingOutHome}
           onOpenTrailer={handleOpenTrailer}
+          onOpenDetails={handleOpenDetails}
         />
       </div>
 
@@ -194,7 +261,7 @@ export default function App() {
         {activeCatalogView === "todos" ? (
           <HomeFeed
             isFadingOut={isFadingOutHome}
-            onSelectMovie={handleOpenTrailer}
+            onSelectMovie={handleOpenDetails}
           />
         ) : (
           /* MODO 2: Modo de Exploração por Gênero com dissolução suave ao sair */
@@ -213,11 +280,19 @@ export default function App() {
               isLoadingMore={isFetchingNextPage}
               hasMore={Boolean(hasNextPage)}
               onLoadMore={() => fetchNextPage()}
-              onSelectMovie={handleOpenTrailer}
+              onSelectMovie={handleOpenDetails}
             />
           </div>
         )}
       </main>
+
+      {/* Tela de Detalhes Completa com Atmosfera Cromática Estilo Spotify */}
+      <MovieDetailsView
+        isOpen={isDetailsOpen}
+        movie={selectedMovie}
+        onClose={handleCloseDetails}
+        onOpenTrailer={handleOpenTrailer}
+      />
 
       <TrailerModal
         isOpen={isTrailerOpen}

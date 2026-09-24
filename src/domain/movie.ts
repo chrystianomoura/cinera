@@ -6,6 +6,18 @@ export interface Genre {
   name: string;
 }
 
+export interface ProductionCompany {
+  id: number;
+  name: string;
+  logoPath?: string | null;
+  originCountry?: string;
+}
+
+export interface ProductionCountry {
+  iso: string;
+  name: string;
+}
+
 /**
  * Representa os detalhes e atributos de um filme.
  */
@@ -23,6 +35,10 @@ export interface Movie {
   tagline?: string;
   genres?: Genre[];
   status?: string;
+  budget?: number;
+  revenue?: number;
+  productionCompanies?: ProductionCompany[];
+  productionCountries?: ProductionCountry[];
 }
 
 /**

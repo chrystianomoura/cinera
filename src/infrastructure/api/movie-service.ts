@@ -9,6 +9,8 @@ import type {
   TMDBPaginatedResponse,
   TMDBCreditsRaw,
   TMDBProvidersResponse,
+  TMDBReleaseDatesResponse,
+  TMDBImagesResponse,
   MovieVideo,
 } from './tmdb-types';
 
@@ -424,6 +426,60 @@ class MovieService {
       }
     } catch (error) {
       console.warn(`Falha ao obter vídeos do filme ${id} do TMDB:`, error);
+    }
+    return [];
+  }
+
+  /**
+   * Retorna a classificação indicativa do filme (prioridade para o Brasil - BR).
+   */
+  async getMovieReleaseDates(id: number): Promise<string | null> {
+    try {
+      if (isTmdbConfigured()) {
+        const data = await fetchFromTMDB<TMDBReleaseDatesResponse>(
+          `/movie/${id}/release_dates`
+        );
+
+        const brData = data.results?.find((r) => r.iso_3166_1 === "BR");
+        if (brData) {
+          const cert = brData.release_dates.find((d) => Boolean(d.certification?.trim()));
+          if (cert?.certification) {
+            return cert.certification.trim();
+          }
+        }
+
+        // Fallback para classificação norte-americana (US)
+        const usData = data.results?.find((r) => r.iso_3166_1 === "US");
+        if (usData) {
+          const cert = usData.release_dates.find((d) => Boolean(d.certification?.trim()));
+          if (cert?.certification) {
+            return cert.certification.trim();
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`Falha ao obter classificação indicativa do filme ${id}:`, error);
+    }
+    return null;
+  }
+
+  /**
+   * Retorna a galeria de fotos widescreen/stills das filmagens do filme.
+   */
+  async getMovieGalleryImages(id: number): Promise<string[]> {
+    try {
+      if (isTmdbConfigured()) {
+        const data = await fetchFromTMDB<TMDBImagesResponse>(
+          `/movie/${id}/images`
+        );
+        const backdrops = data.backdrops || [];
+        return backdrops
+          .filter((b) => Boolean(b.file_path))
+          .slice(0, 12)
+          .map((b) => b.file_path);
+      }
+    } catch (error) {
+      console.warn(`Falha ao obter galeria de imagens do filme ${id}:`, error);
     }
     return [];
   }

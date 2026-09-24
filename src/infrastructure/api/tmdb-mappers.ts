@@ -7,6 +7,19 @@ import {
   type TMDBProviderRaw,
 } from './tmdb-types';
 
+const regionNames =
+  typeof Intl !== "undefined" && Intl.DisplayNames
+    ? new Intl.DisplayNames(["pt-BR"], { type: "region" })
+    : null;
+
+function getCountryNamePtBr(iso: string, fallbackName?: string): string {
+  try {
+    return (regionNames && regionNames.of(iso)) || fallbackName || iso;
+  } catch {
+    return fallbackName || iso;
+  }
+}
+
 /**
  * Converte os dados brutos de filme retornados pelo TMDB (snake_case) para o modelo de domínio da aplicação.
  */
@@ -33,6 +46,18 @@ export function mapTMDBMovie(raw: TMDBMovieRaw): Movie {
     tagline: raw.tagline,
     genres,
     status: raw.status,
+    budget: raw.budget,
+    revenue: raw.revenue,
+    productionCompanies: raw.production_companies?.map((c) => ({
+      id: c.id,
+      name: c.name,
+      logoPath: c.logo_path,
+      originCountry: c.origin_country,
+    })),
+    productionCountries: raw.production_countries?.map((c) => ({
+      iso: c.iso_3166_1,
+      name: getCountryNamePtBr(c.iso_3166_1, c.name),
+    })),
   };
 }
 
@@ -40,6 +65,23 @@ export function mapTMDBMovie(raw: TMDBMovieRaw): Movie {
  * Converte os créditos de filme do TMDB para o modelo de domínio da aplicação.
  */
 export function mapTMDBCredits(data: TMDBCreditsRaw): MovieCredits {
+  const crew = data.crew || [];
+  const directors = Array.from(
+    new Set(crew.filter((c) => c.job === "Director").map((c) => c.name))
+  );
+  const writers = Array.from(
+    new Set(
+      crew
+        .filter(
+          (c) =>
+            c.job === "Screenplay" ||
+            c.job === "Writer" ||
+            c.department === "Writing"
+        )
+        .map((c) => c.name)
+    )
+  );
+
   return {
     id: data.id,
     cast: (data.cast || []).map((c) => ({
@@ -49,13 +91,15 @@ export function mapTMDBCredits(data: TMDBCreditsRaw): MovieCredits {
       profilePath: c.profile_path,
       order: c.order,
     })),
-    crew: (data.crew || []).map((c) => ({
+    crew: crew.map((c) => ({
       id: c.id,
       name: c.name,
       job: c.job,
       department: c.department,
       profilePath: c.profile_path,
     })),
+    directors: directors.length > 0 ? directors : undefined,
+    writers: writers.length > 0 ? writers : undefined,
   };
 }
 
