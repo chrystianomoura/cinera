@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Play, Bookmark, Check, Film, Loader2 } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getPosterUrl, getBackdropUrl } from "@/infrastructure/api/movie-service";
-import { formatRuntime, formatCurrencyUSD } from "@/lib/formatters";
+import { formatRuntime, formatCurrencyUSD, formatCuratedGenres } from "@/lib/formatters";
 import { extractDominantColor } from "@/lib/color-extractor";
 import { useMovieFullDetails } from "@/hooks/use-movie-full-details";
 import { useUserLibrary } from "@/stores/use-user-library";
@@ -86,7 +86,7 @@ export function MovieDetailsView({
   const backdropUrl = movie.backdropPath ? getBackdropUrl(movie.backdropPath, "w1280") : null;
   const releaseYear = movie.releaseDate ? movie.releaseDate.slice(0, 4) : null;
   const duration = formatRuntime(movie.runtime);
-  const genresList = movie.genres?.map((g) => g.name).join(" / ");
+  const curatedGenres = formatCuratedGenres(movie.genres);
 
   // Ficha de Produção & Bilheteria (Orçamento, Bilheteria, País, Título Original, Produtoras)
   const originalTitle = movie.originalTitle;
@@ -226,10 +226,10 @@ export function MovieDetailsView({
                 </>
               ) : null}
 
-              {genresList ? (
+              {curatedGenres ? (
                 <>
                   <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
-                  <span className="text-zinc-200 font-medium">{genresList}</span>
+                  <span className="text-zinc-200 font-medium">{curatedGenres}</span>
                 </>
               ) : null}
 
