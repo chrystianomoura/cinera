@@ -96,9 +96,9 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
 
   return (
     <section className="relative group/pills">
-      {/* Fade Dock Esquerdo perfeitamente alinhado com a altura das pílulas (top-0 bottom-4 desconsidera o pb-4) */}
+      {/* Fade Dock Esquerdo perfeitamente alinhado com a altura das pílulas */}
       <div
-        className={`hidden md:flex absolute left-0 top-0 bottom-4 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity duration-300 ${
+        className={`hidden md:flex absolute left-0 inset-y-0 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity duration-300 ${
           canScrollLeftGenres ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -115,7 +115,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
 
       <div
         ref={genresRowRef}
-        className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide [transform:translateZ(0)] [will-change:scroll-position]"
+        className="flex gap-3 md:gap-4 overflow-x-auto pt-1 pb-1.5 scrollbar-hide [transform:translateZ(0)] [will-change:scroll-position]"
         style={{
           maskImage: canScrollRightGenres
             ? "linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)"
@@ -145,9 +145,9 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
         <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
       </div>
 
-      {/* Fade Dock Direito perfeitamente alinhado com a altura das pílulas (top-0 bottom-4 desconsidera o pb-4) */}
+      {/* Fade Dock Direito perfeitamente alinhado com a altura das pílulas */}
       <div
-        className={`hidden md:flex absolute right-0 top-0 bottom-4 w-28 bg-gradient-to-l from-black from-35% via-black/70 to-transparent z-20 items-center justify-end pointer-events-none transition-opacity duration-300 ${
+        className={`hidden md:flex absolute right-0 inset-y-0 w-28 bg-gradient-to-l from-black from-35% via-black/70 to-transparent z-20 items-center justify-end pointer-events-none transition-opacity duration-300 ${
           canScrollRightGenres ? "opacity-100" : "opacity-0"
         }`}
       >

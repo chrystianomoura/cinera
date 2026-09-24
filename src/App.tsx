@@ -296,10 +296,10 @@ export default function App() {
 
       {/* Conteúdo Principal com transição harmonizada de padding */}
       <main
-        className={`relative z-10 px-6 md:px-12 flex flex-col gap-10 ${
+        className={`relative z-10 px-6 md:px-12 flex flex-col gap-5 md:gap-6 ${
           isHomeView
             ? "transition-[padding-top] duration-700 ease-[cubic-bezier(0.35,0,0.25,1)] pt-0"
-            : "transition-[padding-top] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] pt-24 md:pt-28"
+            : "transition-[padding-top] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] pt-[4.25rem] md:pt-[5.25rem]"
         }`}
       >
         {/* Pílulas de Navegação por Gênero: Sempre visíveis no topo */}
