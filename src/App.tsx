@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   useTrendingMovies,
   useNewReleasesMovies,
@@ -16,6 +16,7 @@ import { GenrePills } from "@/features/catalog/GenrePills";
 import { MovieCarousel } from "@/features/catalog/MovieCarousel";
 import { GenreCatalogGrid } from "@/features/catalog/GenreCatalogGrid";
 import { TrailerModal } from "@/features/trailer/TrailerModal";
+import { smoothScrollToTop } from "@/lib/smooth-scroll";
 
 export default function App() {
   // Dados do Hero e Carrosséis Temáticos
@@ -157,81 +158,12 @@ export default function App() {
     setIsTrailerOpen(false);
   };
 
-  const scrollRafRef = useRef<number | null>(null);
-
-  // Rolagem mais devagar, aveludada e uniforme até o topo (elimina correria e solavancos)
-  const slowSmoothScrollToTop = useCallback(() => {
-    if (scrollRafRef.current) {
-      cancelAnimationFrame(scrollRafRef.current);
-      scrollRafRef.current = null;
-    }
-
-    const start = window.scrollY;
-    if (start <= 0) return;
-
-    // Duração prolongada e serena (entre 1100ms e 1550ms) para máxima suavidade
-    const duration = Math.min(Math.max(1100, start * 1.05), 1550);
-    let startTime: number | null = null;
-
-    // Curva senoidal harmônica pura (easeInOutSine): aceleração e desaceleração 100% orgânicas e aveludadas
-    const easeInOutSine = (t: number) => -(Math.cos(Math.PI * t) - 1) / 2;
-
-    // Desativa pointer-events temporariamente para evitar recálculos de hover nos cards enquanto passam pelo cursor
-    document.body.style.pointerEvents = "none";
-
-    const cleanUp = () => {
-      document.body.style.pointerEvents = "";
-      window.removeEventListener("wheel", cancelOnUserInteraction);
-      window.removeEventListener("touchmove", cancelOnUserInteraction);
-    };
-
-    const cancelOnUserInteraction = () => {
-      if (scrollRafRef.current) {
-        cancelAnimationFrame(scrollRafRef.current);
-        scrollRafRef.current = null;
-      }
-      cleanUp();
-    };
-
-    window.addEventListener("wheel", cancelOnUserInteraction, { passive: true });
-    window.addEventListener("touchmove", cancelOnUserInteraction, { passive: true });
-
-    const step = (currentTime: number) => {
-      if (startTime === null) {
-        startTime = currentTime;
-      }
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = easeInOutSine(progress);
-
-      window.scrollTo(0, Math.round(start * (1 - ease)));
-
-      if (progress < 1) {
-        scrollRafRef.current = requestAnimationFrame(step);
-      } else {
-        scrollRafRef.current = null;
-        cleanUp();
-      }
-    };
-
-    scrollRafRef.current = requestAnimationFrame(step);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (scrollRafRef.current) {
-        cancelAnimationFrame(scrollRafRef.current);
-      }
-      document.body.style.pointerEvents = "";
-    };
-  }, []);
-
   const handleSelectGenre = (genre: string) => {
     // 1. Se clicou no gênero que já está ativo (ex: já está em "Todos" e clicou em "Todos" para voltar ao topo):
-    // Desliza mais devagar e uniforme até o destaque, SEM disparar timers nem re-renderizações!
+    // Desliza com suavidade e velocidade natural, SEM engasgos e sem disparar recálculos de hover!
     if (genre === selectedGenre) {
       if (window.scrollY > 0) {
-        slowSmoothScrollToTop();
+        smoothScrollToTop();
       }
       return;
     }
@@ -239,10 +171,6 @@ export default function App() {
     if (transitionTimerRef.current) {
       clearTimeout(transitionTimerRef.current);
       transitionTimerRef.current = null;
-    }
-    if (scrollRafRef.current) {
-      cancelAnimationFrame(scrollRafRef.current);
-      scrollRafRef.current = null;
     }
 
     if (genre === "Todos") {
@@ -255,9 +183,9 @@ export default function App() {
       // 2. Dissolve suavemente a grade da categoria em 300ms (evita ver a troca de cards)
       setIsFadingOutGenre(true);
 
-      // 3. Se a tela estiver rolada, sobe suavemente
+      // 3. Se a tela estiver rolada, sobe suavemente e sem solavancos
       if (window.scrollY > 0) {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        smoothScrollToTop();
       }
 
       // 4. CIRÚRGICO: Aos 550ms (com a grade anterior já dissolvida e o Hero cobrindo a tela),
@@ -286,7 +214,7 @@ export default function App() {
       } else {
         // Já estava em outra categoria (Hero já fechado): rolagem suave até o topo da nova categoria
         if (window.scrollY > 0) {
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          smoothScrollToTop();
         }
         setPendingGenre(null);
         setIsFadingOutGenre(false);
