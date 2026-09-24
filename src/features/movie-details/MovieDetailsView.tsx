@@ -310,7 +310,11 @@ export function MovieDetailsView({
 
             {/* Onde Assistir (Watch Providers Brasil com título visível em destaque) */}
             <div className="pt-2">
-              <WatchProvidersRow providers={providers} isLoading={isLoadingProviders} />
+              <WatchProvidersRow
+                providers={providers}
+                isLoading={isLoadingProviders}
+                movieTitle={movie.title}
+              />
             </div>
 
             {/* Direção e Roteiro (Condicional com rótulos padronizados no Design System) */}
