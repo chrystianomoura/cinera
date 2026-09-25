@@ -92,15 +92,12 @@ export function MovieDetailsView({
   const formattedRevenue = formatCurrencyUSD(movie.revenue);
   const hasFinancialContrast = Boolean(formattedBudget && formattedRevenue);
 
-  const countries = movie.productionCountries?.map((c) => c.name).filter(Boolean);
-  const countriesList = countries && countries.length > 0 ? countries.join(", ") : null;
-
   const companies = movie.productionCompanies?.map((c) => c.name).filter(Boolean);
   const companiesList =
     companies && companies.length > 0 ? companies.slice(0, 3).join(", ") : null;
 
   const hasProductionDetails = Boolean(
-    originalTitle || countriesList || formattedBudget || formattedRevenue || companiesList
+    originalTitle || formattedBudget || formattedRevenue || companiesList
   );
 
   return (
@@ -337,7 +334,7 @@ export function MovieDetailsView({
               </div>
             ) : null}
 
-            {/* Ficha de Produção & Finanças (Orçamento & Bilheteria na mesma linha, País, Título Original, Produtoras) */}
+            {/* Ficha de Produção & Finanças (Orçamento & Bilheteria na mesma linha, Título Original, Produtoras) */}
             {hasProductionDetails && (
               <div className="flex flex-col gap-2 pt-2.5 border-t border-white/10 text-xs sm:text-sm">
                 {/* Linha 1: Orçamento e Bilheteria SEMPRE juntos e primeiro, com cores semânticas apenas quando ambos existem */}
@@ -375,30 +372,15 @@ export function MovieDetailsView({
                   </div>
                 )}
 
-                {/* Linha 2: Título Original e País de Origem (em português) */}
-                {(originalTitle || countriesList) && (
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-1.5 text-zinc-300">
-                    {originalTitle && (
-                      <div className="flex items-center">
-                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
-                          Título Original:
-                        </span>
-                        <span className="font-medium text-zinc-100 ml-1.5 italic">
-                          {originalTitle}
-                        </span>
-                      </div>
-                    )}
-
-                    {countriesList && (
-                      <div className="flex items-center">
-                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
-                          País:
-                        </span>
-                        <span className="font-medium text-zinc-100 ml-1.5">
-                          {countriesList}
-                        </span>
-                      </div>
-                    )}
+                {/* Linha 2: Título Original */}
+                {originalTitle && (
+                  <div className="flex items-center justify-center md:justify-start text-xs sm:text-sm text-zinc-300">
+                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
+                      Título Original:
+                    </span>
+                    <span className="font-medium text-zinc-100 ml-1.5 italic">
+                      {originalTitle}
+                    </span>
                   </div>
                 )}
 

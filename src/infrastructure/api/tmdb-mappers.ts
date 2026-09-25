@@ -7,18 +7,6 @@ import {
   type TMDBProviderRaw,
 } from './tmdb-types';
 
-const regionNames =
-  typeof Intl !== "undefined" && Intl.DisplayNames
-    ? new Intl.DisplayNames(["pt-BR"], { type: "region" })
-    : null;
-
-function getCountryNamePtBr(iso: string, fallbackName?: string): string {
-  try {
-    return (regionNames && regionNames.of(iso)) || fallbackName || iso;
-  } catch {
-    return fallbackName || iso;
-  }
-}
 
 /**
  * Converte os dados brutos de filme retornados pelo TMDB (snake_case) para o modelo de domínio da aplicação.
@@ -53,10 +41,6 @@ export function mapTMDBMovie(raw: TMDBMovieRaw): Movie {
       name: c.name,
       logoPath: c.logo_path,
       originCountry: c.origin_country,
-    })),
-    productionCountries: raw.production_countries?.map((c) => ({
-      iso: c.iso_3166_1,
-      name: getCountryNamePtBr(c.iso_3166_1, c.name),
     })),
   };
 }

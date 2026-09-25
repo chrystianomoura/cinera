@@ -13,11 +13,6 @@ export interface ProductionCompany {
   originCountry?: string;
 }
 
-export interface ProductionCountry {
-  iso: string;
-  name: string;
-}
-
 /**
  * Representa os detalhes e atributos de um filme.
  */
@@ -38,7 +33,6 @@ export interface Movie {
   budget?: number;
   revenue?: number;
   productionCompanies?: ProductionCompany[];
-  productionCountries?: ProductionCountry[];
 }
 
 /**
