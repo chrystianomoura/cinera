@@ -27,8 +27,7 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("mgm")) return { brandKey: "mgm", displayName: "MGM+" };
   if (lower.includes("diamond")) return { brandKey: "diamond_films", displayName: "Diamond Films" };
   if (lower.includes("paramount")) return { brandKey: "paramount", displayName: "Paramount+" };
-  if (lower.includes("disney")) return { brandKey: "disney", displayName: "Disney+" };
-  if (lower.includes("star+") || lower.includes("star plus")) return { brandKey: "star_plus", displayName: "Star+" };
+  if (lower.includes("disney") || lower.includes("star+") || lower.includes("star plus")) return { brandKey: "disney", displayName: "Disney+" };
   if (lower.includes("hbo max") || lower.includes("max")) return { brandKey: "max", displayName: "HBO Max" };
   if (lower.includes("telecine")) return { brandKey: "telecine", displayName: "Telecine" };
   if (lower.includes("globoplay")) return { brandKey: "globoplay", displayName: "Globoplay" };
@@ -42,7 +41,7 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("adrenalina pura")) return { brandKey: "adrenalina_pura", displayName: "Adrenalina Pura" };
   if (lower.includes("mubi")) return { brandKey: "mubi", displayName: "MUBI" };
   if (lower.includes("claro")) return { brandKey: "claro", displayName: "Claro tv+" };
-  if (lower.includes("vivo")) return { brandKey: "vivo", displayName: "Vivo Play" };
+  if (lower.includes("vivo")) return { brandKey: "vivo", displayName: "Vivo TV" };
   if (lower.includes("crunchyroll")) return { brandKey: "crunchyroll", displayName: "Crunchyroll" };
   if (lower.includes("looke")) return { brandKey: "looke", displayName: "Looke" };
   if (lower.includes("oldflix")) return { brandKey: "oldflix", displayName: "Oldflix" };
@@ -100,8 +99,7 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("docalliance")) return { brandKey: "docalliance", displayName: "DocAlliance Films" };
   if (lower.includes("hoichoi")) return { brandKey: "hoichoi", displayName: "Hoichoi" };
   if (lower.includes("eventive")) return { brandKey: "eventive", displayName: "Eventive" };
-  if (lower.includes("youtube")) return { brandKey: "youtube", displayName: "YouTube" };
-  if (lower.includes("google play")) return { brandKey: "google_play", displayName: "Google Play" };
+  if (lower.includes("youtube") || lower.includes("google play") || lower.includes("google tv")) return { brandKey: "youtube", displayName: "YouTube" };
 
   return { brandKey: cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "_"), displayName: cleanName };
 }
@@ -121,7 +119,7 @@ const STREAMING_HOMEPAGES: Record<string, string> = {
   mgm: "https://www.mgmplus.com/",
   diamond_films: "https://diamondfilms.com.br/",
   claro: "https://www.clarotvmais.com.br/",
-  vivo: "https://vivoplay.com.br/",
+  vivo: "https://www.vivotv.com.br/",
   crunchyroll: "https://www.crunchyroll.com/pt-br/",
   looke: "https://www.looke.com.br/",
   oldflix: "https://www.oldflix.com.br/",
@@ -130,7 +128,7 @@ const STREAMING_HOMEPAGES: Record<string, string> = {
   filmicca: "https://filmicca.com.br/",
   mubi: "https://mubi.com/pt/br",
   pluto: "https://pluto.tv/br/",
-  mercado_play: "https://www.mercadolivre.com.br/play",
+  mercado_play: "https://play.mercadolivre.com.br/",
   youtube: "https://www.youtube.com/feed/storefront",
   google_play: "https://www.youtube.com/feed/storefront",
   lionsgate: "https://www.lionsgate.com/",
@@ -163,6 +161,8 @@ const STREAMING_HOMEPAGES: Record<string, string> = {
 
 const BRAND_LOGOS: Record<string, string> = {
   lionsgate: "/providers/lionsgate.png",
+  disney: "https://image.tmdb.org/t/p/original/5eZ872CghnHFLB1j8grszbrx0dx.png",
+  youtube: "https://image.tmdb.org/t/p/original/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
 };
 
 /**
