@@ -35,7 +35,7 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("gloob")) return { brandKey: "gloob", displayName: "Gloob" };
   if (lower.includes("canal brasil")) return { brandKey: "canal_brasil", displayName: "Canal Brasil" };
   if (lower.includes("prime video") || lower.includes("amazon prime") || lower.includes("amazon video")) return { brandKey: "prime_video", displayName: "Prime Video" };
-  if (lower.includes("apple tv") || lower.includes("itunes")) return { brandKey: "apple_tv", displayName: "Apple TV+" };
+  if (lower.includes("apple tv") || lower.includes("itunes")) return { brandKey: "apple_tv", displayName: "Apple TV" };
   if (lower.includes("lionsgate") || lower.includes("starz")) return { brandKey: "lionsgate", displayName: "Lionsgate+" };
   if (lower.includes("universal")) return { brandKey: "universal", displayName: "Universal+" };
   if (lower.includes("adrenalina pura")) return { brandKey: "adrenalina_pura", displayName: "Adrenalina Pura" };
@@ -140,7 +140,7 @@ const STREAMING_HOMEPAGES: Record<string, string> = {
   univer_video: "https://www.univervideo.com/",
   tv_brasil: "https://play.ebc.com.br/",
   box_brazil: "https://www.boxbrazilplay.com.br/",
-  sony: "https://www.sonypictures.com.br/",
+  sony: "https://sonyone.com.br/",
   multishow: "https://globoplay.globo.com/multishow/",
   gloob: "https://globoplay.globo.com/gloob/",
   canal_brasil: "https://canaisglobo.globo.com/c/canal-brasil/",

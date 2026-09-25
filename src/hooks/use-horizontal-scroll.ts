@@ -14,21 +14,25 @@ interface UseHorizontalScrollOptions {
 export function useHorizontalScroll({
   defaultScrollFraction = 0.75,
 }: UseHorizontalScrollOptions = {}) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [node, setNode] = useState<HTMLDivElement | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const containerRef = useCallback((el: HTMLDivElement | null) => {
+    setNode(el);
+  }, []);
 
   const maxScrollRef = useRef<number>(0);
   const rafIdRef = useRef<number | null>(null);
 
   const updateMeasurements = useCallback(() => {
-    const el = containerRef.current;
+    const el = node;
     if (!el) return;
     maxScrollRef.current = el.scrollWidth - el.clientWidth;
-  }, []);
+  }, [node]);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = node;
     if (!el) return;
 
     updateMeasurements();
@@ -77,12 +81,12 @@ export function useHorizontalScroll({
       el.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
     };
-  }, [updateMeasurements]);
+  }, [node, updateMeasurements]);
 
   const scroll = useCallback(
     (direction: "left" | "right", fraction?: number) => {
-      if (!containerRef.current) return;
-      const container = containerRef.current;
+      if (!node) return;
+      const container = node;
       const scrollFactor = fraction ?? defaultScrollFraction;
       const scrollAmount = container.clientWidth * scrollFactor;
 
@@ -91,7 +95,7 @@ export function useHorizontalScroll({
         behavior: "smooth",
       });
     },
-    [defaultScrollFraction]
+    [node, defaultScrollFraction]
   );
 
   return {
