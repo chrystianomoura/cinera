@@ -34,6 +34,15 @@ export function formatCurrencyUSD(amount?: number): string | null {
     return `$ ${formatted} ${millions >= 2 ? "milhões" : "milhão"}`;
   }
 
+  if (amount >= 1_000) {
+    const thousands = amount / 1_000;
+    const formatted = thousands.toLocaleString("pt-BR", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
+    return `$ ${formatted} mil`;
+  }
+
   return `$ ${amount.toLocaleString("pt-BR")}`;
 }
 
