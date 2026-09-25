@@ -18,7 +18,6 @@ export const MovieCard = memo(function MovieCard({
 }: MovieCardProps) {
   const [hasError, setHasError] = useState(false);
 
-  // Utiliza w342 para carregamento instantâneo e leve sem sobrecarregar a rede
   const posterUrl = movie.posterPath ? getPosterUrl(movie.posterPath, "w342") : "";
 
   return (
@@ -28,8 +27,6 @@ export const MovieCard = memo(function MovieCard({
         className ?? "flex-shrink-0 w-36 md:w-48 lg:w-56"
       }`}
     >
-      {/* Card do Pôster */}
-      {/* ANIMAÇÃO: Subida suave e aveludada (-translate-y-3) com sombra difusa elegante */}
       <div className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-zinc-900 border border-white/5 relative transition-all duration-300 ease-out group-hover/card:-translate-y-3 group-hover/card:shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
         {posterUrl && !hasError ? (
           <img
@@ -52,7 +49,7 @@ export const MovieCard = memo(function MovieCard({
           </div>
         )}
 
-        {/* Badge IMDb Clássica: Alto contraste sem blur pesado que sobrecarrega a GPU */}
+        {/* Badge IMDb */}
         <div className="absolute top-3 right-3 flex items-center rounded overflow-hidden shadow-lg border border-black/20">
           <span className="bg-[#f5c518] text-black text-xs font-black px-2 py-1 tracking-wider uppercase">
             IMDb
@@ -63,7 +60,6 @@ export const MovieCard = memo(function MovieCard({
         </div>
       </div>
 
-      {/* Detalhes Textuais Estáveis e Vivos */}
       <div className="flex flex-col px-0.5 pt-1">
         <h4 className="truncate text-sm md:text-base font-bold text-white tracking-tight leading-snug">
           {movie.title}

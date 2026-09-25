@@ -8,19 +8,10 @@ interface UseHorizontalScrollOptions {
 }
 
 /**
- * Hook reutilizável de alta performance para controle de trilhos horizontais de scroll.
- *
- * Otimizações de fluidez cinematográfica (estilo Apple TV / Netflix):
- * 1. Animação controlada com RAF em 820ms e curva aveludada `easeInOutCubic`:
- *    elimina qualquer sensação de pressa ou tranco, permitindo que os pôsteres passem
- *    com um deslize suave, nobre e agradável aos olhos (com pico de velocidade 25% menor,
- *    o que alivia ainda mais o trabalho da GPU).
- * 2. Desativa temporariamente `pointer-events` no container durante a rolagem das setas,
- *    impedindo que os cards disparem transições pesadas de :hover, sombras e escalonamento
- *    quando passam sob o cursor do mouse (elimina 100% dos engasgos e travamentos).
- * 3. Bloqueia re-renders do React durante o percurso da animação: atualiza o estado
- *    dos botões (canScrollLeft/canScrollRight) apenas ao finalizar o deslize.
- * 4. Preserva 100% intacta a rolagem nativa por trackpad, toque e arraste do usuário.
+ * Hook para controle de rolagem horizontal fluida com:
+ * - Rolagem suave acionada por RAF com curva easeInOutCubic
+ * - Desativação temporária de pointer-events durante animação de setas
+ * - Detecção de limites (canScrollLeft / canScrollRight) para controle de fades e setas
  */
 export function useHorizontalScroll({
   defaultScrollFraction = 0.75,
@@ -161,8 +152,7 @@ export function useHorizontalScroll({
         return;
       }
 
-      // Ativação visual instantânea no início do clique:
-      // se estamos indo para a direita, sabemos imediatamente que haverá conteúdo à esquerda
+      // Ativação instantânea do fade esquerdo no clique para a direita
       if (direction === "right" || newTarget > 2) {
         setCanScrollLeft(true);
       }
@@ -170,24 +160,18 @@ export function useHorizontalScroll({
         setCanScrollRight(true);
       }
 
-      // Cancela animação anterior
       if (animRafRef.current) {
         cancelAnimationFrame(animRafRef.current);
         animRafRef.current = null;
       }
 
-      // 1. Marca que a rolagem programática começou
       isProgrammaticScrollRef.current = true;
-
-      // 2. Desativa temporariamente pointer-events no trilho para blindar os cards
-      // de dispararem hover, -translate-y e box-shadow enquanto deslizam sob o cursor
+      // Previne disparos de hover acidentais nos cards durante a rolagem
       el.style.pointerEvents = "none";
 
-      // 3. Duração calibrada em 820ms: ritmo cinematográfico, macio, aveludado e relaxante
       const duration = scrollDuration;
       let startTime: number | null = null;
 
-      // Curva easeInOutCubic: arranque macio sem tranco súbito e desaceleração progressiva elegante
       const easeInOutCubic = (t: number) =>
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -202,9 +186,7 @@ export function useHorizontalScroll({
 
         el.scrollLeft = Math.round(startLeft + distance * ease);
 
-        // Se estivermos voltando para o início da lista (newTarget <= 6) e já passamos da metade do deslize,
-        // iniciamos a dissolução suave do fade esquerdo para que ele se desfaça em perfeita harmonia
-        // com o momento em que os cards assentam na posição original de repouso.
+        // Inicia o fade-out do lado esquerdo na segunda metade da desaceleração ao voltar ao início
         if (newTarget <= 6 && progress >= 0.45) {
           setCanScrollLeft(false);
         }

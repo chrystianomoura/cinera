@@ -27,12 +27,10 @@ export function Header({ searchQuery = "", onSearchChange }: HeaderProps) {
           : "bg-black/15 border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
       }`}
     >
-      {/* LOGO Cinera: Fonte ampliada, leading-none para respiro vertical perfeito e sombra composta */}
       <h1 className="tracking-widest font-black text-3xl sm:text-4xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
         Cinera
       </h1>
 
-      {/* Barra de Pesquisa estável: aparência constante e idêntica ao focar/tocar */}
       <div className="relative w-64 sm:w-80 md:w-96 flex-shrink-0">
         <input
           type="text"

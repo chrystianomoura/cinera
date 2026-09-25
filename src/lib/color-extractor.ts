@@ -58,11 +58,11 @@ function rgbToHex(r: number, g: number, b: number): string {
 }
 
 /**
- * Extrai a cor primária mais vibrante e cinematográfica de uma imagem (estilo Spotify).
- * - Renderiza em canvas offscreen minúsculo (24x24px) para execução em < 2ms.
+ * Extrai a cor primária mais vibrante de uma imagem para ambientação de fundo.
+ * - Renderiza em canvas offscreen (24x24px) para execução em tempo mínimo (< 2ms).
  * - Filtra pretos profundos, brancos lavados e cinzas neutros.
- * - Dá peso maior para cores com alta saturação e luminosidade equilibrada.
- * - Cache em memória por URL de imagem para zero sobrecarga.
+ * - Pondera saturação alta e luminosidade intermediária.
+ * - Cache em memória por URL de imagem para evitar recálculos.
  */
 export async function extractDominantColor(imageUrl?: string | null): Promise<ExtractedColor> {
   if (!imageUrl) return DEFAULT_COLOR;
@@ -125,7 +125,7 @@ export async function extractDominantColor(imageUrl?: string | null): Promise<Ex
           totalB += b;
           validPixelsCount++;
 
-          // Pontuação: valoriza saturação alta e luminosidade intermediária (vibrante estilo Spotify)
+          // Pontuação: valoriza saturação alta e luminosidade intermediária
           const lightnessScore = 1 - Math.abs(l - 0.5) * 1.5;
           const score = s * 2.0 + lightnessScore;
 

@@ -74,7 +74,7 @@ export function GalleryCarousel({
       </div>
 
       <div className="relative">
-        {/* Edge Fade Esquerdo (visível apenas quando o usuário rolou para a direita e precisa voltar) */}
+        {/* Borda de fade esquerda */}
         <div
           className={`absolute left-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollLeft
@@ -105,7 +105,6 @@ export function GalleryCarousel({
                       decoding="async"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
                     />
-                    {/* Overlay sutil com ícone de zoom ao passar o mouse */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                       <div className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl">
                         <ZoomIn className="w-5 h-5" />
@@ -120,11 +119,10 @@ export function GalleryCarousel({
               </div>
             );
           })}
-          {/* Espaçador final para absorver o fade e exibir perfeitamente o último card */}
           <div className="flex-shrink-0 w-8 sm:w-12 pointer-events-none" aria-hidden="true" />
         </div>
 
-        {/* Edge Fade Direito (esfumaça as próximas cenas até o fim da galeria) */}
+        {/* Borda de fade direita */}
         <div
           className={`absolute right-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollRight

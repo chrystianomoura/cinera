@@ -47,7 +47,7 @@ export function MovieDetailsView({
   // Estado para o modal de foto ampliada da galeria
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
-  // Cor cromática dinâmica estilo Spotify
+  // Cor cromática dinâmica baseada no pôster
   const [ambientColor, setAmbientColor] = useState<string>("30, 41, 59");
 
   const posterPath = movie?.posterPath;
@@ -64,7 +64,6 @@ export function MovieDetailsView({
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Se a foto ampliada estiver aberta, o PhotoModal trata o ESC primeiro
       if (e.key === "Escape" && selectedPhotoIndex === null) {
         onClose();
       }
@@ -88,7 +87,6 @@ export function MovieDetailsView({
   const duration = formatRuntime(movie.runtime);
   const curatedGenres = formatCuratedGenres(movie.genres);
 
-  // Ficha de Produção & Bilheteria (Orçamento, Bilheteria, País, Título Original, Produtoras)
   const originalTitle = movie.originalTitle;
   const formattedBudget = formatCurrencyUSD(movie.budget);
   const formattedRevenue = formatCurrencyUSD(movie.revenue);
@@ -112,7 +110,7 @@ export function MovieDetailsView({
       aria-label={`Detalhes do filme ${movie.title}`}
       className="fixed inset-0 z-50 overflow-y-auto bg-black scrollbar-hide animate-in fade-in duration-300"
     >
-      {/* 1. ATMOSFERA CROMÁTICA DINÂMICA (ESTILO SPOTIFY) */}
+      {/* Atmosfera cromática de fundo */}
       <div
         className="fixed inset-0 pointer-events-none transition-colors duration-1000 ease-out z-0"
         style={{
@@ -120,7 +118,7 @@ export function MovieDetailsView({
         }}
       />
 
-      {/* 2. BACKDROP CINEMATOGRÁFICO NO TOPO COM OVERLAYS EM DEGRADÊ */}
+      {/* Backdrop */}
       {backdropUrl ? (
         <div className="absolute top-0 inset-x-0 h-[65vh] md:h-[75vh] overflow-hidden pointer-events-none z-0">
           <img
@@ -129,9 +127,7 @@ export function MovieDetailsView({
             aria-hidden="true"
             className="w-full h-full object-cover object-top opacity-35 filter contrast-125"
           />
-          {/* Vinheta superior sutil */}
           <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent" />
-          {/* Fusão para preto puro na base */}
           <div
             className="absolute inset-x-0 bottom-0 h-3/4 pointer-events-none"
             style={{
@@ -142,7 +138,6 @@ export function MovieDetailsView({
         </div>
       ) : null}
 
-      {/* 3. BARRA SUPERIOR FIXA: LOGO CINERA + BOTÃO FECHAR ESC */}
       <header className="sticky top-0 inset-x-0 z-40 px-6 md:px-12 py-4 flex items-center justify-between backdrop-blur-md bg-black/40 border-b border-white/10">
         <h1 className="tracking-widest font-black text-2xl sm:text-3xl text-white uppercase font-serif select-none drop-shadow-md">
           Cinera
@@ -423,7 +418,6 @@ export function MovieDetailsView({
           </div>
         </section>
 
-        {/* 5. SINOPSE: CONTAINER CENTRALIZADO COM TÍTULO NO MEIO E TEXTO À ESQUERDA */}
         {movie.overview ? (
           <section className="max-w-2xl sm:max-w-3xl mx-auto w-full px-4 sm:px-6 pt-6 pb-2 flex flex-col gap-3">
             <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center w-full">
@@ -435,12 +429,10 @@ export function MovieDetailsView({
           </section>
         ) : null}
 
-        {/* 6. ELENCO PRINCIPAL (CARDS VERTICAIS NOBRES E TÍTULO CENTRALIZADO) */}
         <section className="pt-6">
           <CastCarousel cast={credits?.cast} isLoading={isLoadingCredits} />
         </section>
 
-        {/* 6. GALERIA (TÍTULO LIMPO 'GALERIA' E CLIQUE PARA AMPLIAR) */}
         <section className="pt-6">
           <GalleryCarousel
             images={gallery}

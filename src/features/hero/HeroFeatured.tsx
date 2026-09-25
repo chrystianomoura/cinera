@@ -66,13 +66,11 @@ export function HeroFeatured({
               alt={heroMovie.title}
               className="w-full h-full object-cover object-top animate-kenburns origin-center"
             />
-            {/* Vinheta anamórfica no canto superior esquerdo: protege a logo Cinera em fundos claros */}
+            {/* Vinheta no canto superior esquerdo para contraste da logo */}
             <div className="absolute top-0 left-0 w-80 md:w-96 h-36 bg-[radial-gradient(ellipse_at_top_left,_rgba(0,0,0,0.45)_0%,_transparent_75%)] pointer-events-none" />
 
-            {/* Degradê superior sutil para contraste da logo e busca */}
             <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/25 via-black/5 to-transparent pointer-events-none" />
 
-            {/* Degradê inferior cinematográfico */}
             <div
               className="absolute inset-x-0 bottom-0 h-[55%] pointer-events-none"
               style={{
@@ -89,7 +87,6 @@ export function HeroFeatured({
                 : "opacity-100 translate-y-0 delay-200"
             }`}
           >
-            {/* 1. TÍTULO PRINCIPAL: se contiver dois pontos (:), quebra a linha */}
             {(() => {
               const colonIndex = heroMovie.title.indexOf(":");
               if (colonIndex !== -1) {
@@ -131,7 +128,6 @@ export function HeroFeatured({
               );
             })()}
 
-            {/* 2. META-DADOS LIMPOS: Tipografia pura, alinhada à esquerda */}
             {(() => {
               const rawGenre = heroMovie.genres?.[0]?.name || null;
               const heroGenre = rawGenre ? rawGenre.toUpperCase() : null;
@@ -172,7 +168,6 @@ export function HeroFeatured({
                     <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
                   )}
 
-                  {/* Badge IMDb clássica de alto contraste */}
                   <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
                     <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
                       IMDb
@@ -185,7 +180,6 @@ export function HeroFeatured({
               );
             })()}
 
-            {/* 3. TAGLINE OFICIAL DO FILME */}
             {heroMovie.tagline && (
               <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-6 drop-shadow-md max-w-2xl">
                 {heroMovie.tagline
@@ -194,7 +188,6 @@ export function HeroFeatured({
               </p>
             )}
 
-            {/* BOTÕES DE AÇÃO: Trailer e Ver Detalhes */}
             <div className="flex flex-wrap items-center gap-4">
               <button
                 onClick={() => onOpenTrailer(heroMovie)}

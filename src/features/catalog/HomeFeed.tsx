@@ -50,7 +50,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
     isError: isErrorPopular,
   } = usePopularMovies(1);
 
-  // Deduplicação inteligente em cascata: 100% de filmes únicos entre os 5 carrosséis
+// Garante unicidade de filmes entre as diferentes seções do feed
   const {
     trendingMovies,
     newReleasesMovies,

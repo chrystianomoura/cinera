@@ -31,7 +31,7 @@ export function GenreCatalogGrid({
   const profile = GENRE_PROFILES[genreName];
   const description = profile?.description || "Explorando os títulos mais populares e aclamados deste gênero";
 
-  // Rolagem infinita contínua e suave via IntersectionObserver
+  // Paginação infinita via IntersectionObserver
   useEffect(() => {
     if (!hasMore || isLoading || isLoadingMore || !onLoadMore) return;
 
@@ -47,7 +47,7 @@ export function GenreCatalogGrid({
       },
       {
         root: null,
-        rootMargin: "400px", // Dispara com antecedência para navegação transparente
+        rootMargin: "400px",
         threshold: 0,
       }
     );
@@ -61,7 +61,6 @@ export function GenreCatalogGrid({
 
   return (
     <section className="flex flex-col gap-8 md:gap-9 pb-16 animate-in fade-in duration-300">
-      {/* Cabeçalho do Catálogo limpo e sofisticado sem linha divisória */}
       <div className="text-center">
         <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
           Catálogo de {genreName}
@@ -111,7 +110,6 @@ export function GenreCatalogGrid({
             </div>
           )}
 
-          {/* Sentinela invisível para disparar carregamento infinito */}
           {hasMore && (
             <div
               ref={sentinelRef}
@@ -120,7 +118,6 @@ export function GenreCatalogGrid({
             />
           )}
 
-          {/* Feedback de carregamento elegante e discreto durante a rolagem */}
           {isLoadingMore && (
             <div className="flex items-center justify-center py-8 gap-3 text-zinc-400">
               <Loader2 className="w-5 h-5 animate-spin text-white/70" />
@@ -130,7 +127,6 @@ export function GenreCatalogGrid({
             </div>
           )}
 
-          {/* Indicador de fim de catálogo elegante */}
           {!hasMore && movies.length > 0 && (
             <div className="text-center py-10 border-t border-white/5 mt-6">
               <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold">
@@ -141,7 +137,7 @@ export function GenreCatalogGrid({
         </>
       )}
 
-      {/* Botão Flutuante Voltar ao Topo (apenas quando rolar > 400px na categoria) */}
+      {/* Botão flutuante para voltar ao topo */}
       <button
         type="button"
         onClick={scrollToTop}

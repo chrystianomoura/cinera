@@ -31,7 +31,6 @@ export function MovieCarousel({
 
   return (
     <section className="relative group/carousel">
-      {/* Título com respiro elegante */}
       <div className="flex items-center gap-3 mb-5">
         {icon && <span className="text-xl md:text-2xl select-none">{icon}</span>}
         <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
@@ -63,7 +62,7 @@ export function MovieCarousel({
         </div>
       ) : (
         <div className="relative">
-          {/* Fade Dock Esquerdo (overlay flutuante acelerado por GPU, visível apenas quando precisa voltar) */}
+          {/* Borda de fade esquerda */}
           <div
             className={`absolute left-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
               canScrollLeft
@@ -72,7 +71,6 @@ export function MovieCarousel({
             }`}
           />
 
-          {/* Botão flutuante esquerdo (sempre montado no DOM para eliminar reflows de layout) */}
           <button
             onClick={() => scroll("left")}
             aria-label={`Rolar ${title} para a esquerda`}
@@ -98,11 +96,10 @@ export function MovieCarousel({
                 onClick={onSelectMovie}
               />
             ))}
-            {/* Espaçador final para visualização confortável do último card */}
             <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
           </div>
 
-          {/* Fade Dock Direito (overlay flutuante acelerado por GPU, esfumaça até o fim da lista) */}
+          {/* Borda de fade direita */}
           <div
             className={`absolute right-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
               canScrollRight
@@ -111,7 +108,6 @@ export function MovieCarousel({
             }`}
           />
 
-          {/* Botão flutuante direito (sempre montado no DOM para zero reflow) */}
           <button
             onClick={() => scroll("right")}
             aria-label={`Rolar ${title} para a direita`}

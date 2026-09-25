@@ -10,10 +10,7 @@ interface CastCarouselProps {
 }
 
 /**
- * Carrossel horizontal de elenco principal.
- * Exibe apenas atores com foto cadastrada no TMDB em cards verticais nobres (aspect 3:4),
- * preservando 100% o enquadramento do rosto (sem cortar testa ou queixo).
- * Foco exclusivo no nome do artista, com título centralizado.
+ * Carrossel horizontal do elenco principal.
  */
 export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
   const {
@@ -23,7 +20,6 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
     scroll,
   } = useHorizontalScroll({ defaultScrollFraction: 0.7 });
 
-  // Filtra atores com foto no perfil TMDB e limita aos 18 principais (memorizado para estabilidade)
   const topCast = useMemo(
     () => cast.filter((actor) => Boolean(actor.profilePath)).slice(0, 18),
     [cast]
@@ -56,13 +52,11 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
 
   return (
     <div className="relative flex flex-col gap-4 group/cast">
-      {/* Título de Elenco Centralizado com botões de navegação na lateral direita */}
       <div className="relative flex items-center justify-center">
         <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Elenco Principal
         </h3>
 
-        {/* Controles de rolagem discreto */}
         <div className="hidden sm:flex items-center gap-1.5 absolute right-0">
           <button
             onClick={() => scroll("left")}
@@ -84,7 +78,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
       </div>
 
       <div className="relative">
-        {/* Edge Fade Esquerdo (visível apenas quando o usuário rolou para a direita e precisa voltar) */}
+        {/* Borda de fade esquerda */}
         <div
           className={`absolute left-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollLeft
@@ -105,7 +99,6 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
                 key={actor.id}
                 className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor"
               >
-                {/* Card Vertical Nobre (aspect 3:4) - Não Clicável, sem corte na cabeça */}
                 <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-lg mb-2.5 transition-all duration-300 group-hover/actor:scale-105">
                   {profileImg ? (
                     <img
@@ -122,18 +115,16 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
                   )}
                 </div>
 
-                {/* Nome do Artista em destaque limpo, sem personagem */}
                 <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-snug break-words tracking-tight w-full text-center">
                   {actor.name}
                 </h4>
               </div>
             );
           })}
-          {/* Espaçador final para absorver o fade e exibir perfeitamente o último card */}
           <div className="flex-shrink-0 w-8 sm:w-12 pointer-events-none" aria-hidden="true" />
         </div>
 
-        {/* Edge Fade Direito (esfumaça os próximos atores até o fim do trilho) */}
+        {/* Borda de fade direita */}
         <div
           className={`absolute right-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollRight

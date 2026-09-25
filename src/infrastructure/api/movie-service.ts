@@ -94,7 +94,7 @@ class MovieService {
         }
 
         const detailedMovies = await Promise.all(
-          candidates.slice(0, 10).map((m) => this.getMovieById(m.id))
+          candidates.slice(0, 5).map((m) => this.getMovieById(m.id))
         );
 
         const heroValid = detailedMovies.filter(

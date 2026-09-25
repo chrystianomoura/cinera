@@ -17,7 +17,6 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
 
   return (
     <section className="relative group/pills">
-      {/* Fade Dock Esquerdo perfeitamente alinhado com a altura das pílulas */}
       <div
         className={`hidden md:flex absolute left-0 inset-y-0 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity ${
           canScrollLeftGenres
@@ -57,11 +56,9 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
             </button>
           );
         })}
-        {/* Espaçador final para absorver o fade quando rolado até o final */}
         <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
       </div>
 
-      {/* Fade Dock Direito perfeitamente alinhado com a altura das pílulas */}
       <div
         className={`hidden md:flex absolute right-0 inset-y-0 w-28 bg-gradient-to-l from-black from-35% via-black/70 to-transparent z-20 items-center justify-end pointer-events-none transition-opacity duration-300 ${
           canScrollRightGenres ? "opacity-100" : "opacity-0"
