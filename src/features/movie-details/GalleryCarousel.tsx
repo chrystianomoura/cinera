@@ -85,7 +85,7 @@ export function GalleryCarousel({
 
         <div
           ref={containerRef}
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0"
         >
           {images.map((path, idx) => {
             const imgUrl = getBackdropUrl(path, "w780");

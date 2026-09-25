@@ -138,7 +138,7 @@ export function MovieDetailsView({
         </div>
       ) : null}
 
-      <header className="sticky top-0 inset-x-0 z-40 px-6 md:px-12 py-4 flex items-center justify-between backdrop-blur-md bg-black/40 border-b border-white/10">
+      <header className="sticky top-0 inset-x-0 z-40 px-4 md:px-12 py-3.5 md:py-4 flex items-center justify-between backdrop-blur-md bg-black/40 border-b border-white/10">
         <h1 className="tracking-widest font-black text-2xl sm:text-3xl text-white uppercase font-serif select-none drop-shadow-md">
           Cinera
         </h1>
@@ -157,9 +157,9 @@ export function MovieDetailsView({
       </header>
 
       {/* 4. CONTEÚDO PRINCIPAL (HERO + METADADOS + FICHA) */}
-      <main className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 pt-8 pb-24 flex flex-col gap-10 md:gap-14">
+      <main className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-24 flex flex-col gap-10 md:gap-14">
         {/* Bloco Superior: Cartaz Flutuante + Informações de Capa perfeitamente alinhados no topo */}
-        <section className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start">
+        <section className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start px-4 md:px-0">
           {/* Cartaz com borda em vidro */}
           <div className="relative w-52 sm:w-64 md:w-72 lg:w-80 flex-shrink-0 aspect-[2/3] rounded-2xl overflow-hidden bg-zinc-900 border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.9)] [transform:translateZ(0)]">
             {posterUrl ? (

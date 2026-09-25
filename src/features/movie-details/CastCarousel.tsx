@@ -89,7 +89,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
 
         <div
           ref={containerRef}
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-1"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-1"
         >
           {topCast.map((actor) => {
             const profileImg = getProfileUrl(actor.profilePath, "w185");
