@@ -63,10 +63,12 @@ export function MovieCarousel({
         </div>
       ) : (
         <div className="relative">
-          {/* Fade Dock Esquerdo (overlay flutuante puro acelerado por GPU, sem degradar o scroll) */}
+          {/* Fade Dock Esquerdo (overlay flutuante acelerado por GPU, visível apenas quando precisa voltar) */}
           <div
-            className={`hidden md:block absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-black from-10% via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-300 ${
-              canScrollLeft ? "opacity-100" : "opacity-0"
+            className={`absolute left-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+              canScrollLeft
+                ? "opacity-100 duration-300 ease-out"
+                : "opacity-0 duration-700 ease-out"
             }`}
           />
 
@@ -75,10 +77,10 @@ export function MovieCarousel({
             onClick={() => scroll("left")}
             aria-label={`Rolar ${title} para a esquerda`}
             tabIndex={canScrollLeft ? 0 : -1}
-            className={`hidden md:flex absolute left-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+            className={`hidden md:flex absolute left-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-all ${
               canScrollLeft
-                ? "opacity-0 group-hover/carousel:opacity-100 pointer-events-auto"
-                : "opacity-0 pointer-events-none"
+                ? "opacity-0 group-hover/carousel:opacity-100 pointer-events-auto duration-200"
+                : "opacity-0 pointer-events-none duration-500 ease-out"
             }`}
           >
             <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
@@ -100,10 +102,12 @@ export function MovieCarousel({
             <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
           </div>
 
-          {/* Fade Dock Direito (overlay flutuante puro acelerado por GPU) */}
+          {/* Fade Dock Direito (overlay flutuante acelerado por GPU, esfumaça até o fim da lista) */}
           <div
-            className={`hidden md:block absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black from-10% via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-300 ${
-              canScrollRight ? "opacity-100" : "opacity-0"
+            className={`absolute right-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+              canScrollRight
+                ? "opacity-100 duration-300 ease-out"
+                : "opacity-0 duration-700 ease-out"
             }`}
           />
 

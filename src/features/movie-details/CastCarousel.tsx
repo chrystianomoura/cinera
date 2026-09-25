@@ -83,42 +83,64 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
         </div>
       </div>
 
-      <div
-        ref={containerRef}
-        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-1"
-      >
-        {topCast.map((actor) => {
-          const profileImg = getProfileUrl(actor.profilePath, "w185");
+      <div className="relative">
+        {/* Edge Fade Esquerdo (visível apenas quando o usuário rolou para a direita e precisa voltar) */}
+        <div
+          className={`absolute left-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+            canScrollLeft
+              ? "opacity-100 duration-300 ease-out"
+              : "opacity-0 duration-700 ease-out"
+          }`}
+        />
 
-          return (
-            <div
-              key={actor.id}
-              className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor"
-            >
-              {/* Card Vertical Nobre (aspect 3:4) - Não Clicável, sem corte na cabeça */}
-              <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-lg mb-2.5 transition-all duration-300 group-hover/actor:scale-105">
-                {profileImg ? (
-                  <img
-                    src={profileImg}
-                    alt={actor.name}
-                    loading="eager"
-                    decoding="async"
-                    className="w-full h-full object-cover object-top"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                    <User className="w-9 h-9" />
-                  </div>
-                )}
+        <div
+          ref={containerRef}
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-1"
+        >
+          {topCast.map((actor) => {
+            const profileImg = getProfileUrl(actor.profilePath, "w185");
+
+            return (
+              <div
+                key={actor.id}
+                className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor"
+              >
+                {/* Card Vertical Nobre (aspect 3:4) - Não Clicável, sem corte na cabeça */}
+                <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-lg mb-2.5 transition-all duration-300 group-hover/actor:scale-105">
+                  {profileImg ? (
+                    <img
+                      src={profileImg}
+                      alt={actor.name}
+                      loading="eager"
+                      decoding="async"
+                      className="w-full h-full object-cover object-top"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                      <User className="w-9 h-9" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Nome do Artista em destaque limpo, sem personagem */}
+                <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-snug break-words tracking-tight w-full text-center">
+                  {actor.name}
+                </h4>
               </div>
+            );
+          })}
+          {/* Espaçador final para absorver o fade e exibir perfeitamente o último card */}
+          <div className="flex-shrink-0 w-8 sm:w-12 pointer-events-none" aria-hidden="true" />
+        </div>
 
-              {/* Nome do Artista em destaque limpo, sem personagem */}
-              <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-snug break-words tracking-tight w-full text-center">
-                {actor.name}
-              </h4>
-            </div>
-          );
-        })}
+        {/* Edge Fade Direito (esfumaça os próximos atores até o fim do trilho) */}
+        <div
+          className={`absolute right-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+            canScrollRight
+              ? "opacity-100 duration-300 ease-out"
+              : "opacity-0 duration-700 ease-out"
+          }`}
+        />
       </div>
     </div>
   );

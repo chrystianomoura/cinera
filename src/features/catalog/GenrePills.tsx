@@ -19,8 +19,10 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
     <section className="relative group/pills">
       {/* Fade Dock Esquerdo perfeitamente alinhado com a altura das pílulas */}
       <div
-        className={`hidden md:flex absolute left-0 inset-y-0 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity duration-300 ${
-          canScrollLeftGenres ? "opacity-100" : "opacity-0"
+        className={`hidden md:flex absolute left-0 inset-y-0 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity ${
+          canScrollLeftGenres
+            ? "opacity-100 duration-300 ease-out"
+            : "opacity-0 duration-700 ease-out"
         }`}
       >
         <button

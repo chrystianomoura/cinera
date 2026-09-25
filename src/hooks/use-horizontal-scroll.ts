@@ -26,14 +26,14 @@ export function useHorizontalScroll({
   defaultScrollFraction = 0.75,
   scrollDuration = 820,
 }: UseHorizontalScrollOptions = {}) {
+  const [node, setNode] = useState<HTMLDivElement | null>(null);
   const nodeRef = useRef<HTMLDivElement | null>(null);
-  const [, setAttached] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
   const containerRef = useCallback((el: HTMLDivElement | null) => {
     nodeRef.current = el;
-    setAttached(Boolean(el));
+    setNode(el);
   }, []);
 
   const maxScrollRef = useRef<number>(0);
@@ -52,19 +52,24 @@ export function useHorizontalScroll({
     const el = nodeRef.current;
     if (!el) return;
     const max = maxScrollRef.current || Math.max(0, el.scrollWidth - el.clientWidth);
-    const left = el.scrollLeft > 2;
-    const right = el.scrollLeft < max - 2;
+    const left = el.scrollLeft > 6;
+    const right = el.scrollLeft < max - 6;
 
     setCanScrollLeft((prev) => (prev !== left ? left : prev));
     setCanScrollRight((prev) => (prev !== right ? right : prev));
   }, []);
 
   useEffect(() => {
-    const el = nodeRef.current;
+    const el = node;
     if (!el) return;
 
     updateMeasurements();
+    syncState();
     const initialRaf = requestAnimationFrame(syncState);
+    const timer = window.setTimeout(() => {
+      updateMeasurements();
+      syncState();
+    }, 60);
 
     let resizeTimer: number | null = null;
 
@@ -109,6 +114,7 @@ export function useHorizontalScroll({
 
     return () => {
       cancelAnimationFrame(initialRaf);
+      window.clearTimeout(timer);
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
       if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
       if (resizeTimer) window.clearTimeout(resizeTimer);
@@ -118,7 +124,7 @@ export function useHorizontalScroll({
       el.removeEventListener("touchstart", onManualIntervention);
       window.removeEventListener("resize", onResize);
     };
-  }, [updateMeasurements, syncState]);
+  }, [node, updateMeasurements, syncState]);
 
   const scroll = useCallback(
     (direction: "left" | "right", fraction?: number) => {
@@ -155,6 +161,15 @@ export function useHorizontalScroll({
         return;
       }
 
+      // Ativação visual instantânea no início do clique:
+      // se estamos indo para a direita, sabemos imediatamente que haverá conteúdo à esquerda
+      if (direction === "right" || newTarget > 2) {
+        setCanScrollLeft(true);
+      }
+      if (newTarget < maxScroll - 2) {
+        setCanScrollRight(true);
+      }
+
       // Cancela animação anterior
       if (animRafRef.current) {
         cancelAnimationFrame(animRafRef.current);
@@ -186,6 +201,13 @@ export function useHorizontalScroll({
         const ease = easeInOutCubic(progress);
 
         el.scrollLeft = Math.round(startLeft + distance * ease);
+
+        // Se estivermos voltando para o início da lista (newTarget <= 6) e já passamos da metade do deslize,
+        // iniciamos a dissolução suave do fade esquerdo para que ele se desfaça em perfeita harmonia
+        // com o momento em que os cards assentam na posição original de repouso.
+        if (newTarget <= 6 && progress >= 0.45) {
+          setCanScrollLeft(false);
+        }
 
         if (progress < 1) {
           animRafRef.current = requestAnimationFrame(step);

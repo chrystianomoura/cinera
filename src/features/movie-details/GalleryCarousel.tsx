@@ -73,43 +73,65 @@ export function GalleryCarousel({
         </div>
       </div>
 
-      <div
-        ref={containerRef}
-        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2"
-      >
-        {images.map((path, idx) => {
-          const imgUrl = getBackdropUrl(path, "w780");
+      <div className="relative">
+        {/* Edge Fade Esquerdo (visível apenas quando o usuário rolou para a direita e precisa voltar) */}
+        <div
+          className={`absolute left-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+            canScrollLeft
+              ? "opacity-100 duration-300 ease-out"
+              : "opacity-0 duration-700 ease-out"
+          }`}
+        />
 
-          return (
-            <div
-              key={idx}
-              onClick={() => onSelectImage?.(idx)}
-              className="relative aspect-video w-64 sm:w-80 md:w-96 rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/35 shadow-lg flex-shrink-0 select-none group/item cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {imgUrl ? (
-                <>
-                  <img
-                    src={imgUrl}
-                    alt={`Cena do filme ${idx + 1}`}
-                    loading="eager"
-                    decoding="async"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
-                  />
-                  {/* Overlay sutil com ícone de zoom ao passar o mouse */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl">
-                      <ZoomIn className="w-5 h-5" />
+        <div
+          ref={containerRef}
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2"
+        >
+          {images.map((path, idx) => {
+            const imgUrl = getBackdropUrl(path, "w780");
+
+            return (
+              <div
+                key={idx}
+                onClick={() => onSelectImage?.(idx)}
+                className="relative aspect-video w-64 sm:w-80 md:w-96 rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/35 shadow-lg flex-shrink-0 select-none group/item cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {imgUrl ? (
+                  <>
+                    <img
+                      src={imgUrl}
+                      alt={`Cena do filme ${idx + 1}`}
+                      loading="eager"
+                      decoding="async"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
+                    />
+                    {/* Overlay sutil com ícone de zoom ao passar o mouse */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl">
+                        <ZoomIn className="w-5 h-5" />
+                      </div>
                     </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                    <ImageIcon className="w-8 h-8" />
                   </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                  <ImageIcon className="w-8 h-8" />
-                </div>
-              )}
-            </div>
-          );
-        })}
+                )}
+              </div>
+            );
+          })}
+          {/* Espaçador final para absorver o fade e exibir perfeitamente o último card */}
+          <div className="flex-shrink-0 w-8 sm:w-12 pointer-events-none" aria-hidden="true" />
+        </div>
+
+        {/* Edge Fade Direito (esfumaça as próximas cenas até o fim da galeria) */}
+        <div
+          className={`absolute right-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+            canScrollRight
+              ? "opacity-100 duration-300 ease-out"
+              : "opacity-0 duration-700 ease-out"
+          }`}
+        />
       </div>
     </div>
   );
