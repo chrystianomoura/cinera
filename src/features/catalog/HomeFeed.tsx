@@ -114,6 +114,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
         movies={newReleasesMovies}
         isLoading={isLoadingNewReleases}
         isError={isErrorNewReleases}
+        isEager={true}
         onSelectMovie={onSelectMovie}
       />
 
@@ -124,6 +125,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
         movies={topRatedMovies}
         isLoading={isLoadingTopRated}
         isError={isErrorTopRated}
+        isEager={true}
         onSelectMovie={onSelectMovie}
       />
 
@@ -134,6 +136,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
         movies={classicMovies}
         isLoading={isLoadingClassics}
         isError={isErrorClassics}
+        isEager={true}
         onSelectMovie={onSelectMovie}
       />
 
@@ -144,6 +147,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
         movies={popularMovies}
         isLoading={isLoadingPopular}
         isError={isErrorPopular}
+        isEager={true}
         onSelectMovie={onSelectMovie}
       />
     </div>

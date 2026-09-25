@@ -75,7 +75,7 @@ export function GalleryCarousel({
 
       <div
         ref={containerRef}
-        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 [transform:translateZ(0)]"
+        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2"
       >
         {images.map((path, idx) => {
           const imgUrl = getBackdropUrl(path, "w780");
@@ -91,7 +91,7 @@ export function GalleryCarousel({
                   <img
                     src={imgUrl}
                     alt={`Cena do filme ${idx + 1}`}
-                    loading="lazy"
+                    loading="eager"
                     decoding="async"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
                   />

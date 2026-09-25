@@ -13,7 +13,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
     canScrollLeft: canScrollLeftGenres,
     canScrollRight: canScrollRightGenres,
     scroll: scrollGenres,
-  } = useHorizontalScroll({ defaultScrollFraction: 0.5 });
+  } = useHorizontalScroll({ defaultScrollFraction: 0.6 });
 
   return (
     <section className="relative group/pills">
@@ -26,6 +26,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
         <button
           onClick={() => scrollGenres("left")}
           aria-label="Rolar gêneros para a esquerda"
+          tabIndex={canScrollLeftGenres ? 0 : -1}
           className={`pointer-events-auto w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ml-4 ${
             !canScrollLeftGenres ? "pointer-events-none invisible" : ""
           }`}
@@ -36,15 +37,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
 
       <div
         ref={genresRowRef}
-        className="flex gap-3 md:gap-4 overflow-x-auto pt-1 pb-1.5 scrollbar-hide [transform:translateZ(0)] [will-change:scroll-position]"
-        style={{
-          maskImage: canScrollRightGenres
-            ? "linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)"
-            : "none",
-          WebkitMaskImage: canScrollRightGenres
-            ? "linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%)"
-            : "none",
-        }}
+        className="flex gap-3 md:gap-4 overflow-x-auto pt-1 pb-1.5 scrollbar-hide"
       >
         {["Todos", ...GENRES].map((genre) => {
           const isSelected = selectedGenre === genre;
@@ -75,6 +68,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
         <button
           onClick={() => scrollGenres("right")}
           aria-label="Rolar gêneros para a direita"
+          tabIndex={canScrollRightGenres ? 0 : -1}
           className={`pointer-events-auto w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer mr-4 ${
             !canScrollRightGenres ? "pointer-events-none invisible" : ""
           }`}

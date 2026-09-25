@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import type { CastMember } from "@/domain";
 import { getProfileUrl } from "@/infrastructure/api/movie-service";
@@ -20,7 +21,13 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
     canScrollLeft,
     canScrollRight,
     scroll,
-  } = useHorizontalScroll({ defaultScrollFraction: 0.6 });
+  } = useHorizontalScroll({ defaultScrollFraction: 0.7 });
+
+  // Filtra atores com foto no perfil TMDB e limita aos 18 principais (memorizado para estabilidade)
+  const topCast = useMemo(
+    () => cast.filter((actor) => Boolean(actor.profilePath)).slice(0, 18),
+    [cast]
+  );
 
   if (isLoading) {
     return (
@@ -42,11 +49,6 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
       </div>
     );
   }
-
-  // Filtra atores com foto no perfil TMDB e limita aos 18 principais
-  const topCast = cast
-    .filter((actor) => Boolean(actor.profilePath))
-    .slice(0, 18);
 
   if (topCast.length === 0) {
     return null;
@@ -83,7 +85,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
 
       <div
         ref={containerRef}
-        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-1 [transform:translateZ(0)]"
+        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-1"
       >
         {topCast.map((actor) => {
           const profileImg = getProfileUrl(actor.profilePath, "w185");
@@ -99,7 +101,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
                   <img
                     src={profileImg}
                     alt={actor.name}
-                    loading="lazy"
+                    loading="eager"
                     decoding="async"
                     className="w-full h-full object-cover object-top"
                   />
