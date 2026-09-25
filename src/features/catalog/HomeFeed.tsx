@@ -90,7 +90,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
 
   return (
     <div
-      className={`flex flex-col gap-6 md:gap-7 transition-opacity duration-300 ${
+      className={`flex flex-col gap-5 md:gap-7 transition-opacity duration-300 ${
         isFadingOut
           ? "opacity-0 pointer-events-none"
           : "opacity-100 animate-in fade-in duration-500"

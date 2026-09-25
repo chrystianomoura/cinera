@@ -31,7 +31,7 @@ export function MovieCarousel({
 
   return (
     <section className="relative group/carousel">
-      <div className="flex items-center gap-3 mb-5 px-4 md:px-0">
+      <div className="flex items-center gap-2.5 sm:gap-3 mb-2 md:mb-5 px-4 md:px-0">
         {icon && <span className="text-xl md:text-2xl select-none">{icon}</span>}
         <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
           {title}
@@ -86,7 +86,7 @@ export function MovieCarousel({
 
           <div
             ref={rowRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto pb-2 pt-4 scrollbar-hide px-4 md:px-0"
+            className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-4 scrollbar-hide px-4 md:px-0"
           >
             {movies.map((movie) => (
               <MovieCard

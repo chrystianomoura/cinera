@@ -56,7 +56,7 @@ export function HeroFeatured({
     <section
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-12 px-4 md:px-12 pt-24 md:pt-28 overflow-hidden"
+      className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-5 sm:pb-6 md:pb-12 px-4 md:px-12 pt-24 md:pt-28 overflow-hidden"
     >
       {(isLoading || !heroMovie) && (
         <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
@@ -90,7 +90,7 @@ export function HeroFeatured({
           </div>
 
           <div
-            className={`relative z-10 max-w-3xl transition-all duration-700 transform ${
+            className={`relative z-10 max-w-3xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transition-all duration-700 transform ${
               isFading || !isVisible
                 ? "opacity-0 translate-y-6"
                 : "opacity-100 translate-y-0 delay-200"
@@ -105,7 +105,7 @@ export function HeroFeatured({
 
                 return (
                   <h2
-                    className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl max-w-3xl ${
+                    className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl max-w-3xl text-center md:text-left ${
                       longestPart > 24
                         ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
                         : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
@@ -124,7 +124,7 @@ export function HeroFeatured({
 
               return (
                 <h2
-                  className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl ${
+                  className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl text-center md:text-left ${
                     heroMovie.title.length > 32
                       ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl max-w-2xl"
                       : heroMovie.title.length > 18
@@ -138,7 +138,7 @@ export function HeroFeatured({
             })()}
 
             {heroMovie.tagline && (
-              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-3.5 drop-shadow-md max-w-2xl">
+              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-3.5 drop-shadow-md max-w-2xl text-center md:text-left">
                 "{heroMovie.tagline
                   .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
                   .trim()}"
@@ -153,7 +153,7 @@ export function HeroFeatured({
               const heroGenre = heroMovie.genres?.[0]?.name || null;
 
               return (
-                <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-6 text-sm md:text-base">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 md:gap-3 mb-5 md:mb-6 text-sm md:text-base">
                   {releaseYear && (
                     <span className="font-semibold text-white drop-shadow-md">
                       {releaseYear}
@@ -210,7 +210,7 @@ export function HeroFeatured({
               );
             })()}
 
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 w-full">
               <button
                 onClick={() => onOpenTrailer(heroMovie)}
                 className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-white text-black font-bold text-base hover:bg-zinc-200 transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 cursor-pointer group"
