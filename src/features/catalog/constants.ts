@@ -106,7 +106,7 @@ export const GENRE_PROFILES: Record<string, GenreProfile> = {
     minVoteAverage: 6.2,
     minVoteCount: 80,
     primaryGenreId: 10749,
-    description: "Histórias de amor inesquecíveis, conexões profundas e paixão",
+    description: "Histórias de amor inesquecíveis e conexões profundas",
   },
   "Documentário": {
     withGenres: "99",
@@ -115,7 +115,7 @@ export const GENRE_PROFILES: Record<string, GenreProfile> = {
     minVoteAverage: 7.0,
     minVoteCount: 50,
     primaryGenreId: 99,
-    description: "Histórias reais fascinantes, investigações e registros históricos",
+    description: "Histórias reais, investigações e fatos marcantes",
   },
 };
 

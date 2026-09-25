@@ -90,7 +90,7 @@ export function HeroFeatured({
           </div>
 
           <div
-            className={`relative z-10 max-w-3xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transition-all duration-700 transform ${
+            className={`relative z-10 max-w-3xl lg:max-w-4xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transition-all duration-700 transform ${
               isFading || !isVisible
                 ? "opacity-0 translate-y-6"
                 : "opacity-100 translate-y-0 delay-200"
@@ -103,34 +103,41 @@ export function HeroFeatured({
                 const part2 = heroMovie.title.slice(colonIndex + 1).trim();
                 const longestPart = Math.max(part1.length, part2.length);
 
+                const fontClasses =
+                  longestPart > 32
+                    ? "text-3xl sm:text-4xl md:text-5xl lg:text-5xl"
+                    : longestPart > 22
+                      ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
+                      : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl";
+
                 return (
                   <h2
-                    className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl max-w-3xl text-center md:text-left ${
-                      longestPart > 24
-                        ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
-                        : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
-                    }`}
+                    className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
                   >
                     <span>{part1}:</span>
                     {part2 && (
-                      <>
-                        <br />
-                        <span>{part2}</span>
-                      </>
+                      <span className="block mt-1 text-white/95">
+                        {part2}
+                      </span>
                     )}
                   </h2>
                 );
               }
 
+              const titleLength = heroMovie.title.length;
+
+              const fontClasses =
+                titleLength > 42
+                  ? "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                  : titleLength > 28
+                    ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
+                    : titleLength > 16
+                      ? "text-4xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-7xl"
+                      : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl";
+
               return (
                 <h2
-                  className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl text-center md:text-left ${
-                    heroMovie.title.length > 32
-                      ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl max-w-2xl"
-                      : heroMovie.title.length > 18
-                        ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-2xl"
-                        : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl max-w-xl"
-                  }`}
+                  className={`font-black tracking-tight text-white mb-2.5 leading-[1.05] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
                 >
                   {heroMovie.title}
                 </h2>
@@ -138,7 +145,7 @@ export function HeroFeatured({
             })()}
 
             {heroMovie.tagline && (
-              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-3.5 drop-shadow-md max-w-2xl text-center md:text-left">
+              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-3.5 drop-shadow-md max-w-2xl text-center md:text-left [text-wrap:balance]">
                 "{heroMovie.tagline
                   .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
                   .trim()}"

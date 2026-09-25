@@ -185,7 +185,7 @@ export function MovieDetailsView({
                   const part2 = movie.title.slice(colonIndex + 1).trim();
 
                   return (
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.05] drop-shadow-lg">
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.05] drop-shadow-lg [text-wrap:balance]">
                       <span>{part1}:</span>
                       {part2 && (
                         <span className="block mt-1 text-white/95">{part2}</span>
@@ -195,7 +195,7 @@ export function MovieDetailsView({
                 }
 
                 return (
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[0.98] drop-shadow-lg">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[0.98] drop-shadow-lg [text-wrap:balance]">
                     {movie.title}
                   </h2>
                 );
@@ -203,7 +203,7 @@ export function MovieDetailsView({
 
               {/* Tagline Oficial colada ao título */}
               {movie.tagline ? (
-                <p className="text-base sm:text-lg md:text-xl font-medium italic text-zinc-300 drop-shadow leading-snug">
+                <p className="text-base sm:text-lg md:text-xl font-medium italic text-zinc-300 drop-shadow leading-snug [text-wrap:balance]">
                   "{movie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}"
                 </p>
               ) : null}

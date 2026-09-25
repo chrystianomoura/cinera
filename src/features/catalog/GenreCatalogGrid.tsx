@@ -60,12 +60,12 @@ export function GenreCatalogGrid({
   }, [hasMore, isLoading, isLoadingMore, onLoadMore]);
 
   return (
-    <section className="flex flex-col gap-8 md:gap-9 pb-16 animate-in fade-in duration-300 px-4 md:px-0">
-      <div className="text-center">
-        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+    <section className="flex flex-col gap-4 md:gap-9 pb-16 animate-in fade-in duration-300 px-4 md:px-0">
+      <div className="text-center max-w-xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight [text-wrap:balance]">
           Catálogo de {genreName}
         </h2>
-        <p className="text-sm md:text-base text-zinc-400 mt-1.5">
+        <p className="text-sm md:text-base text-zinc-400 mt-1 md:mt-2 max-w-[280px] sm:max-w-sm md:max-w-md mx-auto [text-wrap:balance]">
           {description}
         </p>
       </div>
