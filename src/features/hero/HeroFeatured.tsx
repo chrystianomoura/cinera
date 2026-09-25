@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Play, Info } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import type { Movie } from "@/domain";
-import { getBackdropUrl } from "@/infrastructure/api/movie-service";
+import { getBackdropUrl, movieService } from "@/infrastructure/api/movie-service";
 import { formatRuntime } from "@/lib/formatters";
+import { CertificationBadge } from "@/features/movie-details/CertificationBadge";
 
 interface HeroFeaturedProps {
   candidates: Movie[];
@@ -27,6 +29,13 @@ export function HeroFeatured({
 
   const heroMovie =
     candidates.length > 0 ? candidates[heroIndex % candidates.length] : null;
+
+  const { data: certification } = useQuery<string | null>({
+    queryKey: ["movie", "certification", heroMovie?.id],
+    queryFn: () => (heroMovie?.id ? movieService.getMovieReleaseDates(heroMovie.id) : null),
+    enabled: Boolean(heroMovie?.id),
+    staleTime: 1000 * 60 * 60 * 24,
+  });
 
   // Rotação automática a cada 8 segundos com crossfade suave (pausa no hover ou trailer aberto)
   useEffect(() => {
@@ -128,65 +137,78 @@ export function HeroFeatured({
               );
             })()}
 
+            {heroMovie.tagline && (
+              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-3.5 drop-shadow-md max-w-2xl">
+                "{heroMovie.tagline
+                  .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
+                  .trim()}"
+              </p>
+            )}
+
             {(() => {
-              const rawGenre = heroMovie.genres?.[0]?.name || null;
-              const heroGenre = rawGenre ? rawGenre.toUpperCase() : null;
               const releaseYear = heroMovie.releaseDate
                 ? heroMovie.releaseDate.slice(0, 4)
                 : null;
               const runtimeFormatted = formatRuntime(heroMovie.runtime);
+              const heroGenre = heroMovie.genres?.[0]?.name || null;
 
               return (
-                <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-3 text-sm md:text-base">
-                  {heroGenre && (
-                    <span className="font-bold text-white tracking-wider uppercase text-xs md:text-sm drop-shadow-md">
-                      {heroGenre}
-                    </span>
-                  )}
-
-                  {heroGenre && releaseYear && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
-                  )}
-
+                <div className="flex flex-wrap items-center gap-2.5 md:gap-3 mb-6 text-sm md:text-base">
                   {releaseYear && (
-                    <span className="font-semibold text-white text-xs md:text-sm drop-shadow-md">
+                    <span className="font-semibold text-white drop-shadow-md">
                       {releaseYear}
                     </span>
                   )}
 
-                  {releaseYear && runtimeFormatted && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
-                  )}
-
                   {runtimeFormatted && (
-                    <span className="font-semibold text-white text-xs md:text-sm drop-shadow-md">
-                      {runtimeFormatted}
-                    </span>
+                    <>
+                      {releaseYear && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                      )}
+                      <span className="font-semibold text-white drop-shadow-md">
+                        {runtimeFormatted}
+                      </span>
+                    </>
                   )}
 
-                  {(heroGenre || releaseYear || runtimeFormatted) && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                  {heroGenre && (
+                    <>
+                      {(releaseYear || runtimeFormatted) && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                      )}
+                      <span className="font-semibold text-white drop-shadow-md">
+                        {heroGenre}
+                      </span>
+                    </>
                   )}
 
-                  <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
-                    <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
-                      IMDb
-                    </span>
-                    <span className="bg-black/75 text-white text-xs font-bold px-2 py-0.5 backdrop-blur-md">
-                      {heroMovie.voteAverage.toFixed(1)}
-                    </span>
-                  </div>
+                  {certification && (
+                    <>
+                      {(releaseYear || runtimeFormatted || heroGenre) && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                      )}
+                      <CertificationBadge certification={certification} />
+                    </>
+                  )}
+
+                  {heroMovie.voteAverage > 0 && (
+                    <>
+                      {(releaseYear || runtimeFormatted || heroGenre || certification) && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+                      )}
+                      <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
+                        <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
+                          IMDb
+                        </span>
+                        <span className="bg-black/75 text-white text-xs font-bold px-2 py-0.5 backdrop-blur-md">
+                          {heroMovie.voteAverage.toFixed(1)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })()}
-
-            {heroMovie.tagline && (
-              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-6 drop-shadow-md max-w-2xl">
-                {heroMovie.tagline
-                  .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
-                  .trim()}
-              </p>
-            )}
 
             <div className="flex flex-wrap items-center gap-4">
               <button
