@@ -38,7 +38,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
 
       <div
         ref={genresRowRef}
-        className="flex gap-3 md:gap-4 overflow-x-auto pt-1 pb-1.5 scrollbar-hide"
+        className="flex gap-3 md:gap-4 overflow-x-auto pt-1 pb-1.5 scrollbar-hide px-4 md:px-0"
       >
         {["Todos", ...GENRES].map((genre) => {
           const isSelected = selectedGenre === genre;

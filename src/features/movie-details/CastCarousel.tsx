@@ -80,7 +80,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
       <div className="relative">
         {/* Borda de fade esquerda */}
         <div
-          className={`absolute left-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+          className={`hidden md:block absolute left-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollLeft
               ? "opacity-100 duration-300 ease-out"
               : "opacity-0 duration-700 ease-out"
@@ -126,7 +126,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
 
         {/* Borda de fade direita */}
         <div
-          className={`absolute right-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+          className={`hidden md:block absolute right-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollRight
               ? "opacity-100 duration-300 ease-out"
               : "opacity-0 duration-700 ease-out"

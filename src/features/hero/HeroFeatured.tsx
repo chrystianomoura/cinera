@@ -47,7 +47,7 @@ export function HeroFeatured({
     <section
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-12 px-6 md:px-12 pt-24 md:pt-28 overflow-hidden"
+      className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-12 px-4 md:px-12 pt-24 md:pt-28 overflow-hidden"
     >
       {(isLoading || !heroMovie) && (
         <div className="absolute inset-0 bg-zinc-900 animate-pulse" />

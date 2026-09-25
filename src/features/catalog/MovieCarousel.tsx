@@ -31,7 +31,7 @@ export function MovieCarousel({
 
   return (
     <section className="relative group/carousel">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-5 px-4 md:px-0">
         {icon && <span className="text-xl md:text-2xl select-none">{icon}</span>}
         <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
           {title}
@@ -48,7 +48,7 @@ export function MovieCarousel({
       )}
 
       {isLoading ? (
-        <div className="flex gap-4 md:gap-6 overflow-hidden">
+        <div className="flex gap-4 md:gap-6 overflow-hidden px-4 md:px-0">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
@@ -64,7 +64,7 @@ export function MovieCarousel({
         <div className="relative">
           {/* Borda de fade esquerda */}
           <div
-            className={`absolute left-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+            className={`hidden md:block absolute left-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
               canScrollLeft
                 ? "opacity-100 duration-300 ease-out"
                 : "opacity-0 duration-700 ease-out"
@@ -86,7 +86,7 @@ export function MovieCarousel({
 
           <div
             ref={rowRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto pb-2 pt-4 scrollbar-hide"
+            className="flex gap-4 md:gap-6 overflow-x-auto pb-2 pt-4 scrollbar-hide px-4 md:px-0"
           >
             {movies.map((movie) => (
               <MovieCard
@@ -96,12 +96,12 @@ export function MovieCarousel({
                 onClick={onSelectMovie}
               />
             ))}
-            <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
+            <div className="flex-shrink-0 w-8 md:w-16 pointer-events-none" aria-hidden="true" />
           </div>
 
           {/* Borda de fade direita */}
           <div
-            className={`absolute right-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+            className={`hidden md:block absolute right-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
               canScrollRight
                 ? "opacity-100 duration-300 ease-out"
                 : "opacity-0 duration-700 ease-out"

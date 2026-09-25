@@ -76,7 +76,7 @@ export function GalleryCarousel({
       <div className="relative">
         {/* Borda de fade esquerda */}
         <div
-          className={`absolute left-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+          className={`hidden md:block absolute left-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollLeft
               ? "opacity-100 duration-300 ease-out"
               : "opacity-0 duration-700 ease-out"
@@ -124,7 +124,7 @@ export function GalleryCarousel({
 
         {/* Borda de fade direita */}
         <div
-          className={`absolute right-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
+          className={`hidden md:block absolute right-0 inset-y-0 w-16 sm:w-28 md:w-36 lg:w-48 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
             canScrollRight
               ? "opacity-100 duration-300 ease-out"
               : "opacity-0 duration-700 ease-out"
