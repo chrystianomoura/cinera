@@ -154,7 +154,7 @@ export function MovieDetailsView({
       </header>
 
       {/* 4. CONTEÚDO PRINCIPAL (HERO + METADADOS + FICHA) */}
-      <main className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-24 flex flex-col gap-10 md:gap-14">
+      <main className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-24 flex flex-col gap-6 md:gap-8">
         {/* Bloco Superior: Cartaz Flutuante + Informações de Capa perfeitamente alinhados no topo */}
         <section className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start px-4 md:px-0">
           {/* Cartaz com borda em vidro */}
@@ -175,130 +175,151 @@ export function MovieDetailsView({
 
           {/* Dados Textuais e Ações alinhados milimetricamente no topo com a margem superior do cartaz */}
           <div className="flex flex-col gap-4 flex-1 text-center md:text-left md:-mt-1.5">
-            {/* Título Principal com regra de quebra cinematográfica nos dois pontos (:) */}
-            {(() => {
-              const colonIndex = movie.title.indexOf(":");
-              if (colonIndex !== -1) {
-                const part1 = movie.title.slice(0, colonIndex).trim();
-                const part2 = movie.title.slice(colonIndex + 1).trim();
+            {/* Bloco de Cabeçalho: Título e Tagline com espaçamento íntimo */}
+            <div className="flex flex-col gap-1.5 sm:gap-2">
+              {/* Título Principal com regra de quebra cinematográfica nos dois pontos (:) */}
+              {(() => {
+                const colonIndex = movie.title.indexOf(":");
+                if (colonIndex !== -1) {
+                  const part1 = movie.title.slice(0, colonIndex).trim();
+                  const part2 = movie.title.slice(colonIndex + 1).trim();
+
+                  return (
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.05] drop-shadow-lg">
+                      <span>{part1}:</span>
+                      {part2 && (
+                        <span className="block mt-1 text-white/95">{part2}</span>
+                      )}
+                    </h2>
+                  );
+                }
 
                 return (
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.05] drop-shadow-lg">
-                    <span>{part1}:</span>
-                    {part2 && (
-                      <span className="block mt-1 text-white/95">{part2}</span>
-                    )}
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[0.98] drop-shadow-lg">
+                    {movie.title}
                   </h2>
                 );
-              }
+              })()}
 
-              return (
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[0.98] drop-shadow-lg">
-                  {movie.title}
-                </h2>
-              );
-            })()}
-
-            {/* Tagline Oficial */}
-            {movie.tagline ? (
-              <p className="text-base sm:text-lg md:text-xl font-medium italic text-zinc-300 drop-shadow">
-                "{movie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}"
-              </p>
-            ) : null}
-
-            {/* Linha de Metadados: Ano • Duração • Gêneros • Classificação • IMDb com pontos visíveis e nítidos */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 text-sm md:text-base pt-1">
-              {releaseYear ? (
-                <span className="font-semibold text-zinc-200">{releaseYear}</span>
-              ) : null}
-
-              {duration ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
-                  <span className="font-semibold text-zinc-200">{duration}</span>
-                </>
-              ) : null}
-
-              {curatedGenres ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
-                  <span className="text-zinc-200 font-medium">{curatedGenres}</span>
-                </>
-              ) : null}
-
-              {/* Classificação Indicativa Brasileira */}
-              {certification ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
-                  <CertificationBadge certification={certification} />
-                </>
-              ) : null}
-
-              {/* Badge IMDb Oficial */}
-              {movie.voteAverage > 0 ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
-                  <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
-                    <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
-                      IMDb
-                    </span>
-                    <span className="bg-black/80 text-white text-xs font-bold px-2 py-0.5">
-                      {movie.voteAverage.toFixed(1)}
-                    </span>
-                  </div>
-                </>
+              {/* Tagline Oficial colada ao título */}
+              {movie.tagline ? (
+                <p className="text-base sm:text-lg md:text-xl font-medium italic text-zinc-300 drop-shadow leading-snug">
+                  "{movie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}"
+                </p>
               ) : null}
             </div>
 
-            {/* Botões de Ação Principais (Trailer, Quero Assistir, Já Assisti) */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 pt-3">
-              {/* 1. Assistir Trailer */}
+            {/* Linha de Metadados: Emoldurada com linhas em cima e embaixo, fontes mais confortáveis */}
+            <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 text-sm sm:text-base md:text-base py-3 sm:py-3.5 border-y border-white/10 w-full">
+              {/* Linha 1 no mobile: Ano e Duração */}
+              {(releaseYear || duration) && (
+                <div className="flex items-center gap-2.5">
+                  {releaseYear && (
+                    <span className="font-semibold text-zinc-100">{releaseYear}</span>
+                  )}
+                  {releaseYear && duration && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
+                  )}
+                  {duration && (
+                    <span className="font-semibold text-zinc-100">{duration}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Separador no desktop entre Linha 1 e Linha 2 */}
+              {(releaseYear || duration) && curatedGenres && (
+                <span className="hidden md:inline-block w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)]" />
+              )}
+
+              {/* Linha 2 no mobile: Categorias */}
+              {curatedGenres && (
+                <div className="text-zinc-200 font-medium text-center md:text-left">
+                  {curatedGenres}
+                </div>
+              )}
+
+              {/* Separador no desktop entre Linha 2 e Linha 3 */}
+              {curatedGenres && (certification || movie.voteAverage > 0) && (
+                <span className="hidden md:inline-block w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)]" />
+              )}
+
+              {/* Linha 3 no mobile: Classificação Indicativa e IMDb */}
+              {(certification || movie.voteAverage > 0) && (
+                <div className="flex items-center gap-2.5">
+                  {certification && (
+                    <CertificationBadge certification={certification} />
+                  )}
+
+                  {certification && movie.voteAverage > 0 && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
+                  )}
+
+                  {movie.voteAverage > 0 && (
+                    <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
+                      <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
+                        IMDb
+                      </span>
+                      <span className="bg-black/80 text-white text-xs font-bold px-2 py-0.5">
+                        {movie.voteAverage.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Botões de Ação Principais (Opção A: Trailer full-width + Quero Assistir & Já Assisti em 50%/50% no mobile) */}
+            <div className="flex flex-col md:flex-row items-center md:justify-start gap-3 sm:gap-4 w-full">
+              {/* 1. Trailer */}
               <button
                 type="button"
                 onClick={() => onOpenTrailer(movie)}
-                className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-white text-black font-bold text-sm sm:text-base hover:bg-zinc-200 transition-all duration-200 shadow-xl hover:scale-105 active:scale-95 cursor-pointer group"
+                className="w-full md:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-white text-black font-bold text-sm sm:text-base hover:bg-zinc-200 transition-all duration-200 shadow-xl hover:scale-105 active:scale-95 cursor-pointer group"
               >
                 <Play className="w-4 h-4 fill-current transition-transform group-hover:scale-110" />
-                <span>Assistir Trailer</span>
+                <span>Trailer</span>
               </button>
 
-              {/* 2. Quero Assistir (Watchlist com toggle e persistência) */}
-              <button
-                type="button"
-                onClick={() => toggleWatchlist(movie.id)}
-                aria-pressed={isWatchlist}
-                className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
-                  isWatchlist
-                    ? "bg-[#ffcc00] text-black border border-[#ffcc00] font-bold shadow-[0_0_20px_rgba(255,204,0,0.3)]"
-                    : "bg-zinc-900/80 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
-                }`}
-              >
-                <Bookmark
-                  className={`w-4 h-4 ${
-                    isWatchlist ? "fill-current stroke-current" : "stroke-[2.2]"
+              {/* Ações de Biblioteca Pessoal: Grid de 2 colunas no mobile, linha flex no desktop */}
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full md:flex md:w-auto md:gap-4">
+                {/* 2. Quero Assistir (Watchlist com toggle e persistência) */}
+                <button
+                  type="button"
+                  onClick={() => toggleWatchlist(movie.id)}
+                  aria-pressed={isWatchlist}
+                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-3 sm:px-5 py-3 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
+                    isWatchlist
+                      ? "bg-[#ffcc00] text-black border border-[#ffcc00] font-bold shadow-[0_0_20px_rgba(255,204,0,0.3)]"
+                      : "bg-zinc-900/80 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
                   }`}
-                />
-                <span>{isWatchlist ? "Quero Assistir ✓" : "Quero Assistir"}</span>
-              </button>
+                >
+                  <Bookmark
+                    className={`w-4 h-4 flex-shrink-0 ${
+                      isWatchlist ? "fill-current stroke-current" : "stroke-[2.2]"
+                    }`}
+                  />
+                  <span className="truncate">{isWatchlist ? "Quero Assistir ✓" : "Quero Assistir"}</span>
+                </button>
 
-              {/* 3. Já Assisti (Watched History com toggle e persistência) */}
-              <button
-                type="button"
-                onClick={() => toggleWatched(movie.id)}
-                aria-pressed={isWatched}
-                className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
-                  isWatched
-                    ? "bg-emerald-500 text-black border border-emerald-400 font-bold shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                    : "bg-zinc-900/80 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
-                }`}
-              >
-                <Check
-                  className={`w-4 h-4 ${
-                    isWatched ? "stroke-[3]" : "stroke-[2.2]"
+                {/* 3. Já Assisti (Watched History com toggle e persistência) */}
+                <button
+                  type="button"
+                  onClick={() => toggleWatched(movie.id)}
+                  aria-pressed={isWatched}
+                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-3 sm:px-5 py-3 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
+                    isWatched
+                      ? "bg-emerald-500 text-black border border-emerald-400 font-bold shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                      : "bg-zinc-900/80 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
                   }`}
-                />
-                <span>{isWatched ? "Já Assisti ✓" : "Já Assisti"}</span>
-              </button>
+                >
+                  <Check
+                    className={`w-4 h-4 flex-shrink-0 ${
+                      isWatched ? "stroke-[3]" : "stroke-[2.2]"
+                    }`}
+                  />
+                  <span className="truncate">{isWatched ? "Já Assisti ✓" : "Já Assisti"}</span>
+                </button>
+              </div>
             </div>
 
             {/* Onde Assistir (Watch Providers Brasil com título visível em destaque) */}
@@ -308,25 +329,25 @@ export function MovieDetailsView({
               movieTitle={movie.title}
             />
 
-            {/* Direção e Roteiro (Condicional com rótulos padronizados no Design System) */}
+            {/* Direção e Roteiro (Enquadrado perfeitamente no centro de duas linhas) */}
             {(credits?.directors || credits?.writers) ? (
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs sm:text-sm text-zinc-200 pt-2 border-t border-white/10">
+              <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-y-2 md:gap-x-6 md:gap-y-0 py-3 border-y border-white/10 text-center md:text-left w-full">
                 {credits.directors && credits.directors.length > 0 && (
-                  <div className="flex items-center">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
+                  <div className="text-center md:text-left">
+                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Direção:
                     </span>
-                    <span className="font-medium text-zinc-100 ml-1.5">
+                    <span className="font-medium text-zinc-100 text-sm">
                       {credits.directors.join(", ")}
                     </span>
                   </div>
                 )}
                 {credits.writers && credits.writers.length > 0 && (
-                  <div className="flex items-center">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
+                  <div className="text-center md:text-left">
+                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Roteiro:
                     </span>
-                    <span className="font-medium text-zinc-100 ml-1.5">
+                    <span className="font-medium text-zinc-100 text-sm">
                       {credits.writers.join(", ")}
                     </span>
                   </div>
@@ -334,19 +355,25 @@ export function MovieDetailsView({
               </div>
             ) : null}
 
-            {/* Ficha de Produção & Finanças (Orçamento & Bilheteria na mesma linha, Título Original, Produtoras) */}
+            {/* Ficha de Produção & Finanças */}
             {hasProductionDetails && (
-              <div className="flex flex-col gap-2 pt-2.5 border-t border-white/10 text-xs sm:text-sm">
+              <div
+                className={`flex flex-col gap-2.5 text-center md:text-left w-full ${
+                  !(credits?.directors || credits?.writers)
+                    ? "pt-3 border-t border-white/10"
+                    : ""
+                }`}
+              >
                 {/* Linha 1: Orçamento e Bilheteria SEMPRE juntos e primeiro, com cores semânticas apenas quando ambos existem */}
                 {(formattedBudget || formattedRevenue) && (
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-1.5">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-1.5">
                     {formattedBudget && (
                       <div className="flex items-center">
                         <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
                           Orçamento:
                         </span>
                         <span
-                          className={`font-semibold ml-1.5 ${
+                          className={`font-semibold text-sm ml-1.5 ${
                             hasFinancialContrast ? "text-rose-400" : "text-zinc-100"
                           }`}
                         >
@@ -361,7 +388,7 @@ export function MovieDetailsView({
                           Bilheteria:
                         </span>
                         <span
-                          className={`font-semibold ml-1.5 ${
+                          className={`font-semibold text-sm ml-1.5 ${
                             hasFinancialContrast ? "text-emerald-400" : "text-zinc-100"
                           }`}
                         >
@@ -374,23 +401,23 @@ export function MovieDetailsView({
 
                 {/* Linha 2: Título Original */}
                 {originalTitle && (
-                  <div className="flex items-center justify-center md:justify-start text-xs sm:text-sm text-zinc-300">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
+                  <div className="text-center md:text-left">
+                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Título Original:
                     </span>
-                    <span className="font-medium text-zinc-100 ml-1.5 italic">
+                    <span className="font-medium text-zinc-100 text-sm">
                       {originalTitle}
                     </span>
                   </div>
                 )}
 
-                {/* Linha 3: Produtoras com o mesmo tamanho e destaque dos demais */}
+                {/* Linha 3: Produtoras com fluxo contínuo e quebra natural */}
                 {companiesList && (
-                  <div className="flex items-center justify-center md:justify-start text-xs sm:text-sm">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
+                  <div className="text-center md:text-left">
+                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Produtoras:
                     </span>
-                    <span className="font-medium text-zinc-100 ml-1.5">
+                    <span className="font-medium text-zinc-100 text-sm">
                       {companiesList}
                     </span>
                   </div>
@@ -400,28 +427,37 @@ export function MovieDetailsView({
           </div>
         </section>
 
+        {/* Sinopse com linha divisória e espaçamento unificado */}
         {movie.overview ? (
-          <section className="max-w-2xl sm:max-w-3xl mx-auto w-full px-4 sm:px-6 pt-6 pb-2 flex flex-col gap-3">
-            <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center w-full">
-              Sinopse
-            </h3>
-            <p className="text-base sm:text-lg md:text-xl text-white leading-relaxed font-normal text-left">
-              {movie.overview}
-            </p>
+          <section className="w-full border-t border-white/10 pt-6 md:pt-8">
+            <div className="max-w-2xl sm:max-w-3xl mx-auto px-4 sm:px-6 flex flex-col gap-3">
+              <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center w-full">
+                Sinopse
+              </h3>
+              <p className="text-base sm:text-lg md:text-xl text-white leading-relaxed font-normal text-left">
+                {movie.overview}
+              </p>
+            </div>
           </section>
         ) : null}
 
-        <section className="pt-6">
-          <CastCarousel cast={credits?.cast} isLoading={isLoadingCredits} />
-        </section>
+        {/* Elenco Principal com linha divisória e espaçamento unificado */}
+        {(isLoadingCredits || (credits?.cast && credits.cast.length > 0)) ? (
+          <section className="w-full border-t border-white/10 pt-6 md:pt-8">
+            <CastCarousel cast={credits?.cast} isLoading={isLoadingCredits} />
+          </section>
+        ) : null}
 
-        <section className="pt-6">
-          <GalleryCarousel
-            images={gallery}
-            isLoading={isLoadingGallery}
-            onSelectImage={(index) => setSelectedPhotoIndex(index)}
-          />
-        </section>
+        {/* Galeria de Fotos com linha divisória e espaçamento unificado */}
+        {(isLoadingGallery || (gallery && gallery.length > 0)) ? (
+          <section className="w-full border-t border-white/10 pt-6 md:pt-8">
+            <GalleryCarousel
+              images={gallery}
+              isLoading={isLoadingGallery}
+              onSelectImage={(index) => setSelectedPhotoIndex(index)}
+            />
+          </section>
+        ) : null}
 
         {isLoadingMovie && (
           <div className="flex items-center justify-center py-8 gap-3 text-zinc-400">

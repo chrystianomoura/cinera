@@ -175,11 +175,11 @@ function getStreamingHomeUrl(brandKey: string): string | null {
 export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowProps) {
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-2.5">
-        <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold">
+      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
+        <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
           Onde Assistir
         </h3>
-        <div className="flex gap-3">
+        <div className="flex justify-center md:justify-start gap-2.5 w-full">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
@@ -235,12 +235,12 @@ export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowPro
   }
 
   return (
-    <div className="flex flex-col gap-2.5 pt-2">
-      <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold">
+    <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
+      <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
         Onde Assistir
       </h3>
 
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full">
         {uniqueProviders.map((provider) => {
           const content = (
             <>

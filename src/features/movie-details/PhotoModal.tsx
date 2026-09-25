@@ -13,7 +13,7 @@ interface PhotoModalProps {
 
 /**
  * Modal em janela dedicada para visualização de fotos das filmagens em alta resolução.
- * Estilo visual padronizado com o TrailerModal, com navegação lateral por teclado e botões.
+ * Estilo visual padronizado com o TrailerModal, com navegação lateral por teclado e botões de seta com prefetch instantâneo.
  */
 export function PhotoModal({
   isOpen,
@@ -43,9 +43,29 @@ export function PhotoModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, currentIndex, total, onSelectIndex]);
 
+  // Pré-carregamento em background das fotos adjacentes para navegação instantânea (0ms)
+  useEffect(() => {
+    if (!isOpen || images.length === 0) return;
+
+    const preloadTargets = [
+      currentIndex + 1,
+      currentIndex + 2,
+      currentIndex - 1,
+    ].filter((idx) => idx >= 0 && idx < total);
+
+    preloadTargets.forEach((idx) => {
+      const url = getBackdropUrl(images[idx], "w1280");
+      if (url) {
+        const preloadImg = new Image();
+        preloadImg.src = url;
+      }
+    });
+  }, [isOpen, images, currentIndex, total]);
+
+
   if (!isOpen || !currentPath) return null;
 
-  const photoUrl = getBackdropUrl(currentPath, "original");
+  const photoUrl = getBackdropUrl(currentPath, "w1280");
 
   return (
     <div
@@ -77,8 +97,11 @@ export function PhotoModal({
         {/* Área da Imagem em Alta Resolução */}
         <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden group">
           <img
+            key={currentPath}
             src={photoUrl}
             alt={`Cena do filme ${currentIndex + 1}`}
+            draggable={false}
+            decoding="async"
             className="w-full h-full object-contain select-none"
           />
 
