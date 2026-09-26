@@ -1,6 +1,8 @@
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const API_TOKEN = import.meta.env.VITE_TMDB_API_TOKEN;
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const globalProcessEnv = (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env;
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : (globalProcessEnv || {});
+const API_TOKEN = env.VITE_TMDB_API_TOKEN;
+const API_KEY = env.VITE_TMDB_API_KEY;
 
 /**
  * Indica se existem credenciais da API do TMDB configuradas no ambiente.
@@ -43,7 +45,7 @@ export const getProfileUrl = (
 /**
  * Executa requisições autenticadas para a API do TMDB.
  */
-export async function fetchFromTMDB<T>(pathWithQuery: string): Promise<T> {
+export async function fetchFromTMDB<T>(pathWithQuery: string, signal?: AbortSignal): Promise<T> {
   const separator = pathWithQuery.includes('?') ? '&' : '?';
   let fullUrl = `${TMDB_BASE_URL}${pathWithQuery}`;
 
@@ -57,7 +59,7 @@ export async function fetchFromTMDB<T>(pathWithQuery: string): Promise<T> {
     fullUrl += `${separator}api_key=${API_KEY}`;
   }
 
-  const response = await fetch(fullUrl, { headers });
+  const response = await fetch(fullUrl, { headers, signal });
   if (!response.ok) {
     throw new Error(
       `Erro na chamada da API TMDB (${response.status}): ${response.statusText}`

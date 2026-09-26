@@ -12,6 +12,8 @@ import { HomeFeed } from "@/features/catalog/HomeFeed";
 import { GenreCatalogGrid } from "@/features/catalog/GenreCatalogGrid";
 import { MovieDetailsView } from "@/features/movie-details/MovieDetailsView";
 import { TrailerModal } from "@/features/trailer/TrailerModal";
+import { SearchModal } from "@/features/search/SearchModal";
+import { useSearchStore } from "@/features/search/use-search-store";
 import { smoothScrollToTop } from "@/lib/smooth-scroll";
 
 export default function App() {
@@ -129,6 +131,24 @@ export default function App() {
     return () => window.removeEventListener("popstate", syncMovieFromUrl);
   }, []);
 
+  // Atalho global de teclado: Cmd + K (Mac) e Ctrl + K (Windows) para abrir a busca
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        const store = useSearchStore.getState();
+        if (store.isOpen) {
+          store.closeSearch();
+        } else {
+          store.openSearch();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleSelectGenre = (genre: string) => {
     if (genre === selectedGenre) {
       if (window.scrollY > 0) {
@@ -187,7 +207,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
-      <Header />
+      <Header onSearchClick={useSearchStore.getState().openSearch} />
 
       {/* Hero em destaque */}
       <div
@@ -261,6 +281,12 @@ export default function App() {
         trailerKey={trailerKey}
         isLoading={isLoadingTrailer}
         onClose={handleCloseTrailer}
+      />
+
+      {/* Modal de Pesquisa Global (Command Palette) */}
+      <SearchModal
+        onSelectMovie={handleOpenDetails}
+        onSelectGenre={handleSelectGenre}
       />
     </div>
   );

@@ -1,9 +1,28 @@
-import type { Movie, MovieCredits, MovieWatchProviders, PaginatedResponse } from '@/domain';
-import { moviesMock, creditsMock, providersMock } from '../mock/movies.mock';
-import { fetchFromTMDB, isTmdbConfigured, getPosterUrl, getBackdropUrl, getProfileUrl } from './tmdb-client';
-import { mapTMDBMovie, mapTMDBCredits, mapTMDBWatchProviders } from './tmdb-mappers';
-import { filterQualifiedMovies, dedupeFranchises, getFranchiseKey } from './curation-filters';
-import { fetchGenreMoviesPage } from './genre-discovery.service';
+import type {
+  Movie,
+  MovieCredits,
+  MovieWatchProviders,
+  PaginatedResponse,
+} from "@/domain";
+import { moviesMock, creditsMock, providersMock } from "../mock/movies.mock";
+import {
+  fetchFromTMDB,
+  isTmdbConfigured,
+  getPosterUrl,
+  getBackdropUrl,
+  getProfileUrl,
+} from "./tmdb-client";
+import {
+  mapTMDBMovie,
+  mapTMDBCredits,
+  mapTMDBWatchProviders,
+} from "./tmdb-mappers";
+import {
+  filterQualifiedMovies,
+  dedupeFranchises,
+  getFranchiseKey,
+} from "./curation-filters";
+import { fetchGenreMoviesPage } from "./genre-discovery.service";
 import type {
   TMDBMovieRaw,
   TMDBPaginatedResponse,
@@ -12,7 +31,7 @@ import type {
   TMDBReleaseDatesResponse,
   TMDBImagesResponse,
   MovieVideo,
-} from './tmdb-types';
+} from "./tmdb-types";
 
 // Re-exporta utilitários e tipos para 100% de compatibilidade retroativa
 export {
@@ -23,8 +42,8 @@ export {
   getFranchiseKey,
   dedupeFranchises,
 };
-export { TMDB_GENRE_MAP } from './tmdb-types';
-export type { MovieVideo } from './tmdb-types';
+export { TMDB_GENRE_MAP } from "./tmdb-types";
+export type { MovieVideo } from "./tmdb-types";
 
 /**
  * Serviço central de filmes (Fachada do Domínio de Catálogo).
@@ -41,9 +60,9 @@ class MovieService {
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-              `/trending/movie/day?language=pt-BR&page=${p}`
-            )
-          )
+              `/trending/movie/day?language=pt-BR&page=${p}`,
+            ),
+          ),
         );
 
         const allRaw = responses.flatMap((r) => r.results);
@@ -58,13 +77,20 @@ class MovieService {
         };
       }
     } catch (error) {
-      console.warn('Falha ao obter filmes em tendência do TMDB, usando fallback mock:', error);
+      console.warn(
+        "Falha ao obter filmes em tendência do TMDB, usando fallback mock:",
+        error,
+      );
     }
 
     const itemsPerPage = 20;
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const results = filterQualifiedMovies(moviesMock.slice(startIndex, endIndex), 5.5, 5);
+    const results = filterQualifiedMovies(
+      moviesMock.slice(startIndex, endIndex),
+      5.5,
+      5,
+    );
 
     return {
       page,
@@ -76,45 +102,51 @@ class MovieService {
 
   /**
    * Retorna filmes em destaque para o Hero com critérios rígidos:
-   * Backdrop horizontal, nota IMDb mínima, votos reais e tagline oficial.
+   * Backdrop horizontal, nota TMDB mínima, votos reais e tagline oficial.
    */
   async getHeroFeaturedMovies(): Promise<Movie[]> {
     try {
       if (isTmdbConfigured()) {
         const trending = await this.getTrendingMovies(1);
 
-        let candidates = trending.results.filter(
-          (m) => Boolean(m.backdropPath && m.voteAverage >= 7.0 && m.voteCount >= 10)
+        let candidates = trending.results.filter((m) =>
+          Boolean(m.backdropPath && m.voteAverage >= 7.0 && m.voteCount >= 10),
         );
 
         if (candidates.length < 3) {
-          candidates = trending.results.filter(
-            (m) => Boolean(m.backdropPath && m.voteAverage >= 6.5 && m.voteCount >= 10)
+          candidates = trending.results.filter((m) =>
+            Boolean(
+              m.backdropPath && m.voteAverage >= 6.5 && m.voteCount >= 10,
+            ),
           );
         }
 
         const detailedMovies = await Promise.all(
-          candidates.slice(0, 5).map((m) => this.getMovieById(m.id))
+          candidates.slice(0, 5).map((m) => this.getMovieById(m.id)),
         );
 
-        const heroValid = detailedMovies.filter(
-          (m): m is Movie => Boolean(m && m.tagline && m.tagline.trim().length > 0)
+        const heroValid = detailedMovies.filter((m): m is Movie =>
+          Boolean(m && m.tagline && m.tagline.trim().length > 0),
         );
 
         if (heroValid.length >= 3) {
           return heroValid;
         }
 
-        const validCandidates = detailedMovies.filter((m): m is Movie => Boolean(m));
+        const validCandidates = detailedMovies.filter((m): m is Movie =>
+          Boolean(m),
+        );
         if (validCandidates.length > 0) {
           return validCandidates;
         }
       }
     } catch (error) {
-      console.warn('Falha ao obter filmes em destaque para o Hero:', error);
+      console.warn("Falha ao obter filmes em destaque para o Hero:", error);
     }
 
-    return moviesMock.filter((m) => Boolean(m.tagline && m.tagline.trim().length > 0));
+    return moviesMock.filter((m) =>
+      Boolean(m.tagline && m.tagline.trim().length > 0),
+    );
   }
 
   /**
@@ -123,7 +155,9 @@ class MovieService {
   async getMovieById(id: number): Promise<Movie | null> {
     try {
       if (isTmdbConfigured()) {
-        const raw = await fetchFromTMDB<TMDBMovieRaw>(`/movie/${id}?language=pt-BR`);
+        const raw = await fetchFromTMDB<TMDBMovieRaw>(
+          `/movie/${id}?language=pt-BR`,
+        );
         return mapTMDBMovie(raw);
       }
     } catch (error) {
@@ -139,7 +173,9 @@ class MovieService {
   async getMovieCredits(id: number): Promise<MovieCredits | null> {
     try {
       if (isTmdbConfigured()) {
-        const data = await fetchFromTMDB<TMDBCreditsRaw>(`/movie/${id}/credits?language=pt-BR`);
+        const data = await fetchFromTMDB<TMDBCreditsRaw>(
+          `/movie/${id}/credits?language=pt-BR`,
+        );
         return mapTMDBCredits(data);
       }
     } catch (error) {
@@ -152,14 +188,21 @@ class MovieService {
   /**
    * Retorna os provedores onde o filme está disponível.
    */
-  async getMovieWatchProviders(id: number): Promise<MovieWatchProviders | null> {
+  async getMovieWatchProviders(
+    id: number,
+  ): Promise<MovieWatchProviders | null> {
     try {
       if (isTmdbConfigured()) {
-        const data = await fetchFromTMDB<TMDBProvidersResponse>(`/movie/${id}/watch/providers`);
+        const data = await fetchFromTMDB<TMDBProvidersResponse>(
+          `/movie/${id}/watch/providers`,
+        );
         return mapTMDBWatchProviders(data);
       }
     } catch (error) {
-      console.warn(`Falha ao obter provedores de streaming do filme ${id} do TMDB:`, error);
+      console.warn(
+        `Falha ao obter provedores de streaming do filme ${id} do TMDB:`,
+        error,
+      );
     }
 
     return providersMock[id] || null;
@@ -168,11 +211,14 @@ class MovieService {
   /**
    * Procura filmes por um termo de pesquisa no TMDB.
    */
-  async searchMovies(query: string, page: number = 1): Promise<PaginatedResponse<Movie>> {
+  async searchMovies(
+    query: string,
+    page: number = 1,
+  ): Promise<PaginatedResponse<Movie>> {
     try {
       if (isTmdbConfigured() && query.trim()) {
         const data = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-          `/search/movie?query=${encodeURIComponent(query)}&language=pt-BR&page=${page}&include_adult=false`
+          `/search/movie?query=${encodeURIComponent(query)}&language=pt-BR&page=${page}&include_adult=false`,
         );
 
         return {
@@ -190,7 +236,8 @@ class MovieService {
     const filteredMovies = moviesMock.filter(
       (movie) =>
         movie.title.toLowerCase().includes(normalizedQuery) ||
-        (movie.originalTitle && movie.originalTitle.toLowerCase().includes(normalizedQuery))
+        (movie.originalTitle &&
+          movie.originalTitle.toLowerCase().includes(normalizedQuery)),
     );
 
     const itemsPerPage = 20;
@@ -209,7 +256,9 @@ class MovieService {
   /**
    * Retorna lançamentos autênticos e novidades do ano corrente com alta relevância.
    */
-  async getNewReleasesMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
+  async getNewReleasesMovies(
+    page: number = 1,
+  ): Promise<PaginatedResponse<Movie>> {
     try {
       if (isTmdbConfigured()) {
         const currentYear = new Date().getFullYear();
@@ -217,9 +266,9 @@ class MovieService {
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-              `/discover/movie?language=pt-BR&sort_by=popularity.desc&primary_release_date.gte=${currentYear}-01-01&vote_count.gte=30&vote_average.gte=6.0&page=${p}`
-            )
-          )
+              `/discover/movie?language=pt-BR&sort_by=popularity.desc&primary_release_date.gte=${currentYear}-01-01&vote_count.gte=30&vote_average.gte=6.0&page=${p}`,
+            ),
+          ),
         );
 
         const allRaw = responses.flatMap((r) => r.results);
@@ -242,7 +291,11 @@ class MovieService {
       const year = new Date(m.releaseDate).getFullYear();
       return year >= currentYear - 1;
     });
-    const results = filterQualifiedMovies(newReleases.length > 0 ? newReleases : moviesMock, 5.5, 5);
+    const results = filterQualifiedMovies(
+      newReleases.length > 0 ? newReleases : moviesMock,
+      5.5,
+      5,
+    );
     return {
       page,
       results,
@@ -254,7 +307,9 @@ class MovieService {
   /**
    * Alias de compatibilidade para lançamentos.
    */
-  async getNowPlayingMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
+  async getNowPlayingMovies(
+    page: number = 1,
+  ): Promise<PaginatedResponse<Movie>> {
     return this.getNewReleasesMovies(page);
   }
 
@@ -268,9 +323,9 @@ class MovieService {
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=2000&primary_release_date.gte=2000-01-01&without_genres=16&page=${p}`
-            )
-          )
+              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=2000&primary_release_date.gte=2000-01-01&without_genres=16&page=${p}`,
+            ),
+          ),
         );
 
         const allRaw = responses.flatMap((r) => r.results);
@@ -282,7 +337,8 @@ class MovieService {
           page,
           results: franchiseChampionOnly,
           totalPages: responses[0]?.total_pages ?? 1,
-          totalResults: responses[0]?.total_results ?? franchiseChampionOnly.length,
+          totalResults:
+            responses[0]?.total_results ?? franchiseChampionOnly.length,
         };
       }
     } catch (error) {
@@ -292,12 +348,18 @@ class MovieService {
     const contemporary = moviesMock
       .filter((m) => {
         const year = new Date(m.releaseDate).getFullYear();
-        const isNotAnimation = !m.genres?.some((g) => g.id === 16 || g.name === "Animação");
+        const isNotAnimation = !m.genres?.some(
+          (g) => g.id === 16 || g.name === "Animação",
+        );
         return year >= 2000 && isNotAnimation;
       })
       .sort((a, b) => b.voteAverage - a.voteAverage);
     const results = dedupeFranchises(
-      filterQualifiedMovies(contemporary.length > 0 ? contemporary : moviesMock, 6.0, 10)
+      filterQualifiedMovies(
+        contemporary.length > 0 ? contemporary : moviesMock,
+        6.0,
+        10,
+      ),
     );
     return {
       page,
@@ -317,9 +379,9 @@ class MovieService {
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=3000&primary_release_date.lte=1999-12-31&without_genres=16&page=${p}`
-            )
-          )
+              `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=3000&primary_release_date.lte=1999-12-31&without_genres=16&page=${p}`,
+            ),
+          ),
         );
 
         const allRaw = responses.flatMap((r) => r.results);
@@ -331,7 +393,8 @@ class MovieService {
           page,
           results: franchiseChampionOnly,
           totalPages: responses[0]?.total_pages ?? 1,
-          totalResults: responses[0]?.total_results ?? franchiseChampionOnly.length,
+          totalResults:
+            responses[0]?.total_results ?? franchiseChampionOnly.length,
         };
       }
     } catch (error) {
@@ -341,12 +404,18 @@ class MovieService {
     const classics = moviesMock
       .filter((m) => {
         const year = new Date(m.releaseDate).getFullYear();
-        const isNotAnimation = !m.genres?.some((g) => g.id === 16 || g.name === "Animação");
+        const isNotAnimation = !m.genres?.some(
+          (g) => g.id === 16 || g.name === "Animação",
+        );
         return year <= 1999 && isNotAnimation;
       })
       .sort((a, b) => b.voteAverage - a.voteAverage);
     const results = dedupeFranchises(
-      filterQualifiedMovies(classics.length > 0 ? classics : moviesMock, 6.0, 10)
+      filterQualifiedMovies(
+        classics.length > 0 ? classics : moviesMock,
+        6.0,
+        10,
+      ),
     );
     return {
       page,
@@ -366,9 +435,9 @@ class MovieService {
         const responses = await Promise.all(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
-              `/movie/popular?language=pt-BR&page=${p}`
-            )
-          )
+              `/movie/popular?language=pt-BR&page=${p}`,
+            ),
+          ),
         );
 
         const allRaw = responses.flatMap((r) => r.results);
@@ -401,7 +470,7 @@ class MovieService {
    */
   async getMoviesByGenre(
     categoryOrQuery: string | number,
-    page: number = 1
+    page: number = 1,
   ): Promise<PaginatedResponse<Movie>> {
     return fetchGenreMoviesPage(categoryOrQuery, page);
   }
@@ -413,12 +482,12 @@ class MovieService {
     try {
       if (isTmdbConfigured()) {
         let data = await fetchFromTMDB<{ id: number; results: MovieVideo[] }>(
-          `/movie/${id}/videos?language=pt-BR`
+          `/movie/${id}/videos?language=pt-BR`,
         );
 
         if (!data.results || data.results.length === 0) {
           data = await fetchFromTMDB<{ id: number; results: MovieVideo[] }>(
-            `/movie/${id}/videos?language=en-US`
+            `/movie/${id}/videos?language=en-US`,
           );
         }
 
@@ -437,12 +506,14 @@ class MovieService {
     try {
       if (isTmdbConfigured()) {
         const data = await fetchFromTMDB<TMDBReleaseDatesResponse>(
-          `/movie/${id}/release_dates`
+          `/movie/${id}/release_dates`,
         );
 
         const brData = data.results?.find((r) => r.iso_3166_1 === "BR");
         if (brData) {
-          const cert = brData.release_dates.find((d) => Boolean(d.certification?.trim()));
+          const cert = brData.release_dates.find((d) =>
+            Boolean(d.certification?.trim()),
+          );
           if (cert?.certification) {
             return cert.certification.trim();
           }
@@ -451,14 +522,19 @@ class MovieService {
         // Fallback para classificação norte-americana (US)
         const usData = data.results?.find((r) => r.iso_3166_1 === "US");
         if (usData) {
-          const cert = usData.release_dates.find((d) => Boolean(d.certification?.trim()));
+          const cert = usData.release_dates.find((d) =>
+            Boolean(d.certification?.trim()),
+          );
           if (cert?.certification) {
             return cert.certification.trim();
           }
         }
       }
     } catch (error) {
-      console.warn(`Falha ao obter classificação indicativa do filme ${id}:`, error);
+      console.warn(
+        `Falha ao obter classificação indicativa do filme ${id}:`,
+        error,
+      );
     }
     return null;
   }
@@ -470,7 +546,7 @@ class MovieService {
     try {
       if (isTmdbConfigured()) {
         const data = await fetchFromTMDB<TMDBImagesResponse>(
-          `/movie/${id}/images`
+          `/movie/${id}/images`,
         );
         const backdrops = data.backdrops || [];
         return backdrops

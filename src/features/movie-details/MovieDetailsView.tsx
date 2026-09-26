@@ -244,7 +244,7 @@ export function MovieDetailsView({
                 <span className="hidden md:inline-block w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)]" />
               )}
 
-              {/* Linha 3 no mobile: Classificação Indicativa e IMDb */}
+              {/* Linha 3 no mobile: Classificação Indicativa e TMDB */}
               {(certification || movie.voteAverage > 0) && (
                 <div className="flex items-center gap-2.5">
                   {certification && (
@@ -256,13 +256,8 @@ export function MovieDetailsView({
                   )}
 
                   {movie.voteAverage > 0 && (
-                    <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
-                      <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
-                        IMDb
-                      </span>
-                      <span className="bg-black/80 text-white text-xs font-bold px-2 py-0.5">
-                        {movie.voteAverage.toFixed(1)}
-                      </span>
+                    <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30 bg-gradient-to-r from-[#90cea1] to-[#01b4e4] px-2 py-0.5 text-xs font-black text-[#0d253f] tracking-wider uppercase">
+                      TMDB: {movie.voteAverage.toFixed(1)}
                     </div>
                   )}
                 </div>

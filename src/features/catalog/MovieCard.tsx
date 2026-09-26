@@ -49,14 +49,9 @@ export const MovieCard = memo(function MovieCard({
           </div>
         )}
 
-        {/* Badge IMDb */}
-        <div className="absolute top-2 right-2 md:top-3 md:right-3 flex items-center rounded overflow-hidden shadow-lg border border-black/20">
-          <span className="bg-[#f5c518] text-black text-[10px] md:text-xs font-black px-1.5 py-0.5 md:px-2 md:py-1 tracking-wider uppercase">
-            IMDb
-          </span>
-          <span className="bg-zinc-950/90 text-white text-[10px] md:text-xs font-bold px-1.5 py-0.5 md:px-2 md:py-1">
-            {movie.voteAverage.toFixed(1)}
-          </span>
+        {/* Badge TMDB Oficial */}
+        <div className="absolute top-2 right-2 md:top-3 md:right-3 flex items-center rounded overflow-hidden shadow-lg border border-black/20 bg-gradient-to-r from-[#90cea1] to-[#01b4e4] px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs font-black text-[#0d253f] tracking-wider uppercase">
+          TMDB: {movie.voteAverage.toFixed(1)}
         </div>
       </div>
 

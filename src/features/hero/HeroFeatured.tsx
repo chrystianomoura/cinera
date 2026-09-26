@@ -203,13 +203,8 @@ export function HeroFeatured({
                       {(releaseYear || runtimeFormatted || heroGenre || certification) && (
                         <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
                       )}
-                      <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30">
-                        <span className="bg-[#f5c518] text-black text-xs font-black px-1.5 py-0.5 tracking-wider uppercase">
-                          IMDb
-                        </span>
-                        <span className="bg-black/75 text-white text-xs font-bold px-2 py-0.5 backdrop-blur-md">
-                          {heroMovie.voteAverage.toFixed(1)}
-                        </span>
+                      <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30 bg-gradient-to-r from-[#90cea1] to-[#01b4e4] px-2 py-0.5 text-xs font-black text-[#0d253f] tracking-wider uppercase">
+                        TMDB: {heroMovie.voteAverage.toFixed(1)}
                       </div>
                     </>
                   )}
