@@ -53,18 +53,6 @@ export function mapTMDBCredits(data: TMDBCreditsRaw): MovieCredits {
   const directors = Array.from(
     new Set(crew.filter((c) => c.job === "Director").map((c) => c.name))
   );
-  const writers = Array.from(
-    new Set(
-      crew
-        .filter(
-          (c) =>
-            c.job === "Screenplay" ||
-            c.job === "Writer" ||
-            c.department === "Writing"
-        )
-        .map((c) => c.name)
-    )
-  );
 
   return {
     id: data.id,
@@ -83,7 +71,6 @@ export function mapTMDBCredits(data: TMDBCreditsRaw): MovieCredits {
       profilePath: c.profile_path,
     })),
     directors: directors.length > 0 ? directors : undefined,
-    writers: writers.length > 0 ? writers : undefined,
   };
 }
 

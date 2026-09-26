@@ -28,5 +28,4 @@ export interface MovieCredits {
   cast: CastMember[];
   crew: CrewMember[];
   directors?: string[];
-  writers?: string[];
 }

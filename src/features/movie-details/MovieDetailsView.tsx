@@ -96,8 +96,9 @@ export function MovieDetailsView({
   const companiesList =
     companies && companies.length > 0 ? companies.slice(0, 3).join(", ") : null;
 
+  const hasDirectors = Boolean(credits?.directors && credits.directors.length > 0);
   const hasProductionDetails = Boolean(
-    originalTitle || formattedBudget || formattedRevenue || companiesList
+    hasDirectors || originalTitle || formattedBudget || formattedRevenue || companiesList
   );
 
   return (
@@ -209,8 +210,8 @@ export function MovieDetailsView({
               ) : null}
             </div>
 
-            {/* Linha de Metadados: Emoldurada com linhas em cima e embaixo, fontes mais confortáveis */}
-            <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 text-sm sm:text-base md:text-base py-3 sm:py-3.5 border-y border-white/10 w-full">
+            {/* Linha de Metadados: Emoldurada no mobile, limpa sem linha no desktop */}
+            <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 text-sm sm:text-base md:text-base py-3 sm:py-3.5 md:py-0 border-y md:border-y-0 border-white/10 w-full">
               {/* Linha 1 no mobile: Ano e Duração */}
               {(releaseYear || duration) && (
                 <div className="flex items-center gap-2.5">
@@ -268,8 +269,8 @@ export function MovieDetailsView({
               )}
             </div>
 
-            {/* Botões de Ação Principais (Opção A: Trailer full-width + Quero Assistir & Já Assisti em 50%/50% no mobile) */}
-            <div className="flex flex-col md:flex-row items-center md:justify-start gap-3 sm:gap-4 w-full">
+            {/* Botões de Ação Principais: Linha divisória no desktop acima do trailer */}
+            <div className="flex flex-col md:flex-row items-center md:justify-start gap-3 sm:gap-4 w-full md:border-t md:border-white/10 md:pt-4">
               {/* 1. Trailer */}
               <button
                 type="button"
@@ -329,51 +330,31 @@ export function MovieDetailsView({
               movieTitle={movie.title}
             />
 
-            {/* Direção e Roteiro (Enquadrado perfeitamente no centro de duas linhas) */}
-            {(credits?.directors || credits?.writers) ? (
-              <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-y-2 md:gap-x-6 md:gap-y-0 py-3 border-y border-white/10 text-center md:text-left w-full">
-                {credits.directors && credits.directors.length > 0 && (
+            {/* Ficha de Produção & Finanças (com Direção no topo) */}
+            {hasProductionDetails && (
+              <div className="flex flex-col gap-2 md:gap-2.5 pt-3 border-t border-white/10 text-center md:text-left w-full">
+                {/* Linha 1: Direção */}
+                {hasDirectors && (
                   <div className="text-center md:text-left">
                     <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Direção:
                     </span>
                     <span className="font-medium text-zinc-100 text-sm">
-                      {credits.directors.join(", ")}
+                      {credits!.directors!.join(", ")}
                     </span>
                   </div>
                 )}
-                {credits.writers && credits.writers.length > 0 && (
-                  <div className="text-center md:text-left">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
-                      Roteiro:
-                    </span>
-                    <span className="font-medium text-zinc-100 text-sm">
-                      {credits.writers.join(", ")}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : null}
 
-            {/* Ficha de Produção & Finanças */}
-            {hasProductionDetails && (
-              <div
-                className={`flex flex-col gap-2.5 text-center md:text-left w-full ${
-                  !(credits?.directors || credits?.writers)
-                    ? "pt-3 border-t border-white/10"
-                    : ""
-                }`}
-              >
-                {/* Linha 1: Orçamento e Bilheteria SEMPRE juntos e primeiro, com cores semânticas apenas quando ambos existem */}
+                {/* Linha 2: Orçamento e Bilheteria SEMPRE juntos e primeiro, com cores semânticas apenas quando ambos existem */}
                 {(formattedBudget || formattedRevenue) && (
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-1.5">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3.5 sm:gap-x-6 gap-y-1">
                     {formattedBudget && (
-                      <div className="flex items-center">
-                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
+                      <div className="flex items-center whitespace-nowrap">
+                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                           Orçamento:
                         </span>
                         <span
-                          className={`font-semibold text-sm ml-1.5 ${
+                          className={`font-semibold text-xs sm:text-sm ${
                             hasFinancialContrast ? "text-rose-400" : "text-zinc-100"
                           }`}
                         >
@@ -383,12 +364,12 @@ export function MovieDetailsView({
                     )}
 
                     {formattedRevenue && (
-                      <div className="flex items-center">
-                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider">
+                      <div className="flex items-center whitespace-nowrap">
+                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                           Bilheteria:
                         </span>
                         <span
-                          className={`font-semibold text-sm ml-1.5 ${
+                          className={`font-semibold text-xs sm:text-sm ${
                             hasFinancialContrast ? "text-emerald-400" : "text-zinc-100"
                           }`}
                         >
@@ -399,7 +380,7 @@ export function MovieDetailsView({
                   </div>
                 )}
 
-                {/* Linha 2: Título Original */}
+                {/* Linha 3: Título Original */}
                 {originalTitle && (
                   <div className="text-center md:text-left">
                     <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
@@ -411,7 +392,7 @@ export function MovieDetailsView({
                   </div>
                 )}
 
-                {/* Linha 3: Produtoras com fluxo contínuo e quebra natural */}
+                {/* Linha 4: Produtoras com fluxo contínuo e quebra natural */}
                 {companiesList && (
                   <div className="text-center md:text-left">
                     <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
