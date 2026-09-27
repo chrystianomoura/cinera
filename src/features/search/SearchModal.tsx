@@ -6,6 +6,12 @@ import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import type { Movie } from "@/domain";
 import { GENRES } from "../catalog/constants";
 
+const GENRE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  "Ação & Aventura": Flame,
+  "Ficção & Fantasia": Sparkles,
+  "Comédia": Film,
+};
+
 interface SearchModalProps {
   onSelectMovie: (movie: Movie) => void;
   onSelectGenre: (genre: string) => void;
@@ -383,17 +389,20 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
 
               {/* Sugestões de gênero derivadas da fonte única GENRES */}
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-                {GENRES.slice(0, 3).map((genreName) => (
-                  <button
-                    key={genreName}
-                    type="button"
-                    onClick={() => handleSelectQuickGenre(genreName)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-semibold cursor-pointer transition-colors"
-                  >
-                    {genreName === "Ação & Aventura" && <Flame className="w-3.5 h-3.5 text-amber-500" />}
-                    <span>{genreName}</span>
-                  </button>
-                ))}
+                {GENRES.slice(0, 3).map((genreName) => {
+                  const Icon = GENRE_ICONS[genreName];
+                  return (
+                    <button
+                      key={genreName}
+                      type="button"
+                      onClick={() => handleSelectQuickGenre(genreName)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-semibold cursor-pointer transition-colors"
+                    >
+                      {Icon && <Icon className="w-3.5 h-3.5 text-amber-500" />}
+                      <span>{genreName}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

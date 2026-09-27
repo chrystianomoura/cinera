@@ -25,6 +25,7 @@ export interface Movie {
   backdropPath: string | null;
   voteAverage: number;
   voteCount: number;
+  popularity?: number;
   releaseDate: string;
   runtime?: number;
   tagline?: string;

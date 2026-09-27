@@ -21,6 +21,7 @@ export function useMovieSearch(query: string) {
     enabled: isEnabled,
     staleTime: 1000 * 60 * 5, // 5 minutos de cache em memória
     placeholderData: (previousData: SearchMoviesResult | undefined) => previousData,
+    retry: false,
   });
 
   return {

@@ -29,6 +29,7 @@ export function mapTMDBMovie(raw: TMDBMovieRaw): Movie {
     backdropPath: raw.backdrop_path,
     voteAverage: Number((raw.vote_average || 0).toFixed(1)),
     voteCount: raw.vote_count || 0,
+    popularity: raw.popularity,
     releaseDate: raw.release_date || '',
     runtime: raw.runtime,
     tagline: raw.tagline,

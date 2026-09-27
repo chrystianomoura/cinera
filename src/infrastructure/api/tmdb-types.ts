@@ -44,6 +44,7 @@ export interface TMDBMovieRaw {
   backdrop_path: string | null;
   vote_average: number;
   vote_count: number;
+  popularity?: number;
   release_date: string;
   runtime?: number;
   tagline?: string;
