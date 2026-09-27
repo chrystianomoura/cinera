@@ -282,8 +282,15 @@ export async function searchCineraMovies(
         fetchFromTMDB<TMDBPaginatedResponse<{ id: number; name: string; original_name?: string }>>(collectionPath, signal).catch(() => null),
       ]);
 
-      // Filtro de filmes: pôster obrigatório
-      const validMovies = (movieData.results || []).filter((item) => Boolean(item.poster_path));
+      const now = Date.now();
+
+      // Filtro de filmes: pôster obrigatório, já lançado comercialmente e com avaliações públicas
+      const validMovies = (movieData.results || []).filter((item) => {
+        const hasPoster = Boolean(item.poster_path);
+        const isReleased = Boolean(item.release_date && new Date(item.release_date).getTime() <= now);
+        const hasVotes = (item.vote_count || 0) > 0;
+        return hasPoster && isReleased && hasVotes;
+      });
 
       // Filtro de integridade visual com tokens significativos
       const visibleTokens = apiSearchTerm.split(/\s+/).filter((t) => t.length >= 2);
@@ -316,7 +323,12 @@ export async function searchCineraMovies(
               `/collection/${candidateCol.id}?language=pt-BR`,
               signal
             );
-            const parts = (colDetails.parts || []).filter((item) => Boolean(item.poster_path));
+            const parts = (colDetails.parts || []).filter((item) => {
+              const hasPoster = Boolean(item.poster_path);
+              const isReleased = Boolean(item.release_date && new Date(item.release_date).getTime() <= now);
+              const hasVotes = (item.vote_count || 0) > 0;
+              return hasPoster && isReleased && hasVotes;
+            });
 
             // Regra de Ouro 2: Piso estatístico de relevância (mínimo 500 votos em um filme ou 1000 somados)
             const totalVotes = parts.reduce((sum, p) => sum + (p.vote_count || 0), 0);
@@ -381,9 +393,12 @@ export async function searchCineraMovies(
   }
 
   // 4. Fallback resiliente no catálogo mock local
+  const now = Date.now();
   const localResults = moviesMock.filter((m) => {
     const hasPoster = Boolean(m.posterPath);
-    if (!hasPoster) return false;
+    const isReleased = Boolean(m.releaseDate && new Date(m.releaseDate).getTime() <= now);
+    const hasVotes = (m.voteCount || 0) > 0;
+    if (!hasPoster || !isReleased || !hasVotes) return false;
 
     const titleNorm = normalizeSearchString(m.title);
     const origNorm = m.originalTitle ? normalizeSearchString(m.originalTitle) : "";
