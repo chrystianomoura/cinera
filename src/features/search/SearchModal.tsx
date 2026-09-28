@@ -264,10 +264,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                 </div>
               )}
 
-              <div className="flex items-center justify-between px-3 py-1.5 text-xs uppercase font-bold tracking-wider text-zinc-500">
-                <span>Filmes Encontrados</span>
-                <span>{results.length} {results.length === 1 ? "filme" : "filmes"}</span>
-              </div>
 
               {results.map((movie, index) => {
                 const isSelected = selectedIndex === index;
