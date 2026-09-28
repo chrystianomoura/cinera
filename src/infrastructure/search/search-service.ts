@@ -40,11 +40,21 @@ const STOP_WORDS = new Set([
  * para sincronizar buscas populares como "predator", "spider-man" ou "avengers"
  * com o catálogo brasileiro do TMDB.
  */
+const SPELLING_ALIASES: Record<string, string> = {
+  spiderman: "spider man",
+};
+
+export function canonicalizeSpelling(text: string): string {
+  return text
+    .split(/\s+/)
+    .map((token) => SPELLING_ALIASES[token] ?? token)
+    .join(" ");
+}
+
 const CINEMA_COGNATES: Record<string, string> = {
   predator: "predador",
   avengers: "vingadores",
   "spider man": "homem aranha",
-  spiderman: "homem aranha",
 };
 
 function getCognateSynonym(entity: string | null): string | null {
@@ -288,11 +298,12 @@ function pruneSearchResults(rankedMovies: Movie[], normalizedQuery: string): Mov
  * 2. Popularidade Bayesiana: Escala logarítmica de votos somada à popularidade TMDB.
  * 3. Desempate Histórico: Em caso de títulos idênticos (ex: original 1984 vs remake 2010), o pioneiro tem precedência.
  */
-function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
+function rankSearchResults(movies: Movie[], normalizedQuery: string, targetYear?: number | null): Movie[] {
   if (movies.length <= 1) return movies;
 
   const rawQ = normalizedQuery.trim();
   const cleanQ = cleanFranchiseName(normalizedQuery);
+  const targetYearStr = targetYear ? String(targetYear) : null;
 
   const scored = movies.map((m) => {
     const titleNorm = normalizeSearchString(m.title);
@@ -323,14 +334,17 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
       relevance = 150;
     }
 
+    // Bônus para filmes cujo ano de lançamento coincide com o ano explicitado pelo usuário
+    let yearBonus = 0;
+    if (targetYearStr && m.releaseDate && m.releaseDate.slice(0, 4) === targetYearStr) {
+      yearBonus = 200;
+    }
+
     // 5. Score Bayesiano de Popularidade, Votos e Qualidade
     const v = m.voteCount || 0;
     const R = m.voteAverage || 0;
     const pop = m.popularity || 0;
 
-    // Nota Bayesiana Ponderada (Fórmula IMDB Top 250):
-    // Neutraliza notas extremas com poucos votos (uma nota 10 com 1 voto vai para 6.63),
-    // enquanto notas com volume real (milhares de avaliações) mantêm sua autoridade plena.
     const bayesianRating =
       (v / (v + SEARCH_CONFIG.BAYESIAN_MIN_WEIGHT)) * R +
       (SEARCH_CONFIG.BAYESIAN_MIN_WEIGHT / (v + SEARCH_CONFIG.BAYESIAN_MIN_WEIGHT)) *
@@ -342,7 +356,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
     const qualityWeight = (bayesianRating - 5.0) * 15;
     const popWeight = Math.min(pop, 50);
 
-    const totalScore = relevance + voteWeight + qualityWeight + popWeight;
+    const totalScore = relevance + yearBonus + voteWeight + qualityWeight + popWeight;
     return { movie: m, score: totalScore, isExact: relevance >= 400 };
   });
 
@@ -378,15 +392,16 @@ export async function searchCineraMovies(
   }
 
   const { cleanQuery, year } = extractYear(sanitized);
-  const normalizedQuery = normalizeSearchString(stripLeadingArticles(cleanQuery));
-  const unaccentedQuery = normalizeSearchString(cleanQuery);
+  const spelledQuery = canonicalizeSpelling(cleanQuery);
+  const normalizedQuery = normalizeSearchString(stripLeadingArticles(spelledQuery));
+  const unaccentedQuery = normalizeSearchString(spelledQuery);
 
   // Se a query normalizada for vazia ou menor que o tamanho mínimo (ex: "the", "os", "!!")
-  if (unaccentedQuery.length < SEARCH_CONFIG.MIN_QUERY_LENGTH) {
+  if (normalizedQuery.length < SEARCH_CONFIG.MIN_QUERY_LENGTH) {
     return { movies: [] };
   }
 
-  const apiSearchTerm = extractSearchKeywords(cleanQuery);
+  const apiSearchTerm = extractSearchKeywords(spelledQuery);
 
   // 1. Execução contra a API oficial de filmes do TMDB (/search/movie e /search/collection)
   if (isTmdbConfigured()) {
@@ -624,7 +639,7 @@ export async function searchCineraMovies(
         const seenIds = new Set(canonicalCollectionMovies.map((m) => m.id));
         const secondaryRaw = tokenFilteredMovies.filter((m) => !seenIds.has(m.id));
         const secondaryMapped = secondaryRaw.map(mapTMDBMovie);
-        const rankedSecondary = rankSearchResults(secondaryMapped, normalizedQuery);
+        const rankedSecondary = rankSearchResults(secondaryMapped, normalizedQuery, year);
 
         return {
           movies: [
@@ -637,7 +652,7 @@ export async function searchCineraMovies(
       // Para buscas gerais ou filmes autorais/únicos, aplica ranking bayesiano e preenche até 10 filmes relevantes
       const finalMapped = tokenFilteredMovies.map(mapTMDBMovie);
       return {
-        movies: rankSearchResults(finalMapped, normalizedQuery),
+        movies: rankSearchResults(finalMapped, normalizedQuery, year),
       };
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {

@@ -152,6 +152,8 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
 
   if (!isOpen) return null;
 
+  const showList = !isLoading && results.length > 0;
+
   return (
     <div
       role="dialog"
@@ -175,9 +177,9 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             role="combobox"
             aria-autocomplete="list"
             aria-haspopup="listbox"
-            aria-expanded={isOpen}
-            aria-controls="search-results-list"
-            aria-activedescendant={results[selectedIndex] ? `search-item-${selectedIndex}` : undefined}
+            aria-expanded={showList}
+            aria-controls={showList ? "search-results-list" : undefined}
+            aria-activedescendant={showList && results[selectedIndex] ? `search-item-${selectedIndex}` : undefined}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -279,7 +281,10 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
               id="search-results-list"
               role="listbox"
               aria-label="Resultados de filmes encontrados"
-              className="flex flex-col gap-1"
+              aria-busy={!isSettled}
+              className={`flex flex-col gap-1 transition-opacity duration-150 ${
+                !isSettled ? "opacity-60 pointer-events-none" : "opacity-100"
+              }`}
             >
               {results.map((movie, index) => {
                 const isSelected = selectedIndex === index;
@@ -287,7 +292,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                   ? getPosterUrl(movie.posterPath, "w342")
                   : "";
                 const releaseYear = movie.releaseDate
-                  ? new Date(movie.releaseDate).getFullYear()
+                  ? movie.releaseDate.slice(0, 4)
                   : null;
 
                 return (
