@@ -16,13 +16,13 @@ export const SEARCH_CONFIG = {
   COLLECTION_MIN_VOTES: 500,          // Votos mínimos em um filme da coleção para considerá-la canônica
   COLLECTION_TOTAL_VOTES: 1000,       // Soma mínima de votos da coleção
 
-  // Poda Dinâmica Adaptativa por Degrau de Relevância
-  POPULAR_LEADER_VOTES: 1000,         // Define se o líder da busca tem grande volume cultural
-  ADAPTIVE_MIN_PERCENT: 0.02,         // Mínimo de 2% dos votos do líder
-  ADAPTIVE_MIN_FLOOR: 300,            // Piso do degrau de relevância
-  ADAPTIVE_MIN_CEIL: 1000,            // Teto do degrau de relevância
-  EXACT_MATCH_PRESERVE_VOTES: 50,     // Votos mínimos para preservar match exato de título
-  MIN_LOCAL_VOTES: 5,                 // Elimina ruído estatístico de notas 10 com 1 único voto
+  // Higiene de Catálogo
+  MIN_BROAD_VOTES: 20,                // Piso de 20 votos para filmes secundários em buscas gerais (elimina making-ofs, lutas e ruídos)
+  EXACT_MATCH_MIN_VOTES: 1,           // Passe Livre: se o título for idêntico à busca, basta ter 1 voto público
+
+  // Calibração Bayesiana de Qualidade (Fórmula Ponderada IMDb / TMDB)
+  BAYESIAN_GLOBAL_MEAN: 6.5,          // Média global de notas do catálogo de cinema
+  BAYESIAN_MIN_WEIGHT: 25,            // Amostragem mínima de votos para validar a nota média (desarma notas 10 com 1 voto)
 } as const;
 
 /**
@@ -83,16 +83,35 @@ export function stripLeadingArticles(text: string): string {
 
 /**
  * Limpa e padroniza títulos de franquias e coleções para comparação estrita (1:1),
- * removendo sufixos organizacionais como "Coleção", "Collection", "Saga" e stopwords.
+ * removendo apenas sufixos organizacionais como "Coleção", "Collection", "Saga", "Series" e "Franquia".
  */
 export function cleanFranchiseName(name: string): string {
   if (!name) return "";
   return normalizeSearchString(name)
-    .replace(/\b(o|a|os|as|um|uma|the|da|do|dos|das|de|of|e|and|y)\b/gi, " ")
     .replace(/\b(colecao|collection|saga|series|franquia)\b/gi, " ")
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * Avalia se o termo buscado pelo usuário corresponde com exatidão (1:1)
+ * ao nome da franquia/coleção oficial (com ou sem artigo inicial).
+ */
+export function matchFranchise(colName: string, colOrigName: string | undefined, query: string): boolean {
+  const normQ = cleanFranchiseName(query);
+  const stripQ = stripLeadingArticles(normQ);
+
+  const normCol = cleanFranchiseName(colName);
+  const stripCol = stripLeadingArticles(normCol);
+
+  const normOrig = colOrigName ? cleanFranchiseName(colOrigName) : "";
+  const stripOrig = stripLeadingArticles(normOrig);
+
+  const isExactPt = normCol === normQ || stripCol === stripQ || normCol === stripQ || stripCol === normQ;
+  const isExactOrig = normOrig && (normOrig === normQ || stripOrig === stripQ || normOrig === stripQ || stripOrig === normQ);
+
+  return Boolean(isExactPt || isExactOrig);
 }
 
 /**
@@ -131,55 +150,68 @@ export interface SearchMoviesResult {
 }
 
 /**
- * Filtra filmes garantindo que pelo menos um dos termos principais da busca
- * esteja visível no título em português ou no título original do filme.
+ * Filtra filmes garantindo coerência textual com os termos buscados:
+ * 1. Coerência de Idioma: Todos os termos da busca devem estar presentes no título em português
+ *    OU todos no título original (evitando cruzamentos híbridos onde um termo está em espanhol e outro em português).
+ * 2. Prefixos de Palavra: O termo deve corresponder ao início de uma palavra (\b), evitando que sufixos
+ *    aleatórios de plurais (ex: "mes-es") deem falso positivo para digitações parciais (ex: "es" de estrelas).
  */
 function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[]): TMDBMovieRaw[] {
   if (tokens.length === 0) return movies;
 
+  const tokenRegexes = tokens.map(
+    (token) => new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i")
+  );
+
   return movies.filter((m) => {
     const titleNorm = normalizeSearchString(m.title || "");
     const origNorm = normalizeSearchString(m.original_title || "");
-    return tokens.some((token) => titleNorm.includes(token) || origNorm.includes(token));
+
+    const matchPt = tokenRegexes.every((regex) => regex.test(titleNorm));
+    const matchOrig = tokenRegexes.every((regex) => regex.test(origNorm));
+
+    return matchPt || matchOrig;
   });
 }
 
 /**
- * Poda Dinâmica Adaptativa por Degrau de Relevância:
- * - Se o líder é consagrado (> 1000 votos): descarta cauda irrelevante respeitando o degrau.
- * - Garante preservação de títulos com match exato mesmo em nichos menores.
- * - Limita ao teto seguro (Top 10).
+ * Poda e formatação de resultados gerais:
+ * - Passe Livre para Match Exato: se o título corresponder exatamente ao que foi digitado (ex: filme independente,
+ *   curta autoral ou produção de faculdade), basta ter 1 avaliação pública para assumir o topo da busca.
+ * - Piso de Higiene (20 votos): produções secundárias em buscas amplas precisam de no mínimo 20 avaliações para
+ *   eliminar making-ofs de 5 minutos, lutas esportivas, testes amadores e ruídos caseiros.
+ * - Preenche confortavelmente até 10 filmes relevantes.
  */
-function adaptiveDynamicPrune(rankedMovies: Movie[], normalizedQuery: string): Movie[] {
-  if (rankedMovies.length <= 1) return rankedMovies;
+function pruneSearchResults(rankedMovies: Movie[], normalizedQuery: string): Movie[] {
+  const rawQ = normalizedQuery.trim();
+  const cleanQ = cleanFranchiseName(normalizedQuery);
 
-  const topMovie = rankedMovies[0];
-  const maxVotes = topMovie.voteCount || 0;
+  return rankedMovies
+    .filter((m) => {
+      const votes = m.voteCount || 0;
+      if (votes < 1) return false;
 
-  if (maxVotes > SEARCH_CONFIG.POPULAR_LEADER_VOTES) {
-    const minThreshold = Math.min(
-      Math.max(maxVotes * SEARCH_CONFIG.ADAPTIVE_MIN_PERCENT, SEARCH_CONFIG.ADAPTIVE_MIN_FLOOR),
-      SEARCH_CONFIG.ADAPTIVE_MIN_CEIL
-    );
-
-    const pruned = rankedMovies.filter((m) => {
       const norm = normalizeSearchString(m.title);
       const strip = stripLeadingArticles(norm);
       const clean = cleanFranchiseName(m.title);
-      const isExact = strip === normalizedQuery || clean === cleanFranchiseName(normalizedQuery);
+      const origNorm = m.originalTitle ? normalizeSearchString(m.originalTitle) : "";
+      const origStrip = stripLeadingArticles(origNorm);
+      const cleanOrig = m.originalTitle ? cleanFranchiseName(m.originalTitle) : "";
 
-      if (isExact && (m.voteCount || 0) >= SEARCH_CONFIG.EXACT_MATCH_PRESERVE_VOTES) {
-        return true;
+      const isExactMatch =
+        norm === rawQ ||
+        strip === rawQ ||
+        clean === cleanQ ||
+        (origNorm && origNorm === rawQ) ||
+        (origStrip && origStrip === rawQ) ||
+        (cleanOrig && cleanOrig === cleanQ);
+
+      if (isExactMatch) {
+        return votes >= SEARCH_CONFIG.EXACT_MATCH_MIN_VOTES;
       }
 
-      return (m.voteCount || 0) >= minThreshold;
-    });
-
-    return pruned.slice(0, SEARCH_CONFIG.MAX_RESULTS);
-  }
-
-  return rankedMovies
-    .filter((m) => (m.voteCount || 0) >= SEARCH_CONFIG.MIN_LOCAL_VOTES)
+      return votes >= SEARCH_CONFIG.MIN_BROAD_VOTES;
+    })
     .slice(0, SEARCH_CONFIG.MAX_RESULTS);
 }
 
@@ -205,7 +237,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
 
     // 1. Título idêntico (ex: "Sim Senhor" ao buscar "sim senhor", "La La Land", "Oppenheimer")
     if (titleNorm === rawQ || origNorm === rawQ || cleanTitle === cleanQ || cleanOrig === cleanQ) {
-      relevance += 1000;
+      relevance = 400;
     }
     // 2. Inicia com o termo buscado (ex: "O Senhor dos Anéis" ou "Senhor das Armas" para "senhor")
     else if (
@@ -213,24 +245,37 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
       cleanTitle.startsWith(cleanQ) ||
       (origNorm && stripLeadingArticles(origNorm).startsWith(rawQ))
     ) {
-      relevance += 400;
+      relevance = 300;
     }
-    // 3. Palavra inteira correspondente (ex: "Sim Senhor", "Um Senhor Estagiário" para "senhor")
+    // 3. Palavra inteira correspondente (ex: "Vida de Inseto", "Homem-Formiga", "Um Senhor Estagiário")
     else if (
       new RegExp(`\\b${rawQ}\\b`, "i").test(titleNorm) ||
       (origNorm && new RegExp(`\\b${rawQ}\\b`, "i").test(origNorm))
     ) {
-      relevance += 200;
+      relevance = 250;
     }
 
-    // 4. Score Bayesiano de Popularidade e Votos
-    const votes = m.voteCount || 0;
+    // 4. Score Bayesiano de Popularidade, Votos e Qualidade
+    const v = m.voteCount || 0;
+    const R = m.voteAverage || 0;
     const pop = m.popularity || 0;
-    const voteWeight = Math.log10(votes + 1) * 35;
-    const popWeight = Math.min(pop, 100);
 
-    const totalScore = relevance + voteWeight + popWeight;
-    return { movie: m, score: totalScore, isExact: relevance >= 1000 };
+    // Nota Bayesiana Ponderada (Fórmula IMDB Top 250):
+    // Neutraliza notas extremas com poucos votos (uma nota 10 com 1 voto vai para 6.63),
+    // enquanto notas com volume real (milhares de avaliações) mantêm sua autoridade plena.
+    const bayesianRating =
+      (v / (v + SEARCH_CONFIG.BAYESIAN_MIN_WEIGHT)) * R +
+      (SEARCH_CONFIG.BAYESIAN_MIN_WEIGHT / (v + SEARCH_CONFIG.BAYESIAN_MIN_WEIGHT)) *
+        SEARCH_CONFIG.BAYESIAN_GLOBAL_MEAN;
+
+    // Escala de votos logarítmica com amplitude para blockbusters
+    const voteWeight = Math.log10(v + 1) * 60;
+    // Qualidade ponderada sobre a nota bayesiana
+    const qualityWeight = (bayesianRating - 5.0) * 15;
+    const popWeight = Math.min(pop, 50);
+
+    const totalScore = relevance + voteWeight + qualityWeight + popWeight;
+    return { movie: m, score: totalScore, isExact: relevance >= 400 };
   });
 
   scored.sort((a, b) => {
@@ -244,7 +289,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
   });
 
   const sorted = scored.map((s) => s.movie);
-  return adaptiveDynamicPrune(sorted, normalizedQuery);
+  return pruneSearchResults(sorted, normalizedQuery);
 }
 
 /**
@@ -267,13 +312,14 @@ export async function searchCineraMovies(
 
   const { cleanQuery, year } = extractYear(sanitized);
   const normalizedQuery = normalizeSearchString(stripLeadingArticles(cleanQuery));
+  const unaccentedQuery = normalizeSearchString(cleanQuery);
   const apiSearchTerm = extractSearchKeywords(cleanQuery);
 
   // 1. Execução contra a API oficial de filmes do TMDB (/search/movie e /search/collection)
   if (isTmdbConfigured()) {
     try {
       const yearParam = year ? `&primary_release_year=${year}` : "";
-      const moviePath = `/search/movie?query=${encodeURIComponent(apiSearchTerm)}&language=pt-BR&include_adult=false${yearParam}`;
+      const moviePath = `/search/movie?query=${encodeURIComponent(unaccentedQuery)}&language=pt-BR&include_adult=false${yearParam}`;
       const collectionPath = `/search/collection?query=${encodeURIComponent(apiSearchTerm)}&language=pt-BR`;
 
       // Executa consulta de filmes e coleções em paralelo
@@ -292,32 +338,27 @@ export async function searchCineraMovies(
         return hasPoster && isReleased && hasVotes;
       });
 
-      // Filtro de integridade visual com tokens significativos
-      const visibleTokens = apiSearchTerm.split(/\s+/).filter((t) => t.length >= 2);
+      // Filtro de integridade visual com tokens significativos da consulta normalizada
+      const visibleTokens = unaccentedQuery.split(/\s+/).filter((t) => t.length >= 2);
       const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens);
 
       // 2. Verifica se a busca casa com uma Coleção Canônica Oficial (ex: Star Wars, Senhor dos Anéis, Predador)
       let canonicalCollectionMovies: TMDBMovieRaw[] = [];
       const NOISE_COLLECTION_WORDS = ["animado", "animated", "lego", "especial", "seasonal", "parodia", "parody"];
 
-      const queryCleanFranchise = cleanFranchiseName(cleanQuery);
-
       // Uma coleção só pode ser avaliada se a query for substancial (pelo menos 2 caracteres limpos)
-      if (queryCleanFranchise.length >= 2 && collectionData?.results?.length) {
-        const candidateCol = collectionData.results.find((col) => {
+      if (cleanQuery.length >= 2 && collectionData?.results?.length) {
+        const candidateCols = collectionData.results.filter((col) => {
           const colClean = cleanFranchiseName(col.name || "");
           const origClean = cleanFranchiseName(col.original_name || "");
-
-          const hasNoise = NOISE_COLLECTION_WORDS.some(
-            (w) => (colClean.includes(w) || origClean.includes(w)) && !queryCleanFranchise.includes(w)
+          return !NOISE_COLLECTION_WORDS.some(
+            (w) => (colClean.includes(w) || origClean.includes(w)) && !cleanQuery.includes(w)
           );
-          if (hasNoise) return false;
-
-          // Regra de Ouro 1: Match EXATO do nome da franquia (proibido .includes parcial em coleções)
-          return colClean === queryCleanFranchise || origClean === queryCleanFranchise;
         });
 
-        if (candidateCol) {
+        for (const candidateCol of candidateCols.slice(0, 3)) {
+          const isDirectMatch = matchFranchise(candidateCol.name || "", candidateCol.original_name, cleanQuery);
+
           try {
             const colDetails = await fetchFromTMDB<{ parts?: TMDBMovieRaw[] }>(
               `/collection/${candidateCol.id}?language=pt-BR`,
@@ -333,9 +374,55 @@ export async function searchCineraMovies(
             // Regra de Ouro 2: Piso estatístico de relevância (mínimo 500 votos em um filme ou 1000 somados)
             const totalVotes = parts.reduce((sum, p) => sum + (p.vote_count || 0), 0);
             const maxPartVotes = Math.max(...parts.map((p) => p.vote_count || 0), 0);
+            const hasSocialProof = maxPartVotes >= SEARCH_CONFIG.COLLECTION_MIN_VOTES || totalVotes >= SEARCH_CONFIG.COLLECTION_TOTAL_VOTES;
 
-            if (maxPartVotes >= SEARCH_CONFIG.COLLECTION_MIN_VOTES || totalVotes >= SEARCH_CONFIG.COLLECTION_TOTAL_VOTES) {
+            if (!hasSocialProof) continue;
+
+            const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
+            const queryTokensCount = cleanQuery.split(/\s+/).filter(Boolean).length;
+
+            // Regra Anti-Monopólio / Ambiguidade Cultural (Queries de 1 única palavra):
+            // Quando o usuário digita apenas 1 palavra (ex: "guardiões", "senhor", "batman"), pode haver um filme muito maior
+            // que começa com essa mesma palavra mas pertence a outra saga (ex: "Guardiões da Galáxia" com 30k votos vs duologia russa "Guardiões" com 800 votos).
+            // Se existir um filme externo com mais de 3x os votos do líder da coleção que também começa com a palavra,
+            // o termo é ambíguo: não monopolizamos a tela com a coleção menor; deixamos o ranking bayesiano exibir todos os concorrentes.
+            if (queryTokensCount === 1) {
+              const maxExternalVotes = Math.max(
+                ...validMovies
+                  .filter((m) => {
+                    const normTitlePt = stripLeadingArticles(normalizeSearchString(m.title || ""));
+                    const normTitleOrig = stripLeadingArticles(normalizeSearchString(m.original_title || ""));
+                    const startsWithPt = normTitlePt === normQ || normTitlePt.startsWith(normQ + " ");
+                    const startsWithOrig = normTitleOrig === normQ || normTitleOrig.startsWith(normQ + " ");
+                    return (startsWithPt || startsWithOrig) && !parts.some((p) => p.id === m.id);
+                  })
+                  .map((m) => m.vote_count || 0),
+                0
+              );
+
+              if (maxExternalVotes > maxPartVotes * 3) {
+                continue;
+              }
+            }
+
+            // Se for match direto do nome da franquia (ex: "star wars", "senhor dos aneis", "velozes e furiosos")
+            if (isDirectMatch) {
               canonicalCollectionMovies = parts;
+              break;
+            }
+
+            // Regra Orgânica do Prefixo Canônico dos Filmes:
+            // Se o nome da pasta no TMDB for diferente (ex: "James Bond: Coleção"), mas os filmes da coleção tiverem
+            // como prefixo de cinema exatamente o termo buscado (ex: "007: ..."), a saga é validada organicamente.
+            const matchingPrefixParts = parts.filter((p) => {
+              const prefixPt = stripLeadingArticles(normalizeSearchString((p.title || "").split(/[:-]/)[0]));
+              const prefixOrig = stripLeadingArticles(normalizeSearchString((p.original_title || "").split(/[:-]/)[0]));
+              return prefixPt === normQ || prefixOrig === normQ;
+            });
+
+            if (parts.length > 0 && matchingPrefixParts.length / parts.length >= 0.5) {
+              canonicalCollectionMovies = parts;
+              break;
             }
           } catch {
             // Em caso de falha de rede na coleção, segue com os filmes padrão
@@ -343,10 +430,7 @@ export async function searchCineraMovies(
         }
       }
 
-      // 3. Mescla de resultados: Coleções Canônicas têm precedência cronológica da saga
-      const seenIds = new Set<number>();
-      const combinedRaw: TMDBMovieRaw[] = [];
-
+      // 3. Mescla de resultados: Coleções Canônicas entregam a filmografia completa da saga
       if (canonicalCollectionMovies.length > 0) {
         canonicalCollectionMovies.sort((a, b) => {
           const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
@@ -354,32 +438,14 @@ export async function searchCineraMovies(
           return dateA - dateB;
         });
 
-        for (const m of canonicalCollectionMovies) {
-          if (!seenIds.has(m.id)) {
-            seenIds.add(m.id);
-            combinedRaw.push(m);
-          }
-        }
-      }
-
-      // Adiciona outros filmes da busca normal que não estavam na coleção (ex: spin-offs de peso como Rogue One)
-      for (const m of tokenFilteredMovies) {
-        if (!seenIds.has(m.id)) {
-          seenIds.add(m.id);
-          combinedRaw.push(m);
-        }
-      }
-
-      const finalMapped = combinedRaw.map(mapTMDBMovie);
-
-      // Se houver coleção canônica associada, a ordem da saga oficial já está calibrada cronologicamente
-      if (canonicalCollectionMovies.length > 0) {
+        // Mostra a saga completa em ordem cronológica (o tanto de filme que a franquia tiver)
         return {
-          movies: finalMapped.slice(0, SEARCH_CONFIG.MAX_RESULTS),
+          movies: canonicalCollectionMovies.map(mapTMDBMovie),
         };
       }
 
-      // Para buscas gerais ou filmes autorais/únicos, aplica ranking bayesiano e poda adaptativa
+      // Para buscas gerais ou filmes autorais/únicos, aplica ranking bayesiano e preenche até 10 filmes relevantes
+      const finalMapped = tokenFilteredMovies.map(mapTMDBMovie);
       return {
         movies: rankSearchResults(finalMapped, normalizedQuery),
       };
