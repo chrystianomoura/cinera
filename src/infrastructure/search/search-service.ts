@@ -443,8 +443,8 @@ export async function searchCineraMovies(
       const NOISE_COLLECTION_WORDS = ["animado", "animated", "lego", "especial", "seasonal", "parodia", "parody"];
 
       // Uma coleção só pode ser avaliada se a query for substancial (pelo menos 2 caracteres limpos)
-      if (cleanQuery.length >= 2 && collectionData?.results?.length) {
-        const normCleanQuery = normalizeSearchString(cleanQuery);
+      if (spelledQuery.length >= 2 && collectionData?.results?.length) {
+        const normCleanQuery = normalizeSearchString(spelledQuery);
         const candidateCols = collectionData.results.filter((col) => {
           const colClean = cleanFranchiseName(col.name || "");
           const origClean = cleanFranchiseName(col.original_name || "");
@@ -454,11 +454,11 @@ export async function searchCineraMovies(
         });
 
         const canonicalMovieIds = new Set<number>();
-        const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
+        const normQ = stripLeadingArticles(normCleanQuery);
         const queryTokensCount = normQ.split(/\s+/).filter(Boolean).length;
 
         const candidateEntries = candidateCols.slice(0, 5).map((candidateCol) => {
-          const isDirectMatch = matchFranchise(candidateCol.name || "", candidateCol.original_name, cleanQuery);
+          const isDirectMatch = matchFranchise(candidateCol.name || "", candidateCol.original_name, spelledQuery);
 
           // Extração da Raiz Nominal da Franquia (delimitador ':', ' - ' ou parênteses)
           const baseNamePt = (candidateCol.name || "").split(/:|\s+-\s+|\s*\(/)[0];

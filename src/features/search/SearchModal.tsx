@@ -186,6 +186,8 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             placeholder="Pesquisar por título de filme ou franquia..."
             aria-label="Campo de pesquisa de filmes"
             autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
             spellCheck="false"
             className="flex-1 bg-transparent text-white placeholder-zinc-500 text-base md:text-lg focus:outline-none font-medium"
           />
@@ -282,9 +284,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
               role="listbox"
               aria-label="Resultados de filmes encontrados"
               aria-busy={!isSettled}
-              className={`flex flex-col gap-1 transition-opacity duration-150 ${
-                !isSettled ? "opacity-60 pointer-events-none" : "opacity-100"
-              }`}
+              className="flex flex-col gap-1"
             >
               {results.map((movie, index) => {
                 const isSelected = selectedIndex === index;
