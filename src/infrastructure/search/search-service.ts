@@ -49,46 +49,45 @@ const CINEMA_COGNATES: Record<string, string> = {
 
 function getCognateSynonym(entity: string | null): string | null {
   if (!entity) return null;
+  const normEntity = entity.trim().toLowerCase();
   for (const [en, pt] of Object.entries(CINEMA_COGNATES)) {
-    if (entity === pt || entity.includes(pt) || pt.includes(entity)) return en;
-    if (entity === en || entity.includes(en) || en.includes(entity)) return pt;
+    if (normEntity === pt || normEntity === en) return normEntity === pt ? en : pt;
+    if (normEntity.startsWith(`${pt} `) || normEntity.endsWith(` ${pt}`)) return en;
+    if (normEntity.startsWith(`${en} `) || normEntity.endsWith(` ${en}`)) return pt;
   }
   return null;
 }
 
+export function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Normaliza strings removendo acentos, padronizando conectores (& e +),
- * preservando caracteres Unicode (\p{L} para scripts internacionais como japonês/coreano/cirílico)
- * e mapeando termos bilíngues universais.
+ * preservando caracteres Unicode (\p{L} para scripts internacionais como japonês/coreano/cirílico).
+ * Mantém normalização linguística pura sem tradução automática de cognatos.
  */
 export function normalizeSearchString(text: string): string {
-  let res = text
+  return text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .normalize("NFC")
     .replace(/&/g, " e ")
     .replace(/\+/g, " ")
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-
-  for (const [en, pt] of Object.entries(CINEMA_COGNATES)) {
-    if (res === en || res.startsWith(`${en} `)) {
-      res = pt + res.slice(en.length);
-    }
-  }
-
-  return res;
 }
 
 /**
  * Remove artigos e preposições iniciais para desfragmentar buscas por franquias
  * (ex: "os vingadores" -> "vingadores", "o poderoso chefao" -> "poderoso chefao").
+ * Usa lookahead Unicode para não quebrar palavras como "ação" ou "aéreo".
  */
 export function stripLeadingArticles(text: string): string {
   return text
-    .replace(/^(\b(o|a|os|as|um|uma|uns|umas|the|an)\b\s*)+/i, "")
+    .replace(/^(?:(?:o|a|os|as|um|uma|uns|umas|the|an)(?![\p{L}\p{N}])\s*)+/iu, "")
     .trim();
 }
 
@@ -143,17 +142,33 @@ export function extractSearchKeywords(text: string): string {
 }
 
 /**
- * Extrai eventual ano de 4 dígitos informado na query (ex: "Matrix 1999" -> ano 1999).
+ * Extrai eventual ano de 4 dígitos informado explicitamente no FINAL de um título (ex: "Matrix 1999" ou "Batman (1989)").
+ * Títulos que começam com números ou contêm anos como parte intrínseca do nome (ex: "2001: Uma Odisseia no Espaço",
+ * "2010", "1917", "Blade Runner 2049") permanecem íntegros para pesquisa textual completa no TMDB.
  */
 function extractYear(query: string): { cleanQuery: string; year: number | null } {
-  const yearMatch = query.match(/\b(19\d{2}|20\d{2})\b/);
-  if (!yearMatch) {
-    return { cleanQuery: query.trim(), year: null };
+  const trimmed = query.trim();
+
+  // Se a busca for apenas um número/ano (ex: "1917", "2012"), não extrai como filtro restritivo de lançamento
+  if (/^(19\d{2}|20\d{2})$/.test(trimmed)) {
+    return { cleanQuery: trimmed, year: null };
   }
 
-  const year = parseInt(yearMatch[1], 10);
-  const cleanQuery = query.replace(yearMatch[0], "").replace(/\s+/g, " ").trim();
-  return { cleanQuery: cleanQuery.length > 0 ? cleanQuery : query.trim(), year };
+  // Só aceita ano se ele estiver estritamente no final da query, após o título (ex: "Matrix 1999", "Duna (2021)")
+  const trailingYearMatch = trimmed.match(/^(.+?)\s+[\(\[]?((?:19|20)\d{2})[\)\]]?$/);
+  if (!trailingYearMatch || trailingYearMatch[1].length < 2) {
+    return { cleanQuery: trimmed, year: null };
+  }
+
+  const yearCandidate = parseInt(trailingYearMatch[2], 10);
+  const currentYear = new Date().getFullYear();
+
+  // Anos de ficção científica futuros (ex: 2049) não são anos de lançamento reais
+  if (yearCandidate > currentYear + 1) {
+    return { cleanQuery: trimmed, year: null };
+  }
+
+  return { cleanQuery: trailingYearMatch[1].trim(), year: yearCandidate };
 }
 
 export interface SearchMoviesResult {
@@ -300,11 +315,11 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
       relevance = 300;
     }
     // 3. Palavra inteira correspondente no título visível em português
-    else if (new RegExp(`\\b${rawQ}\\b`, "i").test(titleNorm)) {
+    else if (new RegExp(`\\b${escapeRegex(rawQ)}\\b`, "i").test(titleNorm)) {
       relevance = 250;
     }
     // 4. Palavra inteira no título original em inglês (termo não visível em português)
-    else if (origNorm && new RegExp(`\\b${rawQ}\\b`, "i").test(origNorm)) {
+    else if (origNorm && new RegExp(`\\b${escapeRegex(rawQ)}\\b`, "i").test(origNorm)) {
       relevance = 150;
     }
 
@@ -332,12 +347,11 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
   });
 
   scored.sort((a, b) => {
-    // Se ambos forem match exato homônimo (ex: original 1984 vs remake 2010), o pioneiro tem precedência
-    if (a.isExact && b.isExact) {
-      const dateA = a.movie.releaseDate ? new Date(a.movie.releaseDate).getTime() : Infinity;
-      const dateB = b.movie.releaseDate ? new Date(b.movie.releaseDate).getTime() : Infinity;
-      if (dateA !== dateB) return dateA - dateB;
+    // 1. Matches exatos sempre têm prioridade absoluta sobre aproximações
+    if (a.isExact !== b.isExact) {
+      return a.isExact ? -1 : 1;
     }
+    // 2. Se ambos forem exatos homônimos (ex: Titanic 1997 vs Titanic 1943), o score de autoridade/votos desempata
     return b.score - a.score;
   });
 
@@ -366,6 +380,12 @@ export async function searchCineraMovies(
   const { cleanQuery, year } = extractYear(sanitized);
   const normalizedQuery = normalizeSearchString(stripLeadingArticles(cleanQuery));
   const unaccentedQuery = normalizeSearchString(cleanQuery);
+
+  // Se a query normalizada for vazia ou menor que o tamanho mínimo (ex: "the", "os", "!!")
+  if (unaccentedQuery.length < SEARCH_CONFIG.MIN_QUERY_LENGTH) {
+    return { movies: [] };
+  }
+
   const apiSearchTerm = extractSearchKeywords(cleanQuery);
 
   // 1. Execução contra a API oficial de filmes do TMDB (/search/movie e /search/collection)
@@ -376,10 +396,17 @@ export async function searchCineraMovies(
       const collectionPath = `/search/collection?query=${encodeURIComponent(apiSearchTerm)}&language=pt-BR`;
 
       // Executa consulta de filmes e coleções em paralelo
-      const [movieData, collectionData] = await Promise.all([
+      let [movieData, collectionData] = await Promise.all([
         fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(moviePath, signal),
         fetchFromTMDB<TMDBPaginatedResponse<{ id: number; name: string; original_name?: string }>>(collectionPath, signal).catch(() => null),
       ]);
+
+      // Fallback para títulos que terminam em ano mas foram lançados em outro ano (ex: "Wonder Woman 1984" lançado em 2020, "Fantasia 2000" lançado em 1999)
+      if (year && (!movieData.results || movieData.results.length === 0)) {
+        const fullTermQuery = normalizeSearchString(sanitized);
+        const fallbackMoviePath = `/search/movie?query=${encodeURIComponent(fullTermQuery)}&language=pt-BR&include_adult=false`;
+        movieData = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(fallbackMoviePath, signal);
+      }
 
       const now = Date.now();
 
@@ -392,8 +419,9 @@ export async function searchCineraMovies(
       });
 
       // Filtro de integridade visual com tokens significativos da consulta normalizada
-      const visibleTokens = unaccentedQuery.split(/\s+/).filter((t) => t.length >= 2);
-      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens, unaccentedQuery);
+      const effectiveQuery = unaccentedQuery.length >= 2 ? unaccentedQuery : normalizeSearchString(sanitized);
+      const visibleTokens = effectiveQuery.split(/\s+/).filter((t) => t.length >= 2);
+      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens, effectiveQuery);
 
       // 2. Verifica se a busca casa com uma Coleção Canônica Oficial (ex: Star Wars, Senhor dos Anéis, Predador)
       let canonicalCollectionMovies: TMDBMovieRaw[] = [];
@@ -401,19 +429,20 @@ export async function searchCineraMovies(
 
       // Uma coleção só pode ser avaliada se a query for substancial (pelo menos 2 caracteres limpos)
       if (cleanQuery.length >= 2 && collectionData?.results?.length) {
+        const normCleanQuery = normalizeSearchString(cleanQuery);
         const candidateCols = collectionData.results.filter((col) => {
           const colClean = cleanFranchiseName(col.name || "");
           const origClean = cleanFranchiseName(col.original_name || "");
           return !NOISE_COLLECTION_WORDS.some(
-            (w) => (colClean.includes(w) || origClean.includes(w)) && !cleanQuery.includes(w)
+            (w) => (colClean.includes(w) || origClean.includes(w)) && !normCleanQuery.includes(w)
           );
         });
 
         const canonicalMovieIds = new Set<number>();
         const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
-        const queryTokensCount = cleanQuery.split(/\s+/).filter(Boolean).length;
+        const queryTokensCount = normQ.split(/\s+/).filter(Boolean).length;
 
-        const candidateEntries = candidateCols.slice(0, 5).map((candidateCol, index) => {
+        const candidateEntries = candidateCols.slice(0, 5).map((candidateCol) => {
           const isDirectMatch = matchFranchise(candidateCol.name || "", candidateCol.original_name, cleanQuery);
 
           // Extração da Raiz Nominal da Franquia (delimitador ':', ' - ' ou parênteses)
@@ -442,13 +471,14 @@ export async function searchCineraMovies(
           const maxTargetLen = Math.max(stripCandidate.length, stripOrigCandidate.length);
           const coverage = maxTargetLen > 0 ? normQ.length / maxTargetLen : 0;
           const isPredictiveMatch =
-            isPredictivePrefix && (queryTokensCount >= 2 || normQ.length >= 6) && coverage >= 0.65;
+            isPredictivePrefix && (queryTokensCount >= 2 || normQ.length >= 6) && coverage >= 0.75;
 
           // Regra Universal de Franquia Irmã / Eras de Reboots (ex: Homem-Aranha, Batman):
-          // Para buscas com 2+ palavras, qualquer coleção cujo nome no TMDB contenha a franquia é candidata a inspeção
+          // Só qualifica se a coleção cobrir substantivamente o termo do usuário ou for match direto de raiz
           const enSynonym = getCognateSynonym(normQ);
           const isFranchiseVariant =
             queryTokensCount >= 2 &&
+            coverage >= 0.7 &&
             (stripCandidate.includes(normQ) ||
               cleanCandidate.includes(normQ) ||
               (enSynonym ? stripOrigCandidate.includes(enSynonym) || origCandidate.includes(enSynonym) : false));
@@ -457,8 +487,7 @@ export async function searchCineraMovies(
             isDirectMatch ||
             isRootMatch ||
             isPredictiveMatch ||
-            isFranchiseVariant ||
-            index === 0;
+            isFranchiseVariant;
 
           return {
             candidateCol,
@@ -513,11 +542,6 @@ export async function searchCineraMovies(
           if (!hasSocialProof) continue;
 
           // Regra Anti-Monopólio / Ambiguidade Cultural (Queries de 1 única palavra):
-          // Protege contra pequenas coleções com baixo volume de votos que possam sequestrar termos amplos.
-          // Exemplo: "Guardiões: Coleção" (duologia russa de 1.400 votos) não deve monopolizar "guardiões",
-          // pois "Guardiões da Galáxia" possui 30.000+ votos fora da coleção.
-          // Porém, coleções com autoridade mundial consagrada (como o Batman clássico de 1989 com 27.000+ votos)
-          // nunca são descartadas como ruído.
           if (queryTokensCount === 1) {
             const maxExternalVotes = Math.max(
               ...validMovies
@@ -540,16 +564,11 @@ export async function searchCineraMovies(
             }
           }
 
-          // Busca dinâmica de cognato internacional para unir eras e reboots sem nenhum hardcode
+          // Busca dinâmica de cognato internacional para unir eras e reboots
           const enSynonym = getCognateSynonym(normQ);
           const isSisterFranchise =
-            queryTokensCount >= 2 &&
-            (entry.stripCandidate.includes(normQ) ||
-              entry.cleanCandidate.includes(normQ) ||
-              entry.stripRootPt.includes(normQ) ||
-              entry.cleanRootPt.includes(normQ) ||
-              entry.isFranchiseVariant ||
-              (enSynonym ? entry.stripOrigCandidate.includes(enSynonym) || entry.cleanRootOrig.includes(enSynonym) : false));
+            entry.isFranchiseVariant ||
+            (enSynonym ? entry.stripOrigCandidate.includes(enSynonym) || entry.cleanRootOrig.includes(enSynonym) : false);
 
           // Regra Orgânica do Prefixo Canônico dos Filmes (ex: "007: ..."):
           const matchingPrefixParts = parts.filter((p) => {
@@ -589,7 +608,6 @@ export async function searchCineraMovies(
           return dateA - dateB;
         });
 
-        // Enriquece os títulos dos filmes da coleção com as versões oficiais localizadas em pt-BR da busca
         const localizedTitlesById = new Map<number, string>();
         validMovies.forEach((m) => {
           if (m.title) localizedTitlesById.set(m.id, m.title);
@@ -603,8 +621,6 @@ export async function searchCineraMovies(
           return p;
         });
 
-        // Identifica e preserva filmes secundários / spin-offs legítimos
-        // (ex: A Guerra dos Rohirrim em Senhor dos Anéis, Rogue One em Star Wars, Hobbs & Shaw em Velozes e Furiosos)
         const seenIds = new Set(canonicalCollectionMovies.map((m) => m.id));
         const secondaryRaw = tokenFilteredMovies.filter((m) => !seenIds.has(m.id));
         const secondaryMapped = secondaryRaw.map(mapTMDBMovie);
@@ -624,11 +640,12 @@ export async function searchCineraMovies(
         movies: rankSearchResults(finalMapped, normalizedQuery),
       };
     } catch (err: unknown) {
-      // Abortamento silencioso: digitação contínua não pode estourar erro na UI
       if (err instanceof Error && err.name === "AbortError") {
         return { movies: [] };
       }
       console.warn(`Falha na busca remota para "${rawQuery}":`, err);
+      // Se TMDB está configurado, relança o erro para a UI refletir a falha de rede real
+      throw err;
     }
   }
 

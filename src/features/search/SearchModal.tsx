@@ -17,13 +17,14 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     isOpen,
     query,
     selectedIndex,
+    isPausedForDetails,
     closeSearch,
     pauseSearchForDetails,
     setQuery,
     setSelectedIndex,
     moveSelection,
   } = useSearchStore();
-  const { results, isLoading, isFetching, isError, hasSearched, debouncedQuery, refetch } =
+  const { results, isLoading, isFetching, isError, hasSearched, debouncedQuery, isSettled, refetch } =
     useMovieSearch(query);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,28 +32,67 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Guarda o elemento ativo antes de abrir o modal e restaura o foco ao fechar
+  // Guarda o elemento ativo antes de abrir o modal e restaura o foco apenas no fechamento definitivo (não ao pausar para detalhes)
   useEffect(() => {
     if (isOpen) {
-      previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+      previouslyFocusedRef.current ??= document.activeElement as HTMLElement | null;
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
       return () => clearTimeout(timer);
-    } else {
-      previouslyFocusedRef.current?.focus();
     }
-  }, [isOpen]);
 
-  // Trava o scroll da página enquanto o modal estiver aberto
+    if (isPausedForDetails) return;
+
+    previouslyFocusedRef.current?.focus();
+    previouslyFocusedRef.current = null;
+  }, [isOpen, isPausedForDetails]);
+
+  // Listener global no document para fechar no Escape, conter o Tab no diálogo e travar o scroll
   useEffect(() => {
     if (!isOpen) return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeSearch();
+        return;
+      }
+
+      if (e.key === "Tab" && dialogRef.current) {
+        const allFocusables = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+
+        // Filtra elementos que estão ocultos por display: none (ex: md:hidden no desktop)
+        const focusables = allFocusables.filter((el) => el.offsetParent !== null);
+
+        if (focusables.length > 0) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+
+          if (e.shiftKey && (document.activeElement === first || !dialogRef.current.contains(document.activeElement))) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && (document.activeElement === last || !dialogRef.current.contains(document.activeElement))) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleGlobalKeyDown);
+
     return () => {
       document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, closeSearch]);
 
   // Protege selectedIndex contra encolhimento assíncrono de lista de resultados
   useEffect(() => {
@@ -68,7 +108,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       `[data-search-index="${selectedIndex}"]`
     );
     if (activeItem) {
-      activeItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      activeItem.scrollIntoView({ block: "nearest", behavior: "auto" });
     }
   }, [selectedIndex]);
 
@@ -88,34 +128,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     [closeSearch, onSelectGenre]
   );
 
-  // Gerenciamento global de acessibilidade do diálogo (Esc fecha, Tab cicla foco)
-  const handleContainerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      closeSearch();
-      return;
-    }
-
-    // Focus Trap: impede que o Tab vaze para os elementos fora do modal
-    if (e.key === "Tab" && dialogRef.current) {
-      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusables.length > 0) {
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    }
-  };
-
   // Navegação na lista de resultados (↑, ↓, Enter) exclusiva do input
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (results.length === 0) return;
@@ -128,6 +140,9 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       moveSelection("up", results.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
+      // Bloqueia abertura prematura enquanto a digitação ou fetch de novos resultados estiver em trânsito
+      if (!isSettled) return;
+
       const targetMovie = results[selectedIndex] || results[0];
       if (targetMovie) {
         handleSelect(targetMovie);
@@ -148,7 +163,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       <div
         ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleContainerKeyDown}
         className="relative w-full h-full md:h-auto md:max-h-[82vh] md:max-w-2xl bg-zinc-950/95 border-0 md:border md:border-white/10 rounded-none md:rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden text-white cursor-default"
       >
         {/* Cabeçalho de Busca com Input Acessível */}
@@ -161,7 +175,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             role="combobox"
             aria-autocomplete="list"
             aria-haspopup="listbox"
-            aria-expanded={results.length > 0}
+            aria-expanded={isOpen}
             aria-controls="search-results-list"
             aria-activedescendant={results[selectedIndex] ? `search-item-${selectedIndex}` : undefined}
             value={query}

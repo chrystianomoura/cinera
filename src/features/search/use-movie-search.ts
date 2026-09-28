@@ -20,11 +20,18 @@ export function useMovieSearch(query: string) {
     queryFn: ({ signal }) => searchCineraMovies(debouncedQuery, signal),
     enabled: isEnabled,
     staleTime: 1000 * 60 * 5, // 5 minutos de cache em memória
-    placeholderData: (previousData: SearchMoviesResult | undefined) => previousData,
+    // Mantém o placeholder suave apenas enquanto o usuário estiver estendendo incrementalmente a digitação
+    placeholderData: (previousData, previousQuery) => {
+      const prevTerm = previousQuery?.queryKey[2];
+      return typeof prevTerm === "string" && debouncedQuery.startsWith(prevTerm)
+        ? previousData
+        : undefined;
+    },
     retry: false,
   });
 
   const isPlaceholderData = searchQuery.isPlaceholderData;
+  const isSettled = query.trim() === debouncedQuery && !isPlaceholderData && !searchQuery.isFetching;
 
   return {
     results: isEnabled ? searchQuery.data?.movies ?? [] : [],
@@ -32,6 +39,7 @@ export function useMovieSearch(query: string) {
     isLoading: isEnabled && searchQuery.isLoading,
     isFetching: searchQuery.isFetching,
     isPlaceholderData,
+    isSettled,
     isError: searchQuery.isError,
     refetch: searchQuery.refetch,
     debouncedQuery,
