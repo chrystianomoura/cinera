@@ -330,12 +330,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                             </span>
                           </>
                         )}
-
-                        {movie.voteAverage > 0 && (
-                          <div className="ml-auto flex items-center rounded overflow-hidden shadow-sm border border-black/20 bg-gradient-to-r from-[#90cea1] to-[#01b4e4] px-1.5 py-0.5 text-[9px] font-black text-[#0d253f] tracking-wider uppercase flex-shrink-0">
-                            TMDB: {movie.voteAverage.toFixed(1)}
-                          </div>
-                        )}
                       </div>
                     </div>
 

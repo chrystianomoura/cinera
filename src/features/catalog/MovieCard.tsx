@@ -48,11 +48,6 @@ export const MovieCard = memo(function MovieCard({
             </span>
           </div>
         )}
-
-        {/* Badge TMDB Oficial */}
-        <div className="absolute top-2 right-2 md:top-3 md:right-3 flex items-center rounded overflow-hidden shadow-lg border border-black/20 bg-gradient-to-r from-[#90cea1] to-[#01b4e4] px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs font-black text-[#0d253f] tracking-wider uppercase">
-          TMDB: {movie.voteAverage.toFixed(1)}
-        </div>
       </div>
 
       <div className="flex flex-col px-0.5 pt-1">
