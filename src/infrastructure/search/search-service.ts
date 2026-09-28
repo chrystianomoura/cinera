@@ -151,36 +151,6 @@ export function extractSearchKeywords(text: string): string {
   return norm;
 }
 
-/**
- * Extrai eventual ano de 4 dígitos informado explicitamente no FINAL de um título (ex: "Matrix 1999" ou "Batman (1989)").
- * Títulos que começam com números ou contêm anos como parte intrínseca do nome (ex: "2001: Uma Odisseia no Espaço",
- * "2010", "1917", "Blade Runner 2049") permanecem íntegros para pesquisa textual completa no TMDB.
- */
-function extractYear(query: string): { cleanQuery: string; year: number | null } {
-  const trimmed = query.trim();
-
-  // Se a busca for apenas um número/ano (ex: "1917", "2012"), não extrai como filtro restritivo de lançamento
-  if (/^(19\d{2}|20\d{2})$/.test(trimmed)) {
-    return { cleanQuery: trimmed, year: null };
-  }
-
-  // Só aceita ano se ele estiver estritamente no final da query, após o título (ex: "Matrix 1999", "Duna (2021)")
-  const trailingYearMatch = trimmed.match(/^(.+?)\s+[\(\[]?((?:19|20)\d{2})[\)\]]?$/);
-  if (!trailingYearMatch || trailingYearMatch[1].length < 2) {
-    return { cleanQuery: trimmed, year: null };
-  }
-
-  const yearCandidate = parseInt(trailingYearMatch[2], 10);
-  const currentYear = new Date().getFullYear();
-
-  // Anos de ficção científica futuros (ex: 2049) não são anos de lançamento reais
-  if (yearCandidate > currentYear + 1) {
-    return { cleanQuery: trimmed, year: null };
-  }
-
-  return { cleanQuery: trailingYearMatch[1].trim(), year: yearCandidate };
-}
-
 export interface SearchMoviesResult {
   movies: Movie[];
 }
@@ -298,12 +268,11 @@ function pruneSearchResults(rankedMovies: Movie[], normalizedQuery: string): Mov
  * 2. Popularidade Bayesiana: Escala logarítmica de votos somada à popularidade TMDB.
  * 3. Desempate Histórico: Em caso de títulos idênticos (ex: original 1984 vs remake 2010), o pioneiro tem precedência.
  */
-function rankSearchResults(movies: Movie[], normalizedQuery: string, targetYear?: number | null): Movie[] {
+function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
   if (movies.length <= 1) return movies;
 
   const rawQ = normalizedQuery.trim();
   const cleanQ = cleanFranchiseName(normalizedQuery);
-  const targetYearStr = targetYear ? String(targetYear) : null;
 
   const scored = movies.map((m) => {
     const titleNorm = normalizeSearchString(m.title);
@@ -313,7 +282,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string, targetYear?
     const isExact = isTitleExactMatch(m.title, m.originalTitle, rawQ, cleanQ);
     let relevance = 0;
 
-    // 1. Título idêntico homônimo (ex: "Sim Senhor" ao buscar "sim senhor", "La La Land", "Oppenheimer")
+    // 1. Título idêntico homônimo (ex: "Sim Senhor" ao buscar "sim senhor", "Wonder Woman 1984", "La La Land")
     if (isExact) {
       relevance = 400;
     }
@@ -334,12 +303,6 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string, targetYear?
       relevance = 150;
     }
 
-    // Bônus para filmes cujo ano de lançamento coincide com o ano explicitado pelo usuário
-    let yearBonus = 0;
-    if (targetYearStr && m.releaseDate && m.releaseDate.slice(0, 4) === targetYearStr) {
-      yearBonus = 200;
-    }
-
     // 5. Score Bayesiano de Popularidade, Votos e Qualidade
     const v = m.voteCount || 0;
     const R = m.voteAverage || 0;
@@ -356,7 +319,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string, targetYear?
     const qualityWeight = (bayesianRating - 5.0) * 15;
     const popWeight = Math.min(pop, 50);
 
-    const totalScore = relevance + yearBonus + voteWeight + qualityWeight + popWeight;
+    const totalScore = relevance + voteWeight + qualityWeight + popWeight;
     return { movie: m, score: totalScore, isExact: relevance >= 400 };
   });
 
@@ -391,8 +354,7 @@ export async function searchCineraMovies(
     return { movies: [] };
   }
 
-  const { cleanQuery, year } = extractYear(sanitized);
-  const normalizedBase = normalizeSearchString(cleanQuery);
+  const normalizedBase = normalizeSearchString(sanitized);
   const spelledQuery = canonicalizeSpelling(normalizedBase);
   const normalizedQuery = stripLeadingArticles(spelledQuery);
   const unaccentedQuery = spelledQuery;
@@ -631,7 +593,7 @@ export async function searchCineraMovies(
         const seenIds = new Set(canonicalCollectionMovies.map((m) => m.id));
         const secondaryRaw = tokenFilteredMovies.filter((m) => !seenIds.has(m.id));
         const secondaryMapped = secondaryRaw.map(mapTMDBMovie);
-        const rankedSecondary = rankSearchResults(secondaryMapped, normalizedQuery, year);
+        const rankedSecondary = rankSearchResults(secondaryMapped, normalizedQuery);
 
         return {
           movies: [
@@ -644,7 +606,7 @@ export async function searchCineraMovies(
       // Para buscas gerais ou filmes autorais/únicos, aplica ranking bayesiano e preenche até 10 filmes relevantes
       const finalMapped = tokenFilteredMovies.map(mapTMDBMovie);
       return {
-        movies: rankSearchResults(finalMapped, normalizedQuery, year),
+        movies: rankSearchResults(finalMapped, normalizedQuery),
       };
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {
