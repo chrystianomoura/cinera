@@ -50,8 +50,8 @@ const CINEMA_COGNATES: Record<string, string> = {
 function getCognateSynonym(entity: string | null): string | null {
   if (!entity) return null;
   for (const [en, pt] of Object.entries(CINEMA_COGNATES)) {
-    if (pt === entity) return en;
-    if (en === entity) return pt;
+    if (entity === pt || entity.includes(pt) || pt.includes(entity)) return en;
+    if (entity === en || entity.includes(en) || en.includes(entity)) return pt;
   }
   return null;
 }
@@ -156,7 +156,6 @@ function extractYear(query: string): { cleanQuery: string; year: number | null }
 
 export interface SearchMoviesResult {
   movies: Movie[];
-  correctedQuery?: string;
 }
 
 /**
@@ -477,8 +476,6 @@ export async function searchCineraMovies(
             totalVotes >= SEARCH_CONFIG.COLLECTION_TOTAL_VOTES;
 
           if (!hasSocialProof) continue;
-
-          const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
 
           // Regra Anti-Monopólio / Ambiguidade Cultural (Queries de 1 única palavra):
           if (queryTokensCount === 1) {

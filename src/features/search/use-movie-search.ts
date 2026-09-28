@@ -25,16 +25,17 @@ export function useMovieSearch(query: string) {
   });
 
   const isPlaceholderData = searchQuery.isPlaceholderData;
-  const isActivelyLoading = isEnabled && (searchQuery.isLoading || isPlaceholderData);
 
   return {
     results: isEnabled ? searchQuery.data?.movies ?? [] : [],
-    isLoading: isActivelyLoading,
+    // isLoading ativo apenas no primeiro carregamento sem dados em cache (preserva stale-while-revalidate suave)
+    isLoading: isEnabled && searchQuery.isLoading,
     isFetching: searchQuery.isFetching,
     isPlaceholderData,
     isError: searchQuery.isError,
     refetch: searchQuery.refetch,
     debouncedQuery,
+    // hasSearched suprime o estado vazio enquanto placeholderData estiver ativo em voo
     hasSearched: isEnabled && !searchQuery.isLoading && !isPlaceholderData && !searchQuery.isError,
   };
 }
