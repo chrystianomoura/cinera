@@ -102,14 +102,17 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     }
   }, [results.length, selectedIndex, setSelectedIndex]);
 
-  // Restaura a posição exata de rolagem da lista quando o usuário retorna dos detalhes
+  // Restaura a posição exata de rolagem da lista quando o usuário retorna dos detalhes, ou reseta para o topo em nova busca
   useEffect(() => {
     if (!isOpen || !listRef.current || results.length === 0) return;
     if (scrollPosition > 0) {
-      // Restaura exatamente a coordenada de scroll onde o usuário estava
+      // Restaura exatamente a coordenada de scroll onde o usuário estava ao pausar para ver o filme
       listRef.current.scrollTop = scrollPosition;
+    } else {
+      // Nova busca ou início: começa sempre no topo absoluto
+      listRef.current.scrollTop = 0;
     }
-  }, [isOpen, results.length, scrollPosition]);
+  }, [isOpen, results.length, scrollPosition, debouncedQuery]);
 
   // Mantém o item visível apenas quando o usuário navega pelo teclado (ArrowUp / ArrowDown)
   const handleSelect = useCallback(

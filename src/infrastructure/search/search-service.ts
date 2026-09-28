@@ -171,17 +171,22 @@ function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQu
   if (tokens.length === 0) return movies;
 
   const rawQ = normalizeSearchString(cleanQuery);
-  const tokenMatchers = tokens.map((token) => {
-    // Para termos ASCII (português/inglês):
-    // Se o token for uma stopword gramatical (ex: "de", "os", "em", "do"):
-    // exige fronteira estrita (\bde\b) para não poluir palavras que começam com essas letras.
-    // Para todos os outros termos significativos (incluindo bi-gramas em digitação como "st", "wa", "ar", "ma"):
-    // aceita prefixo de palavra (\b${token}), garantindo digitação contínua e sem interrupção.
+  const isTrailingSpace = /\s$/.test(cleanQuery);
+
+  const tokenMatchers = tokens.map((token, index) => {
+    const isLastToken = index === tokens.length - 1;
+    // Se o token estiver sendo digitado ativamente no final (sem espaço subsequente),
+    // o usuário pode estar no meio de uma palavra (ex: "101 da" -> Dálmatas, "de" -> Deadpool).
+    // Nesses casos, aceita prefixo de palavra.
+    // Apenas se houver espaço no final ("101 da ") ou se o token estiver no meio da frase ("a casa de papel"),
+    // aplicamos a fronteira estrita de stop word (\bda\b, \bde\b).
+    const isStopWord = STOP_WORDS.has(token.toLowerCase());
+    const treatAsStrictStopWord = isStopWord && (!isLastToken || isTrailingSpace);
+
     const isAscii = /^[\x20-\x7E]+$/.test(token);
     if (isAscii) {
       const escaped = escapeRegex(token);
-      const isStopWord = STOP_WORDS.has(token.toLowerCase());
-      const pattern = isStopWord ? `\\b${escaped}\\b` : `\\b${escaped}`;
+      const pattern = treatAsStrictStopWord ? `\\b${escaped}\\b` : `\\b${escaped}`;
       const regex = new RegExp(pattern, "i");
       return (text: string) => regex.test(text);
     }

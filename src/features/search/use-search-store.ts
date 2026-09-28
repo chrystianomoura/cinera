@@ -60,6 +60,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     set({
       query,
       selectedIndex: 0,
+      scrollPosition: 0,
     }),
 
   setSelectedIndex: (selectedIndex: number) =>
