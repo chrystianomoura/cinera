@@ -17,6 +17,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     isOpen,
     query,
     selectedIndex,
+    scrollPosition,
     isPausedForDetails,
     closeSearch,
     pauseSearchForDetails,
@@ -101,20 +102,21 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     }
   }, [results.length, selectedIndex, setSelectedIndex]);
 
-  // Mantém o item selecionado visível no scroll da lista
+  // Restaura a posição exata de rolagem da lista quando o usuário retorna dos detalhes
   useEffect(() => {
-    if (!listRef.current) return;
-    const activeItem = listRef.current.querySelector(
-      `[data-search-index="${selectedIndex}"]`
-    );
-    if (activeItem) {
-      activeItem.scrollIntoView({ block: "nearest", behavior: "auto" });
+    if (!isOpen || !listRef.current || results.length === 0) return;
+    if (scrollPosition > 0) {
+      // Restaura exatamente a coordenada de scroll onde o usuário estava
+      listRef.current.scrollTop = scrollPosition;
     }
-  }, [selectedIndex]);
+  }, [isOpen, results.length, scrollPosition]);
 
+  // Mantém o item visível apenas quando o usuário navega pelo teclado (ArrowUp / ArrowDown)
   const handleSelect = useCallback(
     (movie: Movie) => {
-      pauseSearchForDetails();
+      // Salva a coordenada exata de rolagem do container antes de abrir os detalhes
+      const currentScroll = listRef.current ? listRef.current.scrollTop : 0;
+      pauseSearchForDetails(currentScroll);
       onSelectMovie(movie);
     },
     [pauseSearchForDetails, onSelectMovie]
@@ -135,9 +137,17 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     if (e.key === "ArrowDown") {
       e.preventDefault();
       moveSelection("down", results.length);
+      requestAnimationFrame(() => {
+        const nextIdx = (selectedIndex + 1) % results.length;
+        listRef.current?.querySelector(`[data-search-index="${nextIdx}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       moveSelection("up", results.length);
+      requestAnimationFrame(() => {
+        const prevIdx = (selectedIndex - 1 + results.length) % results.length;
+        listRef.current?.querySelector(`[data-search-index="${prevIdx}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
     } else if (e.key === "Enter") {
       e.preventDefault();
       // Bloqueia abertura prematura enquanto a digitação ou fetch de novos resultados estiver em trânsito

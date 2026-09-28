@@ -173,14 +173,15 @@ function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQu
   const rawQ = normalizeSearchString(cleanQuery);
   const tokenMatchers = tokens.map((token) => {
     // Para termos ASCII (português/inglês):
-    // Se o token tem 3 ou mais letras (ex: "figh", "fighter", "vingad"):
-    // aceita prefixo de palavra (\bfigh casa com "fighters").
-    // Se o token tem menos de 3 letras (ex: "de", "os", "el"):
-    // exige fronteira estrita de palavra (\bde\b) para evitar arrastar falsos positivos.
+    // Se o token for uma stopword gramatical (ex: "de", "os", "em", "do"):
+    // exige fronteira estrita (\bde\b) para não poluir palavras que começam com essas letras.
+    // Para todos os outros termos significativos (incluindo bi-gramas em digitação como "st", "wa", "ar", "ma"):
+    // aceita prefixo de palavra (\b${token}), garantindo digitação contínua e sem interrupção.
     const isAscii = /^[\x20-\x7E]+$/.test(token);
     if (isAscii) {
       const escaped = escapeRegex(token);
-      const pattern = token.length >= 3 ? `\\b${escaped}` : `\\b${escaped}\\b`;
+      const isStopWord = STOP_WORDS.has(token.toLowerCase());
+      const pattern = isStopWord ? `\\b${escaped}\\b` : `\\b${escaped}`;
       const regex = new RegExp(pattern, "i");
       return (text: string) => regex.test(text);
     }
