@@ -4,14 +4,14 @@
  */
 export const GENRES = [
   "Ação & Aventura",
-  "Ficção & Fantasia",
+  "Animação",
   "Comédia",
+  "Documentário",
+  "Drama",
+  "Ficção & Fantasia",
+  "Romance",
   "Suspense & Crime",
   "Terror",
-  "Animação",
-  "Drama",
-  "Romance",
-  "Documentário",
 ] as const;
 
 export type GenreCategory = (typeof GENRES)[number];

@@ -96,6 +96,8 @@ export default function App() {
     window.history.pushState({ movieId: movie.id }, "", url.toString());
   };
 
+  const isFromSearch = useSearchStore((state) => state.isPausedForDetails);
+
   const handleCloseDetails = () => {
     setIsDetailsOpen(false);
     const url = new URL(window.location.href);
@@ -103,6 +105,10 @@ export default function App() {
       url.searchParams.delete("filme");
       const cleanUrl = url.pathname + (url.search ? url.search : "");
       window.history.pushState({}, "", cleanUrl);
+    }
+    const { isPausedForDetails, resumeSearchFromDetails } = useSearchStore.getState();
+    if (isPausedForDetails) {
+      resumeSearchFromDetails();
     }
   };
 
@@ -113,6 +119,10 @@ export default function App() {
       const filmParam = url.searchParams.get("filme");
       if (!filmParam) {
         setIsDetailsOpen(false);
+        const { isPausedForDetails, resumeSearchFromDetails } = useSearchStore.getState();
+        if (isPausedForDetails) {
+          resumeSearchFromDetails();
+        }
         return;
       }
       const id = Number(filmParam);
@@ -273,6 +283,7 @@ export default function App() {
         movie={selectedMovie}
         onClose={handleCloseDetails}
         onOpenTrailer={handleOpenTrailer}
+        isFromSearch={isFromSearch}
       />
 
       <TrailerModal

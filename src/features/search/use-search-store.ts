@@ -4,8 +4,11 @@ interface SearchState {
   isOpen: boolean;
   query: string;
   selectedIndex: number;
+  isPausedForDetails: boolean;
   openSearch: () => void;
   closeSearch: () => void;
+  pauseSearchForDetails: () => void;
+  resumeSearchFromDetails: () => void;
   setQuery: (query: string) => void;
   setSelectedIndex: (index: number) => void;
   moveSelection: (direction: "up" | "down", resultCount: number) => void;
@@ -16,12 +19,14 @@ export const useSearchStore = create<SearchState>((set) => ({
   isOpen: false,
   query: "",
   selectedIndex: 0,
+  isPausedForDetails: false,
 
   openSearch: () =>
     set({
       isOpen: true,
       query: "",
       selectedIndex: 0,
+      isPausedForDetails: false,
     }),
 
   closeSearch: () =>
@@ -29,7 +34,20 @@ export const useSearchStore = create<SearchState>((set) => ({
       isOpen: false,
       query: "",
       selectedIndex: 0,
+      isPausedForDetails: false,
     }),
+
+  pauseSearchForDetails: () =>
+    set({
+      isOpen: false,
+      isPausedForDetails: true,
+    }),
+
+  resumeSearchFromDetails: () =>
+    set((state) => ({
+      isOpen: state.isPausedForDetails ? true : state.isOpen,
+      isPausedForDetails: false,
+    })),
 
   setQuery: (query: string) =>
     set({

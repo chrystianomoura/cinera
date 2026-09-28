@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Play, Bookmark, Check, Film, Loader2 } from "lucide-react";
+import { X, Play, Bookmark, Check, Film, Loader2, ArrowLeft } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getPosterUrl, getBackdropUrl } from "@/infrastructure/api/movie-service";
 import { formatRuntime, formatCurrencyUSD, formatCuratedGenres } from "@/lib/formatters";
@@ -17,6 +17,7 @@ interface MovieDetailsViewProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenTrailer: (movie: Movie) => void;
+  isFromSearch?: boolean;
 }
 
 export function MovieDetailsView({
@@ -24,6 +25,7 @@ export function MovieDetailsView({
   isOpen,
   onClose,
   onOpenTrailer,
+  isFromSearch = false,
 }: MovieDetailsViewProps) {
   const movieId = initialMovie?.id ?? null;
   const {
@@ -143,14 +145,25 @@ export function MovieDetailsView({
 
         <button
           onClick={onClose}
-          aria-label="Fechar detalhes (Esc)"
-          title="Fechar (Esc)"
+          aria-label={isFromSearch ? "Voltar para a pesquisa (Esc)" : "Fechar detalhes (Esc)"}
+          title={isFromSearch ? "Voltar para a pesquisa (Esc)" : "Fechar (Esc)"}
           className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group"
         >
-          <span className="text-xs font-semibold uppercase tracking-wider hidden sm:inline">
-            Voltar
-          </span>
-          <X className="w-4 h-4 stroke-[2.5] transition-transform group-hover:rotate-90" />
+          {isFromSearch ? (
+            <>
+              <ArrowLeft className="w-4 h-4 stroke-[2.5] transition-transform group-hover:-translate-x-0.5" />
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Pesquisa
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-xs font-semibold uppercase tracking-wider hidden sm:inline">
+                Voltar
+              </span>
+              <X className="w-4 h-4 stroke-[2.5] transition-transform group-hover:rotate-90" />
+            </>
+          )}
         </button>
       </header>
 

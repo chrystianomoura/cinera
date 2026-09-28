@@ -24,6 +24,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     query,
     selectedIndex,
     closeSearch,
+    pauseSearchForDetails,
     setQuery,
     setSelectedIndex,
     moveSelection,
@@ -79,10 +80,10 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
 
   const handleSelect = useCallback(
     (movie: Movie) => {
-      closeSearch();
+      pauseSearchForDetails();
       onSelectMovie(movie);
     },
-    [closeSearch, onSelectMovie]
+    [pauseSearchForDetails, onSelectMovie]
   );
 
   const handleSelectQuickGenre = useCallback(
@@ -225,28 +226,23 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
         <div ref={listRef} className="flex-1 overflow-y-auto p-2 sm:p-3 scrollbar-hide">
           {/* ESTADO 1: Inicial / Vazio (Sem busca ativa) */}
           {debouncedQuery.length < SEARCH_CONFIG.MIN_QUERY_LENGTH && (
-            <div className="flex flex-col gap-4 py-3 px-2">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-400 font-bold">
-                <Sparkles className="w-3.5 h-3.5 text-[#ffcc00]" />
-                <span>Explorar Catálogos</span>
+            <div className="flex flex-col gap-4 py-4 px-2">
+              <div className="text-center text-xs uppercase tracking-widest text-zinc-400 font-bold">
+                Explorar Catálogos
               </div>
 
-              {/* Sugestões rápidas de Gêneros da fonte única */}
-              <div className="flex flex-wrap gap-2">
+              {/* Sugestões rápidas de Gêneros da fonte única em ordem alfabética */}
+              <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
                 {GENRES.map((genreName) => (
                   <button
                     key={genreName}
                     type="button"
                     onClick={() => handleSelectQuickGenre(genreName)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-white/10 text-xs sm:text-sm font-semibold transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-white/10 text-xs sm:text-sm font-semibold transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <span>{genreName}</span>
                   </button>
                 ))}
-              </div>
-
-              <div className="pt-2 border-t border-white/5 text-xs text-zinc-500">
-                💡 Dica: digite o nome de um filme (ex: <span className="text-zinc-300">"Matilda"</span>, <span className="text-zinc-300">"Jogos Mortais"</span>) ou franquia (ex: <span className="text-zinc-300">"Star Wars"</span>).
               </div>
             </div>
           )}
@@ -295,9 +291,9 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                     data-search-index={index}
                     onClick={() => handleSelect(movie)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`group flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-150 select-none ${
+                    className={`group flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-150 select-none active:bg-white/10 ${
                       isSelected
-                        ? "bg-white/10 text-white shadow-sm ring-1 ring-white/15"
+                        ? "md:bg-white/10 text-white md:shadow-sm md:ring-1 md:ring-white/15"
                         : "hover:bg-white/5 text-zinc-200"
                     }`}
                   >
@@ -344,7 +340,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                     </div>
 
                     <ChevronRight
-                      className={`w-4 h-4 ml-2 flex-shrink-0 transition-opacity ${
+                      className={`hidden md:block w-4 h-4 ml-2 flex-shrink-0 transition-opacity ${
                         isSelected ? "opacity-100 text-white" : "opacity-0 group-hover:opacity-60 text-zinc-400"
                       }`}
                     />
@@ -417,8 +413,8 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
         </div>
 
         {/* Rodapé Tátil com Atalhos de Teclado (Desktop) */}
-        <div className="hidden md:flex items-center justify-between px-4 py-2.5 border-t border-white/10 bg-zinc-900/60 text-xs text-zinc-400 font-medium flex-shrink-0">
-          <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center justify-center px-4 py-2.5 border-t border-white/10 bg-zinc-900/60 text-xs text-zinc-400 font-medium flex-shrink-0">
+          <div className="flex items-center justify-center gap-5">
             <span className="flex items-center gap-1.5">
               <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono text-[10px]">↑</kbd>
               <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono text-[10px]">↓</kbd>
@@ -433,8 +429,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
               <span>Fechar</span>
             </span>
           </div>
-
-          <span className="text-[11px] text-zinc-500 font-mono">Cinera Search</span>
         </div>
       </div>
     </div>
