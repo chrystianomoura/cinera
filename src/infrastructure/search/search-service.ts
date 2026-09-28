@@ -356,8 +356,43 @@ export async function searchCineraMovies(
           );
         });
 
-        for (const candidateCol of candidateCols.slice(0, 3)) {
+        const canonicalMovieIds = new Set<number>();
+        let matchedPrimaryEntity: string | null = null;
+
+        for (const candidateCol of candidateCols.slice(0, 5)) {
           const isDirectMatch = matchFranchise(candidateCol.name || "", candidateCol.original_name, cleanQuery);
+
+          const cleanCandidate = cleanFranchiseName(candidateCol.name || "");
+          const stripCandidate = stripLeadingArticles(cleanCandidate);
+          const origCandidate = candidateCol.original_name ? cleanFranchiseName(candidateCol.original_name) : "";
+          const stripOrigCandidate = stripLeadingArticles(origCandidate);
+
+          const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
+          const queryTokensCount = cleanQuery.split(/\s+/).filter(Boolean).length;
+
+          // Regra Preditiva de Convergência de Saga:
+          const isPredictivePrefix =
+            (stripCandidate.length > 0 && stripCandidate.startsWith(normQ)) ||
+            (stripOrigCandidate.length > 0 && stripOrigCandidate.startsWith(normQ));
+          const maxTargetLen = Math.max(stripCandidate.length, stripOrigCandidate.length);
+          const coverage = maxTargetLen > 0 ? normQ.length / maxTargetLen : 0;
+          const isPredictiveMatch =
+            isPredictivePrefix && (queryTokensCount >= 2 || normQ.length >= 6) && coverage >= 0.65;
+
+          // Regra de Unificação Multi-Coleções (Sagas com múltiplas eras/reboots, ex: Homem-Aranha, Batman):
+          // Se já identificamos uma franquia canônica, a busca tem 2+ palavras e a coleção candidata compartilha
+          // a mesma identidade de marca (ex: "homem aranha" ou "spider man"):
+          const isSisterFranchise =
+            canonicalCollectionMovies.length > 0 &&
+            queryTokensCount >= 2 &&
+            Boolean(matchedPrimaryEntity) &&
+            (stripCandidate.includes(matchedPrimaryEntity!) ||
+              stripOrigCandidate.includes("spider man") ||
+              cleanCandidate.includes(matchedPrimaryEntity!));
+
+          if (!isDirectMatch && !isPredictiveMatch && !isSisterFranchise) {
+            continue;
+          }
 
           try {
             const colDetails = await fetchFromTMDB<{ parts?: TMDBMovieRaw[] }>(
@@ -374,18 +409,13 @@ export async function searchCineraMovies(
             // Regra de Ouro 2: Piso estatístico de relevância (mínimo 500 votos em um filme ou 1000 somados)
             const totalVotes = parts.reduce((sum, p) => sum + (p.vote_count || 0), 0);
             const maxPartVotes = Math.max(...parts.map((p) => p.vote_count || 0), 0);
-            const hasSocialProof = maxPartVotes >= SEARCH_CONFIG.COLLECTION_MIN_VOTES || totalVotes >= SEARCH_CONFIG.COLLECTION_TOTAL_VOTES;
+            const hasSocialProof =
+              maxPartVotes >= SEARCH_CONFIG.COLLECTION_MIN_VOTES ||
+              totalVotes >= SEARCH_CONFIG.COLLECTION_TOTAL_VOTES;
 
             if (!hasSocialProof) continue;
 
-            const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
-            const queryTokensCount = cleanQuery.split(/\s+/).filter(Boolean).length;
-
             // Regra Anti-Monopólio / Ambiguidade Cultural (Queries de 1 única palavra):
-            // Quando o usuário digita apenas 1 palavra (ex: "guardiões", "senhor", "batman"), pode haver um filme muito maior
-            // que começa com essa mesma palavra mas pertence a outra saga (ex: "Guardiões da Galáxia" com 30k votos vs duologia russa "Guardiões" com 800 votos).
-            // Se existir um filme externo com mais de 3x os votos do líder da coleção que também começa com a palavra,
-            // o termo é ambíguo: não monopolizamos a tela com a coleção menor; deixamos o ranking bayesiano exibir todos os concorrentes.
             if (queryTokensCount === 1) {
               const maxExternalVotes = Math.max(
                 ...validMovies
@@ -405,24 +435,35 @@ export async function searchCineraMovies(
               }
             }
 
-            // Se for match direto do nome da franquia (ex: "star wars", "senhor dos aneis", "velozes e furiosos")
-            if (isDirectMatch) {
-              canonicalCollectionMovies = parts;
-              break;
-            }
-
-            // Regra Orgânica do Prefixo Canônico dos Filmes:
-            // Se o nome da pasta no TMDB for diferente (ex: "James Bond: Coleção"), mas os filmes da coleção tiverem
-            // como prefixo de cinema exatamente o termo buscado (ex: "007: ..."), a saga é validada organicamente.
+            // Regra Orgânica do Prefixo Canônico dos Filmes (ex: "007: ..."):
             const matchingPrefixParts = parts.filter((p) => {
               const prefixPt = stripLeadingArticles(normalizeSearchString((p.title || "").split(/[:-]/)[0]));
               const prefixOrig = stripLeadingArticles(normalizeSearchString((p.original_title || "").split(/[:-]/)[0]));
               return prefixPt === normQ || prefixOrig === normQ;
             });
 
-            if (parts.length > 0 && matchingPrefixParts.length / parts.length >= 0.5) {
-              canonicalCollectionMovies = parts;
-              break;
+            const isValidFranchiseMatch =
+              isDirectMatch ||
+              isPredictiveMatch ||
+              isSisterFranchise ||
+              (parts.length > 0 && matchingPrefixParts.length / parts.length >= 0.5);
+
+            if (isValidFranchiseMatch) {
+              if (!matchedPrimaryEntity) {
+                matchedPrimaryEntity = normQ;
+              }
+
+              for (const p of parts) {
+                if (!canonicalMovieIds.has(p.id)) {
+                  canonicalMovieIds.add(p.id);
+                  canonicalCollectionMovies.push(p);
+                }
+              }
+
+              // Para buscas de 1 única palavra, não unifica múltiplas coleções para evitar misturas ambíguas
+              if (queryTokensCount === 1) {
+                break;
+              }
             }
           } catch {
             // Em caso de falha de rede na coleção, segue com os filmes padrão
@@ -430,7 +471,7 @@ export async function searchCineraMovies(
         }
       }
 
-      // 3. Mescla de resultados: Coleções Canônicas entregam a filmografia completa da saga
+      // 3. Mescla de resultados: Coleções Canônicas entregam a saga cronológica no topo + derivados logo abaixo
       if (canonicalCollectionMovies.length > 0) {
         canonicalCollectionMovies.sort((a, b) => {
           const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
@@ -438,9 +479,32 @@ export async function searchCineraMovies(
           return dateA - dateB;
         });
 
-        // Mostra a saga completa em ordem cronológica (o tanto de filme que a franquia tiver)
+        // Enriquece os títulos dos filmes da coleção com as versões oficiais localizadas em pt-BR da busca
+        const localizedTitlesById = new Map<number, string>();
+        validMovies.forEach((m) => {
+          if (m.title) localizedTitlesById.set(m.id, m.title);
+        });
+
+        const localizedCanonicalMovies = canonicalCollectionMovies.map((p) => {
+          const localizedTitle = localizedTitlesById.get(p.id);
+          if (localizedTitle) {
+            return { ...p, title: localizedTitle };
+          }
+          return p;
+        });
+
+        // Identifica e preserva filmes secundários / spin-offs legítimos
+        // (ex: A Guerra dos Rohirrim em Senhor dos Anéis, Rogue One em Star Wars, Hobbs & Shaw em Velozes e Furiosos)
+        const seenIds = new Set(canonicalCollectionMovies.map((m) => m.id));
+        const secondaryRaw = tokenFilteredMovies.filter((m) => !seenIds.has(m.id));
+        const secondaryMapped = secondaryRaw.map(mapTMDBMovie);
+        const rankedSecondary = rankSearchResults(secondaryMapped, normalizedQuery);
+
         return {
-          movies: canonicalCollectionMovies.map(mapTMDBMovie),
+          movies: [
+            ...localizedCanonicalMovies.map(mapTMDBMovie),
+            ...rankedSecondary,
+          ],
         };
       }
 
