@@ -1,17 +1,11 @@
 import { useEffect, useRef, useCallback } from "react";
-import { Search, X, Loader2, Film, ChevronRight, Flame, Sparkles, AlertCircle, RotateCcw } from "lucide-react";
+import { Search, X, Loader2, Film, ChevronRight, AlertCircle, RotateCcw } from "lucide-react";
 import { useSearchStore } from "./use-search-store";
 import { useMovieSearch } from "./use-movie-search";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import { SEARCH_CONFIG } from "@/infrastructure/search/search-service";
 import type { Movie } from "@/domain";
 import { GENRES } from "../catalog/constants";
-
-const GENRE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  "Ação & Aventura": Flame,
-  "Ficção & Fantasia": Sparkles,
-  "Comédia": Film,
-};
 
 interface SearchModalProps {
   onSelectMovie: (movie: Movie) => void;
@@ -370,37 +364,33 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             </div>
           )}
 
-          {/* ESTADO 5: Zero Resultados (Busca sem sucesso, usando debouncedQuery e gêneros dinâmicos) */}
+          {/* ESTADO 5: Zero Resultados (Busca sem sucesso, compacto e limpo) */}
           {!isError && hasSearched && results.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-500 mb-1">
-                <Film className="w-6 h-6" />
-              </div>
+            <div className="flex flex-col items-center justify-center py-4 sm:py-5 px-4 text-center gap-2">
+              <span className="text-3xl select-none leading-none mb-0.5" role="img" aria-label="Alerta">
+                ⚠️
+              </span>
 
-              <h4 className="text-base sm:text-lg font-bold text-white">
+              <h4 className="text-base font-bold text-white">
                 Nenhum filme encontrado para "{debouncedQuery}"
               </h4>
 
-              <p className="text-sm text-zinc-400 max-w-md">
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-md">
                 Verifique se o título foi digitado corretamente ou explore uma das categorias em destaque:
               </p>
 
-              {/* Sugestões de gênero derivadas da fonte única GENRES */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-                {GENRES.slice(0, 3).map((genreName) => {
-                  const Icon = GENRE_ICONS[genreName];
-                  return (
-                    <button
-                      key={genreName}
-                      type="button"
-                      onClick={() => handleSelectQuickGenre(genreName)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-semibold cursor-pointer transition-colors"
-                    >
-                      {Icon && <Icon className="w-3.5 h-3.5 text-amber-500" />}
-                      <span>{genreName}</span>
-                    </button>
-                  );
-                })}
+              {/* Sugestões com todas as categorias presentes na página inicial */}
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-1.5 max-w-lg">
+                {GENRES.map((genreName) => (
+                  <button
+                    key={genreName}
+                    type="button"
+                    onClick={() => handleSelectQuickGenre(genreName)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 hover:border-white/25 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                  >
+                    <span>{genreName}</span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
