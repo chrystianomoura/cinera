@@ -172,11 +172,16 @@ function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQu
 
   const rawQ = normalizeSearchString(cleanQuery);
   const tokenMatchers = tokens.map((token) => {
-    // Para termos ASCII (português/inglês), \b garante fronteira estrita de palavra (evita 'es' casar com 'mes-es').
-    // Para scripts internacionais (Hangul coreano, Kanji/Hiragana japonês, Cirílico), caracteres não possuem \b ASCII.
+    // Para termos ASCII (português/inglês):
+    // Se o token tem 3 ou mais letras (ex: "figh", "fighter", "vingad"):
+    // aceita prefixo de palavra (\bfigh casa com "fighters").
+    // Se o token tem menos de 3 letras (ex: "de", "os", "el"):
+    // exige fronteira estrita de palavra (\bde\b) para evitar arrastar falsos positivos.
     const isAscii = /^[\x20-\x7E]+$/.test(token);
     if (isAscii) {
-      const regex = new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i");
+      const escaped = escapeRegex(token);
+      const pattern = token.length >= 3 ? `\\b${escaped}` : `\\b${escaped}\\b`;
+      const regex = new RegExp(pattern, "i");
       return (text: string) => regex.test(text);
     }
     return (text: string) => text.includes(token);
@@ -202,9 +207,9 @@ function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQu
       return origNorm === rawQ || origStrip === rawQ;
     }
 
-    // Se for termo composto (ex: "fight club", "temple of doom", "dark knight"):
-    // Aceita se o título em inglês contiver a frase contígua
-    return origNorm.includes(rawQ) || origStrip.includes(rawQ);
+    // Se for termo composto (ex: "fight club", "temple of doom", "foo fighters"):
+    // Aceita se o título em inglês contiver a frase contígua ou todos os tokens com prefixo
+    return origNorm.includes(rawQ) || origStrip.includes(rawQ) || matchOrig;
   });
 }
 
@@ -298,8 +303,12 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
     else if (new RegExp(`\\b${escapeRegex(rawQ)}\\b`, "i").test(titleNorm)) {
       relevance = 250;
     }
-    // 4. Palavra inteira no título original em inglês (termo não visível em português)
-    else if (origNorm && new RegExp(`\\b${escapeRegex(rawQ)}\\b`, "i").test(origNorm)) {
+    // 4. Prefixo de palavra correspondente no título visível em português (ex: "foo fighter" -> "Foo Fighters")
+    else if (new RegExp(`\\b${escapeRegex(rawQ)}`, "i").test(titleNorm)) {
+      relevance = 200;
+    }
+    // 5. Palavra inteira ou prefixo no título original em inglês (termo não visível em português)
+    else if (origNorm && new RegExp(`\\b${escapeRegex(rawQ)}`, "i").test(origNorm)) {
       relevance = 150;
     }
 
