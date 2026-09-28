@@ -10,7 +10,7 @@ import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../api/tmdb-types";
 export const SEARCH_CONFIG = {
   MAX_QUERY_LENGTH: 80,
   MIN_QUERY_LENGTH: 2,
-  MAX_RESULTS: 10,
+  MAX_RESULTS: 10,                    // Limite para buscas gerais. Coleções canônicas exibem a filmografia completa sem corte.
 
   // Critérios de Coleção Canônica
   COLLECTION_MIN_VOTES: 500,          // Votos mínimos em um filme da coleção para considerá-la canônica
@@ -308,7 +308,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
       relevance = 150;
     }
 
-    // 4. Score Bayesiano de Popularidade, Votos e Qualidade
+    // 5. Score Bayesiano de Popularidade, Votos e Qualidade
     const v = m.voteCount || 0;
     const R = m.voteAverage || 0;
     const pop = m.popularity || 0;
@@ -410,7 +410,6 @@ export async function searchCineraMovies(
         });
 
         const canonicalMovieIds = new Set<number>();
-        let matchedPrimaryEntity: string | null = null;
         const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
         const queryTokensCount = cleanQuery.split(/\s+/).filter(Boolean).length;
 
@@ -542,7 +541,7 @@ export async function searchCineraMovies(
           }
 
           // Busca dinâmica de cognato internacional para unir eras e reboots sem nenhum hardcode
-          const enSynonym = getCognateSynonym(matchedPrimaryEntity || normQ);
+          const enSynonym = getCognateSynonym(normQ);
           const isSisterFranchise =
             queryTokensCount >= 2 &&
             (entry.stripCandidate.includes(normQ) ||
@@ -567,10 +566,6 @@ export async function searchCineraMovies(
             (parts.length > 0 && matchingPrefixParts.length / parts.length >= 0.5);
 
           if (isValidFranchiseMatch) {
-            if (!matchedPrimaryEntity) {
-              matchedPrimaryEntity = normQ;
-            }
-
             for (const p of parts) {
               if (!canonicalMovieIds.has(p.id)) {
                 canonicalMovieIds.add(p.id);

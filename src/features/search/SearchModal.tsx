@@ -3,6 +3,7 @@ import { Search, X, Loader2, Film, ChevronRight, Flame, Sparkles, AlertCircle, R
 import { useSearchStore } from "./use-search-store";
 import { useMovieSearch } from "./use-movie-search";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
+import { SEARCH_CONFIG } from "@/infrastructure/search/search-service";
 import type { Movie } from "@/domain";
 import { GENRES } from "../catalog/constants";
 
@@ -92,15 +93,15 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     [closeSearch, onSelectGenre]
   );
 
-  // Navegação por teclado (↑, ↓, Enter, Esc, Focus Trap via Tab)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Gerenciamento global de acessibilidade do diálogo (Esc fecha, Tab cicla foco)
+  const handleContainerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
       e.preventDefault();
       closeSearch();
       return;
     }
 
-    // Focus Trap: impede que o Tab vaze para os elementos da página de fundo
+    // Focus Trap: impede que o Tab vaze para os elementos fora do modal
     if (e.key === "Tab" && dialogRef.current) {
       const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -117,9 +118,11 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
           first.focus();
         }
       }
-      return;
     }
+  };
 
+  // Navegação na lista de resultados (↑, ↓, Enter) exclusiva do input
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (results.length === 0) return;
 
     if (e.key === "ArrowDown") {
@@ -150,6 +153,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       <div
         ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleContainerKeyDown}
         className="relative w-full h-full md:h-auto md:max-h-[82vh] md:max-w-2xl bg-zinc-950/95 border-0 md:border md:border-white/10 rounded-none md:rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden text-white cursor-default"
       >
         {/* Cabeçalho de Busca com Input Acessível */}
@@ -167,7 +171,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             aria-activedescendant={results[selectedIndex] ? `search-item-${selectedIndex}` : undefined}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleInputKeyDown}
             placeholder="Pesquisar por título de filme ou franquia..."
             aria-label="Campo de pesquisa de filmes"
             autoComplete="off"
@@ -175,19 +179,26 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             className="flex-1 bg-transparent text-white placeholder-zinc-500 text-base md:text-lg focus:outline-none font-medium"
           />
 
-          {isFetching ? (
+          {/* Indicador de carregamento assíncrono */}
+          {isFetching && (
             <Loader2 className="w-4 h-4 text-zinc-400 animate-spin flex-shrink-0" />
-          ) : query.length > 0 ? (
+          )}
+
+          {/* Botão de limpar texto sempre disponível com texto presente */}
+          {query.length > 0 && (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                inputRef.current?.focus();
+              }}
               className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer flex-shrink-0"
               title="Limpar texto"
               aria-label="Limpar texto pesquisado"
             >
               <X className="w-4 h-4" />
             </button>
-          ) : null}
+          )}
 
           {/* Atalho Esc no desktop */}
           <button
@@ -213,7 +224,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
         {/* Área de Conteúdo */}
         <div ref={listRef} className="flex-1 overflow-y-auto p-2 sm:p-3 scrollbar-hide">
           {/* ESTADO 1: Inicial / Vazio (Sem busca ativa) */}
-          {debouncedQuery.length < 2 && (
+          {debouncedQuery.length < SEARCH_CONFIG.MIN_QUERY_LENGTH && (
             <div className="flex flex-col gap-4 py-3 px-2">
               <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-400 font-bold">
                 <Sparkles className="w-3.5 h-3.5 text-[#ffcc00]" />
@@ -266,8 +277,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
               aria-label="Resultados de filmes encontrados"
               className="flex flex-col gap-1"
             >
-
-
               {results.map((movie, index) => {
                 const isSelected = selectedIndex === index;
                 const posterUrl = movie.posterPath
