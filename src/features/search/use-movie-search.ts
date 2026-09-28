@@ -24,14 +24,17 @@ export function useMovieSearch(query: string) {
     retry: false,
   });
 
+  const isPlaceholderData = searchQuery.isPlaceholderData;
+  const isActivelyLoading = isEnabled && (searchQuery.isLoading || isPlaceholderData);
+
   return {
     results: isEnabled ? searchQuery.data?.movies ?? [] : [],
-    correctedQuery: isEnabled ? searchQuery.data?.correctedQuery : undefined,
-    isLoading: isEnabled && searchQuery.isLoading,
+    isLoading: isActivelyLoading,
     isFetching: searchQuery.isFetching,
+    isPlaceholderData,
     isError: searchQuery.isError,
     refetch: searchQuery.refetch,
     debouncedQuery,
-    hasSearched: isEnabled && !searchQuery.isLoading && !searchQuery.isError,
+    hasSearched: isEnabled && !searchQuery.isLoading && !isPlaceholderData && !searchQuery.isError,
   };
 }

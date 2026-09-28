@@ -8,6 +8,7 @@ interface SearchState {
   closeSearch: () => void;
   setQuery: (query: string) => void;
   setSelectedIndex: (index: number) => void;
+  moveSelection: (direction: "up" | "down", resultCount: number) => void;
   resetSearch: () => void;
 }
 
@@ -39,6 +40,16 @@ export const useSearchStore = create<SearchState>((set) => ({
   setSelectedIndex: (selectedIndex: number) =>
     set({
       selectedIndex,
+    }),
+
+  moveSelection: (direction: "up" | "down", resultCount: number) =>
+    set((state) => {
+      if (resultCount <= 0) return { selectedIndex: 0 };
+      const nextIndex =
+        direction === "down"
+          ? (state.selectedIndex + 1) % resultCount
+          : (state.selectedIndex - 1 + resultCount) % resultCount;
+      return { selectedIndex: nextIndex };
     }),
 
   resetSearch: () =>

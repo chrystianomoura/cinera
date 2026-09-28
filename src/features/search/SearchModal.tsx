@@ -18,22 +18,33 @@ interface SearchModalProps {
 }
 
 export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) {
-  const { isOpen, query, selectedIndex, closeSearch, setQuery, setSelectedIndex } =
-    useSearchStore();
-  const { results, correctedQuery, isLoading, isFetching, isError, hasSearched, debouncedQuery, refetch } =
+  const {
+    isOpen,
+    query,
+    selectedIndex,
+    closeSearch,
+    setQuery,
+    setSelectedIndex,
+    moveSelection,
+  } = useSearchStore();
+  const { results, isLoading, isFetching, isError, hasSearched, debouncedQuery, refetch } =
     useMovieSearch(query);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Foco automático no input ao abrir
+  // Guarda o elemento ativo antes de abrir o modal e restaura o foco ao fechar
   useEffect(() => {
     if (isOpen) {
+      previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
       return () => clearTimeout(timer);
+    } else {
+      previouslyFocusedRef.current?.focus();
     }
   }, [isOpen]);
 
@@ -46,6 +57,13 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       document.body.style.overflow = originalOverflow;
     };
   }, [isOpen]);
+
+  // Protege selectedIndex contra encolhimento assíncrono de lista de resultados
+  useEffect(() => {
+    if (results.length > 0 && selectedIndex >= results.length) {
+      setSelectedIndex(0);
+    }
+  }, [results.length, selectedIndex, setSelectedIndex]);
 
   // Mantém o item selecionado visível no scroll da lista
   useEffect(() => {
@@ -106,10 +124,10 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((selectedIndex + 1) % results.length);
+      moveSelection("down", results.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((selectedIndex - 1 + results.length) % results.length);
+      moveSelection("up", results.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
       const targetMovie = results[selectedIndex] || results[0];
@@ -120,10 +138,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
   };
 
   if (!isOpen) return null;
-
-  const showCorrectionBanner =
-    Boolean(correctedQuery) &&
-    correctedQuery?.toLowerCase() !== debouncedQuery.toLowerCase();
 
   return (
     <div
@@ -147,6 +161,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             type="text"
             role="combobox"
             aria-autocomplete="list"
+            aria-haspopup="listbox"
             aria-expanded={results.length > 0}
             aria-controls="search-results-list"
             aria-activedescendant={results[selectedIndex] ? `search-item-${selectedIndex}` : undefined}
@@ -251,18 +266,6 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
               aria-label="Resultados de filmes encontrados"
               className="flex flex-col gap-1"
             >
-              {/* Feedback de Recuperação Inteligente de Espaço / Typo */}
-              {showCorrectionBanner && (
-                <div className="flex items-center gap-2 px-3 py-2 mb-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                  <span>
-                    Exibindo resultados para:{" "}
-                    <strong className="font-semibold text-white underline decoration-amber-400">
-                      {correctedQuery}
-                    </strong>
-                  </span>
-                </div>
-              )}
 
 
               {results.map((movie, index) => {

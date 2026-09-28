@@ -47,9 +47,19 @@ const CINEMA_COGNATES: Record<string, string> = {
   spiderman: "homem aranha",
 };
 
+function getCognateSynonym(entity: string | null): string | null {
+  if (!entity) return null;
+  for (const [en, pt] of Object.entries(CINEMA_COGNATES)) {
+    if (pt === entity) return en;
+    if (en === entity) return pt;
+  }
+  return null;
+}
+
 /**
  * Normaliza strings removendo acentos, padronizando conectores (& e +),
- * mapeando termos bilíngues universais e limpando excesso de espaços.
+ * preservando caracteres Unicode (\p{L} para scripts internacionais como japonês/coreano/cirílico)
+ * e mapeando termos bilíngues universais.
  */
 export function normalizeSearchString(text: string): string {
   let res = text
@@ -57,7 +67,7 @@ export function normalizeSearchString(text: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, " e ")
     .replace(/\+/g, " ")
-    .replace(/[^a-zA-Z0-9 ]/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
@@ -150,15 +160,21 @@ export interface SearchMoviesResult {
 }
 
 /**
- * Filtra filmes garantindo coerência textual com os termos buscados:
- * 1. Coerência de Idioma: Todos os termos da busca devem estar presentes no título em português
- *    OU todos no título original (evitando cruzamentos híbridos onde um termo está em espanhol e outro em português).
- * 2. Prefixos de Palavra: O termo deve corresponder ao início de uma palavra (\b), evitando que sufixos
- *    aleatórios de plurais (ex: "mes-es") deem falso positivo para digitações parciais (ex: "es" de estrelas).
+ * Filtra filmes garantindo integridade e transparência textual com o que o usuário vê na tela:
+ * 1. Visibilidade Direta em Português: Se o termo existe no título traduzido (que o usuário lê no card),
+ *    o filme é aprovado com precedência.
+ * 2. Correspondência Internacional no Título Original:
+ *    - Para termos de 1 única palavra (ex: "doom", "jaws", "alien"): só aprova se o título original for
+ *      exatamente a obra buscada (match exato homônimo). Isso impede que uma palavra avulsa de cauda em inglês
+ *      (ex: "The Doom Generation" -> "Geração Maldita", "Temple of Doom" -> "Indiana Jones") traga filmes cujo
+ *      nome em português não tem nenhuma relação com o termo.
+ *    - Para termos compostos de 2+ palavras (ex: "temple of doom", "fight club"): aprova se o título original
+ *      contiver a frase contígua.
  */
-function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[]): TMDBMovieRaw[] {
+function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQuery: string): TMDBMovieRaw[] {
   if (tokens.length === 0) return movies;
 
+  const rawQ = normalizeSearchString(cleanQuery);
   const tokenRegexes = tokens.map(
     (token) => new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i")
   );
@@ -167,10 +183,25 @@ function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[]): TMDBMo
     const titleNorm = normalizeSearchString(m.title || "");
     const origNorm = normalizeSearchString(m.original_title || "");
 
+    // 1. Visibilidade Direta em Português: o termo existe no título que o usuário lê na tela
     const matchPt = tokenRegexes.every((regex) => regex.test(titleNorm));
-    const matchOrig = tokenRegexes.every((regex) => regex.test(origNorm));
+    if (matchPt) return true;
 
-    return matchPt || matchOrig;
+    // 2. Se o título em português NÃO contém o termo, só aceita o título original em inglês se:
+    const matchOrig = tokenRegexes.every((regex) => regex.test(origNorm));
+    if (!matchOrig) return false;
+
+    const origStrip = stripLeadingArticles(origNorm);
+
+    // Se for termo de 1 única palavra (ex: "doom", "jaws", "alien"):
+    // Só aprova se o título em inglês for exatamente a obra buscada (match exato)
+    if (tokens.length === 1) {
+      return origNorm === rawQ || origStrip === rawQ;
+    }
+
+    // Se for termo composto (ex: "fight club", "temple of doom", "dark knight"):
+    // Aceita se o título em inglês contiver a frase contígua
+    return origNorm.includes(rawQ) || origStrip.includes(rawQ);
   });
 }
 
@@ -247,12 +278,13 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
     ) {
       relevance = 300;
     }
-    // 3. Palavra inteira correspondente (ex: "Vida de Inseto", "Homem-Formiga", "Um Senhor Estagiário")
-    else if (
-      new RegExp(`\\b${rawQ}\\b`, "i").test(titleNorm) ||
-      (origNorm && new RegExp(`\\b${rawQ}\\b`, "i").test(origNorm))
-    ) {
+    // 3. Palavra inteira correspondente no título visível em português
+    else if (new RegExp(`\\b${rawQ}\\b`, "i").test(titleNorm)) {
       relevance = 250;
+    }
+    // 4. Palavra inteira no título original em inglês (termo não visível em português)
+    else if (origNorm && new RegExp(`\\b${rawQ}\\b`, "i").test(origNorm)) {
+      relevance = 150;
     }
 
     // 4. Score Bayesiano de Popularidade, Votos e Qualidade
@@ -340,7 +372,7 @@ export async function searchCineraMovies(
 
       // Filtro de integridade visual com tokens significativos da consulta normalizada
       const visibleTokens = unaccentedQuery.split(/\s+/).filter((t) => t.length >= 2);
-      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens);
+      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens, unaccentedQuery);
 
       // 2. Verifica se a busca casa com uma Coleção Canônica Oficial (ex: Star Wars, Senhor dos Anéis, Predador)
       let canonicalCollectionMovies: TMDBMovieRaw[] = [];
@@ -358,17 +390,30 @@ export async function searchCineraMovies(
 
         const canonicalMovieIds = new Set<number>();
         let matchedPrimaryEntity: string | null = null;
+        const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
+        const queryTokensCount = cleanQuery.split(/\s+/).filter(Boolean).length;
 
-        for (const candidateCol of candidateCols.slice(0, 5)) {
+        const candidateEntries = candidateCols.slice(0, 5).map((candidateCol, index) => {
           const isDirectMatch = matchFranchise(candidateCol.name || "", candidateCol.original_name, cleanQuery);
+
+          // Extração da Raiz Nominal da Franquia (Gramática de Catálogo: delimitador ':' ou ' - ')
+          const baseNamePt = (candidateCol.name || "").split(/:|\s+-\s+/)[0];
+          const baseNameOrig = (candidateCol.original_name || "").split(/:|\s+-\s+/)[0];
+          const cleanRootPt = cleanFranchiseName(baseNamePt);
+          const stripRootPt = stripLeadingArticles(cleanRootPt);
+          const cleanRootOrig = cleanFranchiseName(baseNameOrig);
+          const stripRootOrig = stripLeadingArticles(cleanRootOrig);
+
+          const isRootMatch =
+            cleanRootPt === normQ ||
+            stripRootPt === normQ ||
+            cleanRootOrig === normQ ||
+            stripRootOrig === normQ;
 
           const cleanCandidate = cleanFranchiseName(candidateCol.name || "");
           const stripCandidate = stripLeadingArticles(cleanCandidate);
           const origCandidate = candidateCol.original_name ? cleanFranchiseName(candidateCol.original_name) : "";
           const stripOrigCandidate = stripLeadingArticles(origCandidate);
-
-          const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
-          const queryTokensCount = cleanQuery.split(/\s+/).filter(Boolean).length;
 
           // Regra Preditiva de Convergência de Saga:
           const isPredictivePrefix =
@@ -379,94 +424,124 @@ export async function searchCineraMovies(
           const isPredictiveMatch =
             isPredictivePrefix && (queryTokensCount >= 2 || normQ.length >= 6) && coverage >= 0.65;
 
-          // Regra de Unificação Multi-Coleções (Sagas com múltiplas eras/reboots, ex: Homem-Aranha, Batman):
-          // Se já identificamos uma franquia canônica, a busca tem 2+ palavras e a coleção candidata compartilha
-          // a mesma identidade de marca (ex: "homem aranha" ou "spider man"):
+          const isCandidateToInspect =
+            isDirectMatch ||
+            isRootMatch ||
+            isPredictiveMatch ||
+            index === 0;
+
+          return {
+            candidateCol,
+            isDirectMatch,
+            isRootMatch,
+            isPredictiveMatch,
+            cleanRootPt,
+            stripRootPt,
+            cleanCandidate,
+            stripCandidate,
+            cleanRootOrig,
+            stripOrigCandidate,
+            isCandidateToInspect,
+          };
+        });
+
+        const qualifyingCandidates = candidateEntries.filter((e) => e.isCandidateToInspect);
+
+        // Dispara requisições dos detalhes das coleções em paralelo via Promise.allSettled (elimina latência sequencial)
+        const settledCollections = await Promise.allSettled(
+          qualifyingCandidates.map((entry) =>
+            fetchFromTMDB<{ parts?: TMDBMovieRaw[] }>(
+              `/collection/${entry.candidateCol.id}?language=pt-BR`,
+              signal
+            )
+          )
+        );
+
+        for (let i = 0; i < qualifyingCandidates.length; i++) {
+          const entry = qualifyingCandidates[i];
+          const settled = settledCollections[i];
+          if (settled.status !== "fulfilled" || !settled.value.parts) continue;
+
+          const parts = (settled.value.parts || []).filter((item) => {
+            const hasPoster = Boolean(item.poster_path);
+            const isReleased = Boolean(item.release_date && new Date(item.release_date).getTime() <= now);
+            const hasVotes = (item.vote_count || 0) > 0;
+            return hasPoster && isReleased && hasVotes;
+          });
+
+          // Regra de Ouro 2: Piso estatístico de relevância (mínimo 500 votos em um filme ou 1000 somados)
+          const totalVotes = parts.reduce((sum, p) => sum + (p.vote_count || 0), 0);
+          const maxPartVotes = Math.max(...parts.map((p) => p.vote_count || 0), 0);
+          const hasSocialProof =
+            maxPartVotes >= SEARCH_CONFIG.COLLECTION_MIN_VOTES ||
+            totalVotes >= SEARCH_CONFIG.COLLECTION_TOTAL_VOTES;
+
+          if (!hasSocialProof) continue;
+
+          const normQ = stripLeadingArticles(normalizeSearchString(cleanQuery));
+
+          // Regra Anti-Monopólio / Ambiguidade Cultural (Queries de 1 única palavra):
+          if (queryTokensCount === 1) {
+            const maxExternalVotes = Math.max(
+              ...validMovies
+                .filter((m) => {
+                  const normTitlePt = stripLeadingArticles(normalizeSearchString(m.title || ""));
+                  const normTitleOrig = stripLeadingArticles(normalizeSearchString(m.original_title || ""));
+                  const startsWithPt = normTitlePt === normQ || normTitlePt.startsWith(normQ + " ");
+                  const startsWithOrig = normTitleOrig === normQ || normTitleOrig.startsWith(normQ + " ");
+                  return (startsWithPt || startsWithOrig) && !parts.some((p) => p.id === m.id);
+                })
+                .map((m) => m.vote_count || 0),
+              0
+            );
+
+            if (maxExternalVotes > maxPartVotes * 3) {
+              continue;
+            }
+          }
+
+          // Busca dinâmica de cognato internacional para unir eras e reboots sem nenhum hardcode
+          const enSynonym = getCognateSynonym(matchedPrimaryEntity);
           const isSisterFranchise =
             canonicalCollectionMovies.length > 0 &&
             queryTokensCount >= 2 &&
             Boolean(matchedPrimaryEntity) &&
-            (stripCandidate.includes(matchedPrimaryEntity!) ||
-              stripOrigCandidate.includes("spider man") ||
-              cleanCandidate.includes(matchedPrimaryEntity!));
+            (entry.stripCandidate.includes(matchedPrimaryEntity!) ||
+              entry.cleanCandidate.includes(matchedPrimaryEntity!) ||
+              entry.stripRootPt.includes(matchedPrimaryEntity!) ||
+              entry.cleanRootPt.includes(matchedPrimaryEntity!) ||
+              (enSynonym ? entry.stripOrigCandidate.includes(enSynonym) || entry.cleanRootOrig.includes(enSynonym) : false));
 
-          if (!isDirectMatch && !isPredictiveMatch && !isSisterFranchise) {
-            continue;
-          }
+          // Regra Orgânica do Prefixo Canônico dos Filmes (ex: "007: ..."):
+          const matchingPrefixParts = parts.filter((p) => {
+            const prefixPt = stripLeadingArticles(normalizeSearchString((p.title || "").split(/[:-]/)[0]));
+            const prefixOrig = stripLeadingArticles(normalizeSearchString((p.original_title || "").split(/[:-]/)[0]));
+            return prefixPt === normQ || prefixOrig === normQ;
+          });
 
-          try {
-            const colDetails = await fetchFromTMDB<{ parts?: TMDBMovieRaw[] }>(
-              `/collection/${candidateCol.id}?language=pt-BR`,
-              signal
-            );
-            const parts = (colDetails.parts || []).filter((item) => {
-              const hasPoster = Boolean(item.poster_path);
-              const isReleased = Boolean(item.release_date && new Date(item.release_date).getTime() <= now);
-              const hasVotes = (item.vote_count || 0) > 0;
-              return hasPoster && isReleased && hasVotes;
-            });
+          const isValidFranchiseMatch =
+            entry.isDirectMatch ||
+            entry.isRootMatch ||
+            entry.isPredictiveMatch ||
+            isSisterFranchise ||
+            (parts.length > 0 && matchingPrefixParts.length / parts.length >= 0.5);
 
-            // Regra de Ouro 2: Piso estatístico de relevância (mínimo 500 votos em um filme ou 1000 somados)
-            const totalVotes = parts.reduce((sum, p) => sum + (p.vote_count || 0), 0);
-            const maxPartVotes = Math.max(...parts.map((p) => p.vote_count || 0), 0);
-            const hasSocialProof =
-              maxPartVotes >= SEARCH_CONFIG.COLLECTION_MIN_VOTES ||
-              totalVotes >= SEARCH_CONFIG.COLLECTION_TOTAL_VOTES;
+          if (isValidFranchiseMatch) {
+            if (!matchedPrimaryEntity) {
+              matchedPrimaryEntity = normQ;
+            }
 
-            if (!hasSocialProof) continue;
-
-            // Regra Anti-Monopólio / Ambiguidade Cultural (Queries de 1 única palavra):
-            if (queryTokensCount === 1) {
-              const maxExternalVotes = Math.max(
-                ...validMovies
-                  .filter((m) => {
-                    const normTitlePt = stripLeadingArticles(normalizeSearchString(m.title || ""));
-                    const normTitleOrig = stripLeadingArticles(normalizeSearchString(m.original_title || ""));
-                    const startsWithPt = normTitlePt === normQ || normTitlePt.startsWith(normQ + " ");
-                    const startsWithOrig = normTitleOrig === normQ || normTitleOrig.startsWith(normQ + " ");
-                    return (startsWithPt || startsWithOrig) && !parts.some((p) => p.id === m.id);
-                  })
-                  .map((m) => m.vote_count || 0),
-                0
-              );
-
-              if (maxExternalVotes > maxPartVotes * 3) {
-                continue;
+            for (const p of parts) {
+              if (!canonicalMovieIds.has(p.id)) {
+                canonicalMovieIds.add(p.id);
+                canonicalCollectionMovies.push(p);
               }
             }
 
-            // Regra Orgânica do Prefixo Canônico dos Filmes (ex: "007: ..."):
-            const matchingPrefixParts = parts.filter((p) => {
-              const prefixPt = stripLeadingArticles(normalizeSearchString((p.title || "").split(/[:-]/)[0]));
-              const prefixOrig = stripLeadingArticles(normalizeSearchString((p.original_title || "").split(/[:-]/)[0]));
-              return prefixPt === normQ || prefixOrig === normQ;
-            });
-
-            const isValidFranchiseMatch =
-              isDirectMatch ||
-              isPredictiveMatch ||
-              isSisterFranchise ||
-              (parts.length > 0 && matchingPrefixParts.length / parts.length >= 0.5);
-
-            if (isValidFranchiseMatch) {
-              if (!matchedPrimaryEntity) {
-                matchedPrimaryEntity = normQ;
-              }
-
-              for (const p of parts) {
-                if (!canonicalMovieIds.has(p.id)) {
-                  canonicalMovieIds.add(p.id);
-                  canonicalCollectionMovies.push(p);
-                }
-              }
-
-              // Para buscas de 1 única palavra, não unifica múltiplas coleções para evitar misturas ambíguas
-              if (queryTokensCount === 1) {
-                break;
-              }
+            // Para buscas de 1 única palavra sem match de raiz exata, não unifica múltiplas coleções
+            if (queryTokensCount === 1 && !entry.isRootMatch) {
+              break;
             }
-          } catch {
-            // Em caso de falha de rede na coleção, segue com os filmes padrão
           }
         }
       }
