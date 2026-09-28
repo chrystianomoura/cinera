@@ -27,6 +27,7 @@ export function useMovieSearch(query: string) {
         ? previousData
         : undefined;
     },
+    refetchOnWindowFocus: false,
     retry: false,
   });
 

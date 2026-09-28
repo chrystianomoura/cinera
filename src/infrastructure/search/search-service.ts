@@ -40,14 +40,14 @@ const STOP_WORDS = new Set([
  * para sincronizar buscas populares como "predator", "spider-man" ou "avengers"
  * com o catálogo brasileiro do TMDB.
  */
-const SPELLING_ALIASES: Record<string, string> = {
-  spiderman: "spider man",
-};
+const SPELLING_ALIASES = new Map<string, string>([
+  ["spiderman", "spider man"],
+]);
 
 export function canonicalizeSpelling(text: string): string {
   return text
     .split(/\s+/)
-    .map((token) => SPELLING_ALIASES[token] ?? token)
+    .map((token) => SPELLING_ALIASES.get(token.toLowerCase()) ?? token)
     .join(" ");
 }
 
@@ -392,9 +392,10 @@ export async function searchCineraMovies(
   }
 
   const { cleanQuery, year } = extractYear(sanitized);
-  const spelledQuery = canonicalizeSpelling(cleanQuery);
-  const normalizedQuery = normalizeSearchString(stripLeadingArticles(spelledQuery));
-  const unaccentedQuery = normalizeSearchString(spelledQuery);
+  const normalizedBase = normalizeSearchString(cleanQuery);
+  const spelledQuery = canonicalizeSpelling(normalizedBase);
+  const normalizedQuery = stripLeadingArticles(spelledQuery);
+  const unaccentedQuery = spelledQuery;
 
   // Se a query normalizada for vazia ou menor que o tamanho mínimo (ex: "the", "os", "!!")
   if (normalizedQuery.length < SEARCH_CONFIG.MIN_QUERY_LENGTH) {
@@ -406,22 +407,14 @@ export async function searchCineraMovies(
   // 1. Execução contra a API oficial de filmes do TMDB (/search/movie e /search/collection)
   if (isTmdbConfigured()) {
     try {
-      const yearParam = year ? `&primary_release_year=${year}` : "";
-      const moviePath = `/search/movie?query=${encodeURIComponent(unaccentedQuery)}&language=pt-BR&include_adult=false${yearParam}`;
+      const moviePath = `/search/movie?query=${encodeURIComponent(unaccentedQuery)}&language=pt-BR&include_adult=false`;
       const collectionPath = `/search/collection?query=${encodeURIComponent(apiSearchTerm)}&language=pt-BR`;
 
       // Executa consulta de filmes e coleções em paralelo
-      let [movieData, collectionData] = await Promise.all([
+      const [movieData, collectionData] = await Promise.all([
         fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(moviePath, signal),
         fetchFromTMDB<TMDBPaginatedResponse<{ id: number; name: string; original_name?: string }>>(collectionPath, signal).catch(() => null),
       ]);
-
-      // Fallback para títulos que terminam em ano mas foram lançados em outro ano (ex: "Wonder Woman 1984" lançado em 2020, "Fantasia 2000" lançado em 1999)
-      if (year && (!movieData.results || movieData.results.length === 0)) {
-        const fullTermQuery = normalizeSearchString(sanitized);
-        const fallbackMoviePath = `/search/movie?query=${encodeURIComponent(fullTermQuery)}&language=pt-BR&include_adult=false`;
-        movieData = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(fallbackMoviePath, signal);
-      }
 
       const now = Date.now();
 
@@ -434,9 +427,8 @@ export async function searchCineraMovies(
       });
 
       // Filtro de integridade visual com tokens significativos da consulta normalizada
-      const effectiveQuery = unaccentedQuery.length >= 2 ? unaccentedQuery : normalizeSearchString(sanitized);
-      const visibleTokens = effectiveQuery.split(/\s+/).filter((t) => t.length >= 2);
-      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens, effectiveQuery);
+      const visibleTokens = unaccentedQuery.split(/\s+/).filter((t) => t.length >= 2);
+      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens, unaccentedQuery);
 
       // 2. Verifica se a busca casa com uma Coleção Canônica Oficial (ex: Star Wars, Senhor dos Anéis, Predador)
       let canonicalCollectionMovies: TMDBMovieRaw[] = [];
