@@ -65,6 +65,7 @@ export function normalizeSearchString(text: string): string {
   let res = text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .normalize("NFC")
     .replace(/&/g, " e ")
     .replace(/\+/g, " ")
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
@@ -94,12 +95,13 @@ export function stripLeadingArticles(text: string): string {
 /**
  * Limpa e padroniza títulos de franquias e coleções para comparação estrita (1:1),
  * removendo apenas sufixos organizacionais como "Coleção", "Collection", "Saga", "Series" e "Franquia".
+ * Preserva scripts internacionais Unicode (\p{L}\p{N}).
  */
 export function cleanFranchiseName(name: string): string {
   if (!name) return "";
   return normalizeSearchString(name)
     .replace(/\b(colecao|collection|saga|series|franquia)\b/gi, " ")
-    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -174,20 +176,27 @@ function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQu
   if (tokens.length === 0) return movies;
 
   const rawQ = normalizeSearchString(cleanQuery);
-  const tokenRegexes = tokens.map(
-    (token) => new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i")
-  );
+  const tokenMatchers = tokens.map((token) => {
+    // Para termos ASCII (português/inglês), \b garante fronteira estrita de palavra (evita 'es' casar com 'mes-es').
+    // Para scripts internacionais (Hangul coreano, Kanji/Hiragana japonês, Cirílico), caracteres não possuem \b ASCII.
+    const isAscii = /^[\x20-\x7E]+$/.test(token);
+    if (isAscii) {
+      const regex = new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i");
+      return (text: string) => regex.test(text);
+    }
+    return (text: string) => text.includes(token);
+  });
 
   return movies.filter((m) => {
     const titleNorm = normalizeSearchString(m.title || "");
     const origNorm = normalizeSearchString(m.original_title || "");
 
     // 1. Visibilidade Direta em Português: o termo existe no título que o usuário lê na tela
-    const matchPt = tokenRegexes.every((regex) => regex.test(titleNorm));
+    const matchPt = tokenMatchers.every((matcher) => matcher(titleNorm));
     if (matchPt) return true;
 
     // 2. Se o título em português NÃO contém o termo, só aceita o título original em inglês se:
-    const matchOrig = tokenRegexes.every((regex) => regex.test(origNorm));
+    const matchOrig = tokenMatchers.every((matcher) => matcher(origNorm));
     if (!matchOrig) return false;
 
     const origStrip = stripLeadingArticles(origNorm);
@@ -202,6 +211,32 @@ function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQu
     // Aceita se o título em inglês contiver a frase contígua
     return origNorm.includes(rawQ) || origStrip.includes(rawQ);
   });
+}
+
+/**
+ * Avalia se o filme corresponde com exatidão homônima ao termo pesquisado
+ * (no título localizado em português, no título original, ou sem artigos gramaticais iniciais).
+ * Centraliza a checagem evitando drift entre poda de catálogo e pontuação de relevância.
+ */
+export function isTitleExactMatch(
+  title: string,
+  originalTitle: string | undefined,
+  rawQ: string,
+  cleanQ: string
+): boolean {
+  const norm = normalizeSearchString(title);
+  const strip = stripLeadingArticles(norm);
+  const clean = cleanFranchiseName(title);
+  const origNorm = originalTitle ? normalizeSearchString(originalTitle) : "";
+  const origStrip = stripLeadingArticles(origNorm);
+  const cleanOrig = originalTitle ? cleanFranchiseName(originalTitle) : "";
+
+  return (
+    norm === rawQ ||
+    strip === rawQ ||
+    clean === cleanQ ||
+    (origNorm ? origNorm === rawQ || origStrip === rawQ || cleanOrig === cleanQ : false)
+  );
 }
 
 /**
@@ -221,20 +256,7 @@ function pruneSearchResults(rankedMovies: Movie[], normalizedQuery: string): Mov
       const votes = m.voteCount || 0;
       if (votes < 1) return false;
 
-      const norm = normalizeSearchString(m.title);
-      const strip = stripLeadingArticles(norm);
-      const clean = cleanFranchiseName(m.title);
-      const origNorm = m.originalTitle ? normalizeSearchString(m.originalTitle) : "";
-      const origStrip = stripLeadingArticles(origNorm);
-      const cleanOrig = m.originalTitle ? cleanFranchiseName(m.originalTitle) : "";
-
-      const isExactMatch =
-        norm === rawQ ||
-        strip === rawQ ||
-        clean === cleanQ ||
-        (origNorm && origNorm === rawQ) ||
-        (origStrip && origStrip === rawQ) ||
-        (cleanOrig && cleanOrig === cleanQ);
+      const isExactMatch = isTitleExactMatch(m.title, m.originalTitle, rawQ, cleanQ);
 
       if (isExactMatch) {
         return votes >= SEARCH_CONFIG.EXACT_MATCH_MIN_VOTES;
@@ -261,12 +283,12 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
     const titleNorm = normalizeSearchString(m.title);
     const origNorm = m.originalTitle ? normalizeSearchString(m.originalTitle) : "";
     const cleanTitle = cleanFranchiseName(m.title);
-    const cleanOrig = m.originalTitle ? cleanFranchiseName(m.originalTitle) : "";
 
+    const isExact = isTitleExactMatch(m.title, m.originalTitle, rawQ, cleanQ);
     let relevance = 0;
 
-    // 1. Título idêntico (ex: "Sim Senhor" ao buscar "sim senhor", "La La Land", "Oppenheimer")
-    if (titleNorm === rawQ || origNorm === rawQ || cleanTitle === cleanQ || cleanOrig === cleanQ) {
+    // 1. Título idêntico homônimo (ex: "Sim Senhor" ao buscar "sim senhor", "La La Land", "Oppenheimer")
+    if (isExact) {
       relevance = 400;
     }
     // 2. Inicia com o termo buscado (ex: "O Senhor dos Anéis" ou "Senhor das Armas" para "senhor")
@@ -395,9 +417,9 @@ export async function searchCineraMovies(
         const candidateEntries = candidateCols.slice(0, 5).map((candidateCol, index) => {
           const isDirectMatch = matchFranchise(candidateCol.name || "", candidateCol.original_name, cleanQuery);
 
-          // Extração da Raiz Nominal da Franquia (Gramática de Catálogo: delimitador ':' ou ' - ')
-          const baseNamePt = (candidateCol.name || "").split(/:|\s+-\s+/)[0];
-          const baseNameOrig = (candidateCol.original_name || "").split(/:|\s+-\s+/)[0];
+          // Extração da Raiz Nominal da Franquia (delimitador ':', ' - ' ou parênteses)
+          const baseNamePt = (candidateCol.name || "").split(/:|\s+-\s+|\s*\(/)[0];
+          const baseNameOrig = (candidateCol.original_name || "").split(/:|\s+-\s+|\s*\(/)[0];
           const cleanRootPt = cleanFranchiseName(baseNamePt);
           const stripRootPt = stripLeadingArticles(cleanRootPt);
           const cleanRootOrig = cleanFranchiseName(baseNameOrig);
@@ -423,10 +445,20 @@ export async function searchCineraMovies(
           const isPredictiveMatch =
             isPredictivePrefix && (queryTokensCount >= 2 || normQ.length >= 6) && coverage >= 0.65;
 
+          // Regra Universal de Franquia Irmã / Eras de Reboots (ex: Homem-Aranha, Batman):
+          // Para buscas com 2+ palavras, qualquer coleção cujo nome no TMDB contenha a franquia é candidata a inspeção
+          const enSynonym = getCognateSynonym(normQ);
+          const isFranchiseVariant =
+            queryTokensCount >= 2 &&
+            (stripCandidate.includes(normQ) ||
+              cleanCandidate.includes(normQ) ||
+              (enSynonym ? stripOrigCandidate.includes(enSynonym) || origCandidate.includes(enSynonym) : false));
+
           const isCandidateToInspect =
             isDirectMatch ||
             isRootMatch ||
             isPredictiveMatch ||
+            isFranchiseVariant ||
             index === 0;
 
           return {
@@ -434,6 +466,7 @@ export async function searchCineraMovies(
             isDirectMatch,
             isRootMatch,
             isPredictiveMatch,
+            isFranchiseVariant,
             cleanRootPt,
             stripRootPt,
             cleanCandidate,
@@ -468,6 +501,9 @@ export async function searchCineraMovies(
             return hasPoster && isReleased && hasVotes;
           });
 
+          // Regra de Ouro 1: Uma coleção só é considerada franquia/saga se tiver pelo menos 2 filmes lançados
+          if (parts.length < 2) continue;
+
           // Regra de Ouro 2: Piso estatístico de relevância (mínimo 500 votos em um filme ou 1000 somados)
           const totalVotes = parts.reduce((sum, p) => sum + (p.vote_count || 0), 0);
           const maxPartVotes = Math.max(...parts.map((p) => p.vote_count || 0), 0);
@@ -478,6 +514,11 @@ export async function searchCineraMovies(
           if (!hasSocialProof) continue;
 
           // Regra Anti-Monopólio / Ambiguidade Cultural (Queries de 1 única palavra):
+          // Protege contra pequenas coleções com baixo volume de votos que possam sequestrar termos amplos.
+          // Exemplo: "Guardiões: Coleção" (duologia russa de 1.400 votos) não deve monopolizar "guardiões",
+          // pois "Guardiões da Galáxia" possui 30.000+ votos fora da coleção.
+          // Porém, coleções com autoridade mundial consagrada (como o Batman clássico de 1989 com 27.000+ votos)
+          // nunca são descartadas como ruído.
           if (queryTokensCount === 1) {
             const maxExternalVotes = Math.max(
               ...validMovies
@@ -492,21 +533,23 @@ export async function searchCineraMovies(
               0
             );
 
-            if (maxExternalVotes > maxPartVotes * 3) {
+            const hasEstablishedAuthority = totalVotes >= 10000;
+            const hasSevereExternalMonopoly = maxExternalVotes > maxPartVotes * 3;
+
+            if (!hasEstablishedAuthority && hasSevereExternalMonopoly) {
               continue;
             }
           }
 
           // Busca dinâmica de cognato internacional para unir eras e reboots sem nenhum hardcode
-          const enSynonym = getCognateSynonym(matchedPrimaryEntity);
+          const enSynonym = getCognateSynonym(matchedPrimaryEntity || normQ);
           const isSisterFranchise =
-            canonicalCollectionMovies.length > 0 &&
             queryTokensCount >= 2 &&
-            Boolean(matchedPrimaryEntity) &&
-            (entry.stripCandidate.includes(matchedPrimaryEntity!) ||
-              entry.cleanCandidate.includes(matchedPrimaryEntity!) ||
-              entry.stripRootPt.includes(matchedPrimaryEntity!) ||
-              entry.cleanRootPt.includes(matchedPrimaryEntity!) ||
+            (entry.stripCandidate.includes(normQ) ||
+              entry.cleanCandidate.includes(normQ) ||
+              entry.stripRootPt.includes(normQ) ||
+              entry.cleanRootPt.includes(normQ) ||
+              entry.isFranchiseVariant ||
               (enSynonym ? entry.stripOrigCandidate.includes(enSynonym) || entry.cleanRootOrig.includes(enSynonym) : false));
 
           // Regra Orgânica do Prefixo Canônico dos Filmes (ex: "007: ..."):
