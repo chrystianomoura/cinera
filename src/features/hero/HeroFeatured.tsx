@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { Play, Info } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import type { Movie } from "@/domain";
-import { getBackdropUrl, movieService } from "@/infrastructure/api/movie-service";
-import { formatRuntime } from "@/lib/formatters";
-import { CertificationBadge } from "@/features/movie-details/CertificationBadge";
+import { getBackdropUrl } from "@/infrastructure/api/movie-service";
 
 interface HeroFeaturedProps {
   candidates: Movie[];
@@ -27,36 +24,35 @@ export function HeroFeatured({
   const [isFading, setIsFading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  // Trava dupla: prioriza estritamente filmes com tagline oficial
+  const validCandidates = candidates.filter(
+    (m) => Boolean(m.tagline && m.tagline.trim().length > 0),
+  );
+  const heroList = validCandidates.length > 0 ? validCandidates : candidates;
+
   const heroMovie =
-    candidates.length > 0 ? candidates[heroIndex % candidates.length] : null;
+    heroList.length > 0 ? heroList[heroIndex % heroList.length] : null;
 
-  const { data: certification } = useQuery<string | null>({
-    queryKey: ["movie", "certification", heroMovie?.id],
-    queryFn: () => (heroMovie?.id ? movieService.getMovieReleaseDates(heroMovie.id) : null),
-    enabled: Boolean(heroMovie?.id),
-    staleTime: 1000 * 60 * 60 * 24,
-  });
-
-  // Rotação automática a cada 8 segundos com crossfade suave (pausa no hover ou trailer aberto)
+  // Rotação automática a cada 6 segundos com crossfade suave (pausa no hover ou trailer aberto)
   useEffect(() => {
-    if (candidates.length <= 1 || isTrailerOpen || isHovered) return;
+    if (heroList.length <= 1 || isTrailerOpen || isHovered) return;
 
     const interval = setInterval(() => {
       setIsFading(true);
       setTimeout(() => {
-        setHeroIndex((prev) => (prev + 1) % candidates.length);
+        setHeroIndex((prev) => (prev + 1) % heroList.length);
         setIsFading(false);
       }, 700);
-    }, 8000);
+    }, 6000);
 
     return () => clearInterval(interval);
-  }, [candidates.length, isTrailerOpen, isHovered]);
+  }, [heroList.length, isTrailerOpen, isHovered]);
 
   return (
     <section
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full min-h-[80vh] md:min-h-[88vh] flex items-end pb-5 sm:pb-6 md:pb-12 px-4 md:px-12 pt-24 md:pt-28 overflow-hidden"
+      className="relative w-full min-h-[72vh] md:min-h-[80vh] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-6 md:pt-10 overflow-hidden"
     >
       {(isLoading || !heroMovie) && (
         <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
@@ -75,16 +71,12 @@ export function HeroFeatured({
               alt={heroMovie.title}
               className="w-full h-full object-cover object-top animate-kenburns origin-center"
             />
-            {/* Vinheta no canto superior esquerdo para contraste da logo */}
-            <div className="absolute top-0 left-0 w-80 md:w-96 h-36 bg-[radial-gradient(ellipse_at_top_left,_rgba(0,0,0,0.45)_0%,_transparent_75%)] pointer-events-none" />
-
-            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/25 via-black/5 to-transparent pointer-events-none" />
 
             <div
-              className="absolute inset-x-0 bottom-0 h-[55%] pointer-events-none"
+              className="absolute inset-x-0 bottom-0 h-[38%] pointer-events-none"
               style={{
                 background:
-                  "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0.2) 75%, transparent 100%)",
+                  "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 35%, rgba(0,0,0,0.2) 75%, transparent 100%)",
               }}
             />
           </div>
@@ -97,6 +89,11 @@ export function HeroFeatured({
             }`}
           >
             {(() => {
+              const hasTagline = Boolean(
+                heroMovie.tagline && heroMovie.tagline.trim().length > 0,
+              );
+              const titleSpacingClass = hasTagline ? "mb-1.5" : "mb-4 md:mb-5";
+
               const colonIndex = heroMovie.title.indexOf(":");
               if (colonIndex !== -1) {
                 const part1 = heroMovie.title.slice(0, colonIndex).trim();
@@ -105,14 +102,14 @@ export function HeroFeatured({
 
                 const fontClasses =
                   longestPart > 32
-                    ? "text-3xl sm:text-4xl md:text-5xl lg:text-5xl"
-                    : longestPart > 22
-                      ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
-                      : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl";
+                    ? "text-xl sm:text-2xl md:text-3xl lg:text-4xl"
+                    : longestPart > 20
+                      ? "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                      : "text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem]";
 
                 return (
                   <h2
-                    className={`font-black tracking-tight text-white mb-2.5 leading-[1.08] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
+                    className={`font-black tracking-tight text-white ${titleSpacingClass} leading-[1.08] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
                   >
                     <span>{part1}:</span>
                     {part2 && (
@@ -127,17 +124,15 @@ export function HeroFeatured({
               const titleLength = heroMovie.title.length;
 
               const fontClasses =
-                titleLength > 42
-                  ? "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
-                  : titleLength > 28
-                    ? "text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
-                    : titleLength > 16
-                      ? "text-4xl sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-7xl"
-                      : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl";
+                titleLength > 32
+                  ? "text-xl sm:text-2xl md:text-3xl lg:text-4xl"
+                  : titleLength >= 18
+                    ? "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                    : "text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem]";
 
               return (
                 <h2
-                  className={`font-black tracking-tight text-white mb-2.5 leading-[1.05] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
+                  className={`font-black tracking-tight text-white ${titleSpacingClass} leading-[1.05] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
                 >
                   {heroMovie.title}
                 </h2>
@@ -145,72 +140,12 @@ export function HeroFeatured({
             })()}
 
             {heroMovie.tagline && (
-              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic mb-3.5 drop-shadow-md max-w-2xl text-center md:text-left [text-wrap:balance]">
+              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic leading-snug mb-4 md:mb-5 drop-shadow-md max-w-2xl text-center md:text-left [text-wrap:balance]">
                 "{heroMovie.tagline
                   .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
                   .trim()}"
               </p>
             )}
-
-            {(() => {
-              const releaseYear = heroMovie.releaseDate
-                ? heroMovie.releaseDate.slice(0, 4)
-                : null;
-              const runtimeFormatted = formatRuntime(heroMovie.runtime);
-              const heroGenre = heroMovie.genres?.[0]?.name || null;
-
-              return (
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 md:gap-3 mb-5 md:mb-6 text-sm md:text-base">
-                  {releaseYear && (
-                    <span className="font-semibold text-white drop-shadow-md">
-                      {releaseYear}
-                    </span>
-                  )}
-
-                  {runtimeFormatted && (
-                    <>
-                      {releaseYear && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
-                      )}
-                      <span className="font-semibold text-white drop-shadow-md">
-                        {runtimeFormatted}
-                      </span>
-                    </>
-                  )}
-
-                  {heroGenre && (
-                    <>
-                      {(releaseYear || runtimeFormatted) && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
-                      )}
-                      <span className="font-semibold text-white drop-shadow-md">
-                        {heroGenre}
-                      </span>
-                    </>
-                  )}
-
-                  {certification && (
-                    <>
-                      {(releaseYear || runtimeFormatted || heroGenre) && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
-                      )}
-                      <CertificationBadge certification={certification} />
-                    </>
-                  )}
-
-                  {heroMovie.voteAverage > 0 && (
-                    <>
-                      {(releaseYear || runtimeFormatted || heroGenre || certification) && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block flex-shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
-                      )}
-                      <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30 bg-gradient-to-r from-[#90cea1] to-[#01b4e4] px-2 py-0.5 text-xs font-black text-[#0d253f] tracking-wider uppercase">
-                        TMDB: {heroMovie.voteAverage.toFixed(1)}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })()}
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 w-full">
               <button

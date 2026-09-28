@@ -109,44 +109,41 @@ class MovieService {
       if (isTmdbConfigured()) {
         const trending = await this.getTrendingMovies(1);
 
+        // Funil 1: Backdrop obrigatório, relevância real (mínimo 50 votos) e nota consistente (>= 6.8)
         let candidates = trending.results.filter((m) =>
-          Boolean(m.backdropPath && m.voteAverage >= 7.0 && m.voteCount >= 10),
+          Boolean(m.backdropPath && m.voteAverage >= 6.8 && m.voteCount >= 50),
         );
 
-        if (candidates.length < 3) {
+        // Fallback suave apenas se o dia tiver poucos filmes avaliados
+        if (candidates.length < 5) {
           candidates = trending.results.filter((m) =>
-            Boolean(
-              m.backdropPath && m.voteAverage >= 6.5 && m.voteCount >= 10,
-            ),
+            Boolean(m.backdropPath && m.voteAverage >= 6.5 && m.voteCount >= 25),
           );
         }
 
+        // Inspeciona até 15 candidatos para garantir os 5 melhores com tagline oficial
+        const candidatesToInspect = candidates.slice(0, 15);
         const detailedMovies = await Promise.all(
-          candidates.slice(0, 5).map((m) => this.getMovieById(m.id)),
+          candidatesToInspect.map((m) => this.getMovieById(m.id)),
         );
 
+        // Filtro ESTRITO: Apenas filmes com tagline oficial válida e não-vazia
         const heroValid = detailedMovies.filter((m): m is Movie =>
           Boolean(m && m.tagline && m.tagline.trim().length > 0),
         );
 
         if (heroValid.length >= 3) {
-          return heroValid;
-        }
-
-        const validCandidates = detailedMovies.filter((m): m is Movie =>
-          Boolean(m),
-        );
-        if (validCandidates.length > 0) {
-          return validCandidates;
+          return heroValid.slice(0, 5);
         }
       }
     } catch (error) {
       console.warn("Falha ao obter filmes em destaque para o Hero:", error);
     }
 
-    return moviesMock.filter((m) =>
-      Boolean(m.tagline && m.tagline.trim().length > 0),
-    );
+    // Fallback estrito no mock: apenas filmes com tagline válida
+    return moviesMock
+      .filter((m) => Boolean(m.tagline && m.tagline.trim().length > 0))
+      .slice(0, 5);
   }
 
   /**

@@ -223,9 +223,9 @@ export default function App() {
       <div
         className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 ${
           isHomeView && !isFadingOutHome
-            ? "max-h-[88vh] opacity-100"
+            ? "max-h-[82vh] opacity-100"
             : isHomeView && isFadingOutHome
-            ? "max-h-[88vh] opacity-0"
+            ? "max-h-[82vh] opacity-0"
             : "max-h-0 opacity-0 pointer-events-none"
         }`}
       >
@@ -243,7 +243,7 @@ export default function App() {
         className={`relative z-10 px-0 md:px-12 flex flex-col gap-2.5 sm:gap-3.5 md:gap-6 ${
           isHomeView
             ? "pt-0"
-            : "pt-[4.25rem] md:pt-[5.25rem]"
+            : "pt-2 sm:pt-3 md:pt-4"
         }`}
       >
         <GenrePills
