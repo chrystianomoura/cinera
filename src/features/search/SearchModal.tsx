@@ -366,13 +366,13 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
 
           {/* ESTADO 5: Zero Resultados (Busca sem sucesso, compacto e limpo) */}
           {!isError && hasSearched && results.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-4 sm:py-5 px-4 text-center gap-2">
+            <div className="flex flex-col items-center justify-center py-4 sm:py-5 px-4 text-center gap-2 max-w-full overflow-hidden">
               <span className="text-3xl select-none leading-none mb-0.5" role="img" aria-label="Alerta">
                 ⚠️
               </span>
 
-              <h4 className="text-base font-bold text-white">
-                Nenhum filme encontrado para "{debouncedQuery}"
+              <h4 className="text-sm sm:text-base font-bold text-white max-w-full break-words [overflow-wrap:anywhere] px-2">
+                Nenhum filme encontrado para "{debouncedQuery.length > 35 ? `${debouncedQuery.slice(0, 35)}...` : debouncedQuery}"
               </h4>
 
               <p className="text-xs sm:text-sm text-zinc-400 max-w-md">
