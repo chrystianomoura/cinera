@@ -17,8 +17,8 @@ interface UseHorizontalScrollOptions {
  */
 export function useHorizontalScroll({
   defaultScrollFraction = 0.75,
-  scrollDuration = 820,
-  threshold = 8,
+  scrollDuration = 680,
+  threshold = 12,
 }: UseHorizontalScrollOptions = {}) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
   const nodeRef = useRef<HTMLDivElement | null>(null);
@@ -166,8 +166,6 @@ export function useHorizontalScroll({
 
       const duration = scrollDuration ?? 680;
       let startTime: number | null = null;
-      let cachedCanLeft = el.scrollLeft > threshold;
-      let cachedCanRight = el.scrollLeft < maxScroll - threshold;
 
       // Curva aveludada clássica de streaming: entrada suave, percurso fluido e pouso macio
       const easeInOutCubic = (t: number) =>
@@ -184,19 +182,6 @@ export function useHorizontalScroll({
 
         const currentPos = Math.round(startLeft + distance * ease);
         el.scrollLeft = currentPos;
-
-        // Atualização de estado leve e instantânea: só dispara re-render no React se o booleano mudar!
-        const curLeft = currentPos > threshold;
-        const curRight = currentPos < maxScroll - threshold;
-
-        if (curLeft !== cachedCanLeft) {
-          cachedCanLeft = curLeft;
-          setCanScrollLeft(curLeft);
-        }
-        if (curRight !== cachedCanRight) {
-          cachedCanRight = curRight;
-          setCanScrollRight(curRight);
-        }
 
         if (progress < 1) {
           animRafRef.current = requestAnimationFrame(step);

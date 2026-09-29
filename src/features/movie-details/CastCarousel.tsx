@@ -18,7 +18,11 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
     canScrollLeft,
     canScrollRight,
     scroll,
-  } = useHorizontalScroll({ defaultScrollFraction: 0.7 });
+  } = useHorizontalScroll({
+    defaultScrollFraction: 0.75,
+    scrollDuration: 680,
+    threshold: 12,
+  });
 
   const topCast = useMemo(
     () => cast.filter((actor) => Boolean(actor.profilePath)).slice(0, 18),
@@ -59,31 +63,37 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
 
         <div className="hidden sm:flex items-center gap-1.5 absolute right-0">
           <button
-            onClick={() => scroll("left")}
-            disabled={!canScrollLeft}
+            onClick={() => canScrollLeft && scroll("left")}
             aria-label="Rolar elenco para a esquerda"
-            className="w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer"
+            tabIndex={canScrollLeft ? 0 : -1}
+            className={`w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer ${
+              canScrollLeft
+                ? "opacity-100 cursor-pointer"
+                : "opacity-30 pointer-events-none cursor-default"
+            }`}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 pointer-events-none" />
           </button>
           <button
-            onClick={() => scroll("right")}
-            disabled={!canScrollRight}
+            onClick={() => canScrollRight && scroll("right")}
             aria-label="Rolar elenco para a direita"
-            className="w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer"
+            tabIndex={canScrollRight ? 0 : -1}
+            className={`w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer ${
+              canScrollRight
+                ? "opacity-100 cursor-pointer"
+                : "opacity-30 pointer-events-none cursor-default"
+            }`}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 pointer-events-none" />
           </button>
         </div>
       </div>
 
       <div className="relative">
-        {/* Borda de fade esquerda */}
+        {/* Borda de fade esquerda - rápida e ágil */}
         <div
-          className={`hidden md:block absolute left-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
-            canScrollLeft
-              ? "opacity-100 duration-300 ease-out"
-              : "opacity-0 duration-700 ease-out"
+          className={`hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
+            canScrollLeft ? "opacity-100" : "opacity-0"
           }`}
         />
 
@@ -99,14 +109,14 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
                 key={actor.id}
                 className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor"
               >
-                <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-lg mb-2.5 transition-all duration-300 group-hover/actor:scale-105">
+                <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-md mb-2.5 transition-transform duration-300 ease-out group-hover/actor:scale-105">
                   {profileImg ? (
                     <img
                       src={profileImg}
                       alt={actor.name}
-                      loading="eager"
+                      loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover object-top pointer-events-none"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-zinc-600">
@@ -121,15 +131,12 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
               </div>
             );
           })}
-          <div className="flex-shrink-0 w-8 sm:w-12 pointer-events-none" aria-hidden="true" />
         </div>
 
-        {/* Borda de fade direita */}
+        {/* Borda de fade direita - rápida e ágil */}
         <div
-          className={`hidden md:block absolute right-0 inset-y-0 w-14 sm:w-20 md:w-28 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
-            canScrollRight
-              ? "opacity-100 duration-300 ease-out"
-              : "opacity-0 duration-700 ease-out"
+          className={`hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
+            canScrollRight ? "opacity-100" : "opacity-0"
           }`}
         />
       </div>
