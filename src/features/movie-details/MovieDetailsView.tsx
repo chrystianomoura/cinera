@@ -218,7 +218,7 @@ export function MovieDetailsView({
               {/* Tagline Oficial colada ao título */}
               {movie.tagline ? (
                 <p className="text-base sm:text-lg md:text-xl font-medium italic text-zinc-300 drop-shadow leading-snug [text-wrap:balance]">
-                  "{movie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}"
+                  {movie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}
                 </p>
               ) : null}
             </div>

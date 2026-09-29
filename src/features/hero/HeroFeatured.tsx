@@ -52,7 +52,7 @@ export function HeroFeatured({
     <section
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full min-h-[72vh] md:min-h-[80vh] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-6 md:pt-10 overflow-hidden"
+      className="relative w-full h-[calc(100svh-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden"
     >
       {(isLoading || !heroMovie) && (
         <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
@@ -141,9 +141,9 @@ export function HeroFeatured({
 
             {heroMovie.tagline && (
               <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic leading-snug mb-4 md:mb-5 drop-shadow-md max-w-2xl text-center md:text-left [text-wrap:balance]">
-                "{heroMovie.tagline
+                {heroMovie.tagline
                   .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
-                  .trim()}"
+                  .trim()}
               </p>
             )}
 

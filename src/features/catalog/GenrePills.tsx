@@ -58,11 +58,12 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
 
   return (
     <section className="relative group/pills">
+      {/* Borda de fade e seta esquerda (aparece apenas no hover da seção de pílulas) */}
       <div
-        className={`hidden md:flex absolute left-0 inset-y-0 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity ${
+        className={`hidden md:flex absolute left-0 inset-y-0 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity duration-300 ${
           canScrollLeftGenres
-            ? "opacity-100 duration-300 ease-out"
-            : "opacity-0 duration-700 ease-out"
+            ? "opacity-0 group-hover/pills:opacity-100"
+            : "opacity-0 pointer-events-none"
         }`}
       >
         <button
@@ -101,9 +102,12 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
         <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
       </div>
 
+      {/* Borda de fade e seta direita (aparece apenas no hover da seção de pílulas) */}
       <div
         className={`hidden md:flex absolute right-0 inset-y-0 w-28 bg-gradient-to-l from-black from-35% via-black/70 to-transparent z-20 items-center justify-end pointer-events-none transition-opacity duration-300 ${
-          canScrollRightGenres ? "opacity-100" : "opacity-0"
+          canScrollRightGenres
+            ? "opacity-0 group-hover/pills:opacity-100"
+            : "opacity-0 pointer-events-none"
         }`}
       >
         <button

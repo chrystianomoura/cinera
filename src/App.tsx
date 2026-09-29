@@ -222,9 +222,9 @@ export default function App() {
       <div
         className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 ${
           isHomeView && !isFadingOutHome
-            ? "max-h-[82vh] opacity-100"
+            ? "max-h-[850px] opacity-100"
             : isHomeView && isFadingOutHome
-            ? "max-h-[82vh] opacity-0"
+            ? "max-h-[850px] opacity-0"
             : "max-h-0 opacity-0 pointer-events-none"
         }`}
       >

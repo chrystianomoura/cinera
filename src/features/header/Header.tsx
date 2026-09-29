@@ -20,7 +20,7 @@ export function Header({ onSearchClick }: HeaderProps) {
 
   return (
     <header
-      className={`sticky top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 px-4 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b backdrop-blur-xl ${
+      className={`sticky top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b backdrop-blur-xl ${
         isScrolled
           ? "bg-black/95 border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.6)]"
           : "bg-black/90 border-white/10 shadow-none"
