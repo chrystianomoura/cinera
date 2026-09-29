@@ -139,16 +139,16 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
+      const nextIdx = selectedIndex < 0 ? 0 : (selectedIndex + 1) % results.length;
       moveSelection("down", results.length);
       requestAnimationFrame(() => {
-        const nextIdx = (selectedIndex + 1) % results.length;
         listRef.current?.querySelector(`[data-search-index="${nextIdx}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
       });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
+      const prevIdx = selectedIndex < 0 ? results.length - 1 : (selectedIndex - 1 + results.length) % results.length;
       moveSelection("up", results.length);
       requestAnimationFrame(() => {
-        const prevIdx = (selectedIndex - 1 + results.length) % results.length;
         listRef.current?.querySelector(`[data-search-index="${prevIdx}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
       });
     } else if (e.key === "Enter") {
