@@ -164,9 +164,12 @@ export function useHorizontalScroll({
       // Previne disparos de hover acidentais nos cards durante a rolagem
       el.style.pointerEvents = "none";
 
-      const duration = scrollDuration;
+      const duration = scrollDuration ?? 680;
       let startTime: number | null = null;
+      let cachedCanLeft = el.scrollLeft > threshold;
+      let cachedCanRight = el.scrollLeft < maxScroll - threshold;
 
+      // Curva aveludada clássica de streaming: entrada suave, percurso fluido e pouso macio
       const easeInOutCubic = (t: number) =>
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -179,7 +182,21 @@ export function useHorizontalScroll({
         const progress = Math.min(1, elapsed / duration);
         const ease = easeInOutCubic(progress);
 
-        el.scrollLeft = Math.round(startLeft + distance * ease);
+        const currentPos = Math.round(startLeft + distance * ease);
+        el.scrollLeft = currentPos;
+
+        // Atualização de estado leve e instantânea: só dispara re-render no React se o booleano mudar!
+        const curLeft = currentPos > threshold;
+        const curRight = currentPos < maxScroll - threshold;
+
+        if (curLeft !== cachedCanLeft) {
+          cachedCanLeft = curLeft;
+          setCanScrollLeft(curLeft);
+        }
+        if (curRight !== cachedCanRight) {
+          cachedCanRight = curRight;
+          setCanScrollRight(curRight);
+        }
 
         if (progress < 1) {
           animRafRef.current = requestAnimationFrame(step);
@@ -195,7 +212,7 @@ export function useHorizontalScroll({
 
       animRafRef.current = requestAnimationFrame(step);
     },
-    [defaultScrollFraction, scrollDuration, syncState]
+    [defaultScrollFraction, scrollDuration, syncState, threshold]
   );
 
   return {

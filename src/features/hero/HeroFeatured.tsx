@@ -147,20 +147,20 @@ export function HeroFeatured({
               </p>
             )}
 
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 w-full">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-3.5 w-full">
               <button
                 onClick={() => onOpenTrailer(heroMovie)}
-                className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-white text-black font-bold text-base hover:bg-zinc-200 transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 cursor-pointer group"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black font-bold text-sm border border-white hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-200 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Play className="w-5 h-5 fill-current transition-transform group-hover:scale-110" />
+                <Play className="w-4.5 h-4.5 fill-current" />
                 <span>Trailer</span>
               </button>
 
               <button
                 onClick={() => onOpenDetails?.(heroMovie)}
-                className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white font-semibold text-base border border-white/15 hover:border-white/35 transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 cursor-pointer group"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-950/80 backdrop-blur-md hover:bg-zinc-800 text-white font-medium text-sm border border-white/20 hover:border-white/40 transition-all duration-200 shadow-lg hover:scale-105 active:scale-95 cursor-pointer group"
               >
-                <Info className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
+                <Info className="w-4.5 h-4.5 text-zinc-300 group-hover:text-white transition-colors" />
                 <span>Ver Detalhes</span>
               </button>
             </div>

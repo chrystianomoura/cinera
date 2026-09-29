@@ -24,7 +24,7 @@ export const MovieCard = memo(function MovieCard({
     <div
       onClick={() => onClick?.(movie)}
       className={`group/card relative flex flex-col gap-2 cursor-pointer ${
-        className ?? "flex-shrink-0 w-36 md:w-48 lg:w-56"
+        className ?? "flex-shrink-0 w-36 sm:w-44 md:w-52 lg:w-60"
       }`}
     >
       <div className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-zinc-900 border border-white/5 relative transition-all duration-300 ease-out group-hover/card:-translate-y-3 group-hover/card:shadow-[0_15px_40px_rgba(0,0,0,0.6)]">

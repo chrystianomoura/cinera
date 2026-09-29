@@ -27,7 +27,11 @@ export function MovieCarousel({
     canScrollLeft,
     canScrollRight,
     scroll,
-  } = useHorizontalScroll({ defaultScrollFraction: 0.75 });
+  } = useHorizontalScroll({
+    defaultScrollFraction: 0.75,
+    scrollDuration: 680,
+    threshold: 12,
+  });
 
   return (
     <section className="relative group/carousel">
@@ -52,7 +56,7 @@ export function MovieCarousel({
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-36 md:w-48 lg:w-56 flex flex-col gap-3 animate-pulse"
+              className="flex-shrink-0 w-36 sm:w-44 md:w-52 lg:w-60 flex flex-col gap-3 animate-pulse"
             >
               <div className="aspect-[2/3] w-full rounded-xl bg-zinc-900"></div>
               <div className="h-4 w-3/4 rounded bg-zinc-900"></div>
@@ -62,12 +66,10 @@ export function MovieCarousel({
         </div>
       ) : (
         <div className="relative">
-          {/* Borda de fade esquerda */}
+          {/* Borda de fade esquerda - rápida, suave e sem flash */}
           <div
-            className={`hidden md:block absolute left-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-r from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
-              canScrollLeft
-                ? "opacity-100 duration-300 ease-out"
-                : "opacity-0 duration-700 ease-out"
+            className={`hidden md:block absolute left-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-r from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
+              canScrollLeft ? "opacity-100" : "opacity-0"
             }`}
           />
 
@@ -96,15 +98,12 @@ export function MovieCarousel({
                 onClick={onSelectMovie}
               />
             ))}
-            <div className="flex-shrink-0 w-8 md:w-16 pointer-events-none" aria-hidden="true" />
           </div>
 
-          {/* Borda de fade direita */}
+          {/* Borda de fade direita - rápida, suave e sem flash */}
           <div
-            className={`hidden md:block absolute right-0 top-0 bottom-2 w-16 sm:w-24 md:w-36 lg:w-44 bg-gradient-to-l from-black from-20% via-black/85 via-50% to-transparent z-20 pointer-events-none transition-opacity ${
-              canScrollRight
-                ? "opacity-100 duration-300 ease-out"
-                : "opacity-0 duration-700 ease-out"
+            className={`hidden md:block absolute right-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-l from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
+              canScrollRight ? "opacity-100" : "opacity-0"
             }`}
           />
 
