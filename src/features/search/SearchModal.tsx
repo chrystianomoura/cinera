@@ -98,7 +98,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
   // Protege selectedIndex contra encolhimento assíncrono de lista de resultados
   useEffect(() => {
     if (results.length > 0 && selectedIndex >= results.length) {
-      setSelectedIndex(0);
+      setSelectedIndex(-1);
     }
   }, [results.length, selectedIndex, setSelectedIndex]);
 
@@ -180,8 +180,8 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
         onClick={(e) => e.stopPropagation()}
         className="relative w-full h-full md:h-auto md:max-h-[82vh] md:max-w-2xl bg-zinc-950/95 border-0 md:border md:border-white/10 rounded-none md:rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden text-white cursor-default"
       >
-        {/* Cabeçalho de Busca com Input Acessível */}
-        <div className="flex items-center px-4 py-3.5 border-b border-white/10 gap-3 bg-zinc-900/60 flex-shrink-0">
+        {/* Cabeçalho de Busca com Input Acessível e Suporte a Safe-Area no Mobile */}
+        <div className="flex items-center px-3.5 sm:px-4 pt-3 pb-3 sm:py-3.5 border-b border-white/10 gap-2.5 sm:gap-3 bg-zinc-900/80 backdrop-blur-md flex-shrink-0">
           <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
 
           <input
@@ -196,13 +196,13 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
-            placeholder="Pesquisar por título de filme ou franquia..."
+            placeholder="Pesquisar por filme ou franquia..."
             aria-label="Campo de pesquisa de filmes"
             autoComplete="off"
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck="false"
-            className="flex-1 bg-transparent text-white placeholder-zinc-500 text-base md:text-lg focus:outline-none font-medium"
+            className="flex-1 bg-transparent text-white placeholder-zinc-500 text-base sm:text-lg focus:outline-none font-medium"
           />
 
           {/* Indicador de carregamento assíncrono */}
@@ -218,7 +218,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                 setQuery("");
                 inputRef.current?.focus();
               }}
-              className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer flex-shrink-0"
+              className="p-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer flex-shrink-0 rounded-full hover:bg-white/5 active:bg-white/10"
               title="Limpar texto"
               aria-label="Limpar texto pesquisado"
             >
@@ -231,17 +231,17 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             type="button"
             onClick={closeSearch}
             aria-label="Fechar janela de busca"
-            className="hidden md:inline-flex items-center justify-center text-[11px] font-mono text-zinc-400 bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-0.5 rounded cursor-pointer transition-colors"
+            className="hidden md:inline-flex items-center justify-center text-xs font-mono font-medium text-zinc-300 bg-white/10 hover:bg-white/15 border border-white/15 px-2.5 py-1 rounded-md cursor-pointer transition-colors shadow-sm"
           >
             Esc
           </button>
 
-          {/* Botão Fechar no mobile */}
+          {/* Botão Fechar no mobile com área de toque ergonômica */}
           <button
             type="button"
             onClick={closeSearch}
             aria-label="Fechar janela de busca"
-            className="md:hidden text-sm font-semibold text-zinc-300 hover:text-white px-1.5 py-1"
+            className="md:hidden text-sm font-semibold text-zinc-400 hover:text-white px-2 py-1 rounded-lg active:bg-white/10 transition-colors"
           >
             Fechar
           </button>
@@ -297,6 +297,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
               role="listbox"
               aria-label="Resultados de filmes encontrados"
               aria-busy={!isSettled}
+              onMouseLeave={() => setSelectedIndex(-1)}
               className="flex flex-col gap-1"
             >
               {results.map((movie, index) => {
@@ -317,53 +318,53 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                     data-search-index={index}
                     onClick={() => handleSelect(movie)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`group flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-150 select-none active:bg-white/10 ${
+                    className={`group flex items-center gap-4 px-3 py-3 rounded-2xl cursor-pointer transition-all duration-150 select-none active:bg-white/10 border-b border-white/[0.06] last:border-b-0 ${
                       isSelected
-                        ? "md:bg-white/10 text-white md:shadow-sm md:ring-1 md:ring-white/15"
-                        : "hover:bg-white/5 text-zinc-200"
+                        ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-white/15"
+                        : "hover:bg-white/[0.04] text-zinc-200"
                     }`}
                   >
-                    {/* Pôster em Miniatura */}
-                    <div className="w-11 h-16 rounded-lg overflow-hidden bg-zinc-900 border border-white/10 flex-shrink-0 relative">
+                    {/* Pôster Imponente e Cinematográfico (w-16 h-24 / 64px x 96px) */}
+                    <div className="w-16 h-24 sm:w-16 sm:h-24 rounded-xl overflow-hidden bg-zinc-900 ring-1 ring-white/15 flex-shrink-0 relative shadow-[0_8px_20px_rgba(0,0,0,0.7)]">
                       {posterUrl ? (
                         <img
                           src={posterUrl}
                           alt={movie.title}
                           loading="lazy"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                          <Film className="w-5 h-5" />
+                        <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-zinc-900">
+                          <Film className="w-6 h-6" />
                         </div>
                       )}
                     </div>
 
-                    {/* Dados do Filme */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-1">
-                      <h4 className="text-sm sm:text-base font-bold text-white truncate leading-snug">
+                    {/* Dados do Filme: Título Grande e Forte com Categorias Separadas por '/' */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5 py-0.5">
+                      <h4 className="text-base sm:text-lg font-bold text-white truncate leading-tight tracking-tight">
                         {movie.title}
                       </h4>
 
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
-                        {releaseYear && <span>{releaseYear}</span>}
+                      <div className="flex items-center gap-2.5 text-xs sm:text-[13px] text-zinc-400 font-normal">
+                        {releaseYear && (
+                          <span className="text-zinc-300 font-semibold">{releaseYear}</span>
+                        )}
 
                         {movie.genres && movie.genres.length > 0 && (
                           <>
-                            <span className="w-1 h-1 rounded-full bg-zinc-500 inline-block" />
-                            <span className="truncate">
-                              {movie.genres.slice(0, 2).map((g) => g.name).join(" • ")}
+                            {/* Ponto Divisor com Contraste Marcante */}
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 inline-block flex-shrink-0" />
+                            <span className="truncate text-zinc-300">
+                              {movie.genres.slice(0, 2).map((g) => g.name).join(" / ")}
                             </span>
                           </>
                         )}
                       </div>
                     </div>
 
-                    <ChevronRight
-                      className={`hidden md:block w-4 h-4 ml-2 flex-shrink-0 transition-opacity ${
-                        isSelected ? "opacity-100 text-white" : "opacity-0 group-hover:opacity-60 text-zinc-400"
-                      }`}
-                    />
+                    {/* Chevron Convidativo e Evidente no Mobile e Desktop */}
+                    <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-white group-active:text-white transition-colors flex-shrink-0 ml-1 stroke-[2.25]" />
                   </div>
                 );
               })}
@@ -429,20 +430,20 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
         </div>
 
         {/* Rodapé Tátil com Atalhos de Teclado (Desktop) */}
-        <div className="hidden md:flex items-center justify-center px-4 py-2.5 border-t border-white/10 bg-zinc-900/60 text-xs text-zinc-400 font-medium flex-shrink-0">
-          <div className="flex items-center justify-center gap-5">
-            <span className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono text-[10px]">↑</kbd>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono text-[10px]">↓</kbd>
-              <span>Navegar</span>
+        <div className="hidden md:flex items-center justify-center px-4 py-3 border-t border-white/10 bg-zinc-900/80 text-[13px] text-zinc-300 font-medium flex-shrink-0">
+          <div className="flex items-center justify-center gap-6">
+            <span className="flex items-center gap-2">
+              <kbd className="px-2 py-0.5 rounded-md bg-white/10 text-white font-mono text-xs border border-white/10 shadow-sm">↑</kbd>
+              <kbd className="px-2 py-0.5 rounded-md bg-white/10 text-white font-mono text-xs border border-white/10 shadow-sm">↓</kbd>
+              <span className="text-zinc-300">Navegar</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono text-[10px]">↵</kbd>
-              <span>Abrir Filme</span>
+            <span className="flex items-center gap-2">
+              <kbd className="px-2 py-0.5 rounded-md bg-white/10 text-white font-mono text-xs border border-white/10 shadow-sm">↵</kbd>
+              <span className="text-zinc-300">Abrir Filme</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono text-[10px]">Esc</kbd>
-              <span>Fechar</span>
+            <span className="flex items-center gap-2">
+              <kbd className="px-2 py-0.5 rounded-md bg-white/10 text-white font-mono text-xs border border-white/10 shadow-sm">Esc</kbd>
+              <span className="text-zinc-300">Fechar</span>
             </span>
           </div>
         </div>

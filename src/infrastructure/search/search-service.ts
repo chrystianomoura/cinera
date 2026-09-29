@@ -339,11 +339,15 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
   });
 
   scored.sort((a, b) => {
-    // 1. Matches exatos sempre têm prioridade absoluta sobre aproximações
-    if (a.isExact !== b.isExact) {
-      return a.isExact ? -1 : 1;
+    // 1. Se ambos são exatos ou ambos são parciais, o score bayesiano desempata
+    if (a.isExact === b.isExact) {
+      return b.score - a.score;
     }
-    // 2. Se ambos forem exatos homônimos (ex: Titanic 1997 vs Titanic 1943), o score de autoridade/votos desempata
+
+    // 2. Se um é exato e o outro é parcial:
+    // O exato tem grande vantagem (+400 de relevância base).
+    // No entanto, se o filme parcial for um fenômeno de autoridade colossal (ex: O Cavaleiro das Trevas com 35k votos)
+    // contra uma obra homônima obscura de 20 votos (ex: serial de 1943), a pontuação bayesiana total decide organicamente.
     return b.score - a.score;
   });
 
@@ -449,13 +453,20 @@ export async function searchCineraMovies(
           const stripOrigCandidate = stripLeadingArticles(origCandidate);
 
           // Regra Preditiva de Convergência de Saga:
+          // Se o usuário já digitou >= 75% da raiz da franquia (ex: "dun" para "duna" / "dune" = 75% de cobertura),
+          // o motor reconhece o prefixo contíguo da saga de forma inteligente e contínua.
           const isPredictivePrefix =
             (stripCandidate.length > 0 && stripCandidate.startsWith(normQ)) ||
-            (stripOrigCandidate.length > 0 && stripOrigCandidate.startsWith(normQ));
-          const maxTargetLen = Math.max(stripCandidate.length, stripOrigCandidate.length);
+            (stripOrigCandidate.length > 0 && stripOrigCandidate.startsWith(normQ)) ||
+            (cleanRootPt.length > 0 && cleanRootPt.startsWith(normQ)) ||
+            (cleanRootOrig.length > 0 && cleanRootOrig.startsWith(normQ));
+          const maxTargetLen = Math.max(
+            cleanRootPt.length || stripCandidate.length,
+            cleanRootOrig.length || stripOrigCandidate.length
+          );
           const coverage = maxTargetLen > 0 ? normQ.length / maxTargetLen : 0;
           const isPredictiveMatch =
-            isPredictivePrefix && (queryTokensCount >= 2 || normQ.length >= 6) && coverage >= 0.75;
+            isPredictivePrefix && (queryTokensCount >= 2 || normQ.length >= 3) && coverage >= 0.75;
 
           // Regra Universal de Franquia Irmã / Eras de Reboots (ex: Homem-Aranha, Batman):
           // Só qualifica se a coleção cobrir substantivamente o termo do usuário ou for match direto de raiz

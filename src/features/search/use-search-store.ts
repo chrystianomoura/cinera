@@ -20,7 +20,7 @@ interface SearchState {
 export const useSearchStore = create<SearchState>((set) => ({
   isOpen: false,
   query: "",
-  selectedIndex: 0,
+  selectedIndex: -1,
   scrollPosition: 0,
   isPausedForDetails: false,
 
@@ -28,7 +28,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     set({
       isOpen: true,
       query: "",
-      selectedIndex: 0,
+      selectedIndex: -1,
       scrollPosition: 0,
       isPausedForDetails: false,
     }),
@@ -37,7 +37,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     set({
       isOpen: false,
       query: "",
-      selectedIndex: 0,
+      selectedIndex: -1,
       scrollPosition: 0,
       isPausedForDetails: false,
     }),
@@ -59,7 +59,7 @@ export const useSearchStore = create<SearchState>((set) => ({
   setQuery: (query: string) =>
     set({
       query,
-      selectedIndex: 0,
+      selectedIndex: -1,
       scrollPosition: 0,
     }),
 
@@ -91,6 +91,6 @@ export const useSearchStore = create<SearchState>((set) => ({
   resetSearch: () =>
     set({
       query: "",
-      selectedIndex: 0,
+      selectedIndex: -1,
     }),
 }));
