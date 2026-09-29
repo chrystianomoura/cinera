@@ -75,13 +75,13 @@ export function MovieCarousel({
             onClick={() => scroll("left")}
             aria-label={`Rolar ${title} para a esquerda`}
             tabIndex={canScrollLeft ? 0 : -1}
-            className={`hidden md:flex absolute left-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-all ${
+            className={`hidden md:flex absolute left-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer pointer-events-none ${
               canScrollLeft
-                ? "opacity-0 group-hover/carousel:opacity-100 pointer-events-auto duration-200"
-                : "opacity-0 pointer-events-none duration-500 ease-out"
+                ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto"
+                : "opacity-0 pointer-events-none"
             }`}
           >
-            <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+            <ChevronLeft className="w-6 h-6 stroke-[2.5] pointer-events-none" />
           </button>
 
           <div
@@ -112,13 +112,13 @@ export function MovieCarousel({
             onClick={() => scroll("right")}
             aria-label={`Rolar ${title} para a direita`}
             tabIndex={canScrollRight ? 0 : -1}
-            className={`hidden md:flex absolute right-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+            className={`hidden md:flex absolute right-2.5 top-[38%] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer pointer-events-none ${
               canScrollRight
-                ? "opacity-0 group-hover/carousel:opacity-100 pointer-events-auto"
+                ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto"
                 : "opacity-0 pointer-events-none"
             }`}
           >
-            <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+            <ChevronRight className="w-6 h-6 stroke-[2.5] pointer-events-none" />
           </button>
         </div>
       )}

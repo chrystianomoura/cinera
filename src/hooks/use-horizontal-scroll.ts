@@ -5,6 +5,8 @@ interface UseHorizontalScrollOptions {
   defaultScrollFraction?: number;
   /** Duração em ms da rolagem suave (padrão: 820ms para um deslize relaxante e aveludado) */
   scrollDuration?: number;
+  /** Limite em pixels para considerar que saiu das extremidades (padrão: 8) */
+  threshold?: number;
 }
 
 /**
@@ -16,6 +18,7 @@ interface UseHorizontalScrollOptions {
 export function useHorizontalScroll({
   defaultScrollFraction = 0.75,
   scrollDuration = 820,
+  threshold = 8,
 }: UseHorizontalScrollOptions = {}) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
   const nodeRef = useRef<HTMLDivElement | null>(null);
@@ -43,12 +46,12 @@ export function useHorizontalScroll({
     const el = nodeRef.current;
     if (!el) return;
     const max = maxScrollRef.current || Math.max(0, el.scrollWidth - el.clientWidth);
-    const left = el.scrollLeft > 6;
-    const right = el.scrollLeft < max - 6;
+    const left = el.scrollLeft > threshold;
+    const right = el.scrollLeft < max - threshold;
 
     setCanScrollLeft((prev) => (prev !== left ? left : prev));
     setCanScrollRight((prev) => (prev !== right ? right : prev));
-  }, []);
+  }, [threshold]);
 
   useEffect(() => {
     const el = node;
@@ -150,14 +153,6 @@ export function useHorizontalScroll({
       if (Math.abs(distance) < 2) {
         targetScrollLeftRef.current = null;
         return;
-      }
-
-      // Ativação instantânea do fade esquerdo no clique para a direita
-      if (direction === "right" || newTarget > 2) {
-        setCanScrollLeft(true);
-      }
-      if (newTarget < maxScroll - 2) {
-        setCanScrollRight(true);
       }
 
       if (animRafRef.current) {

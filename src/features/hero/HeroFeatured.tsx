@@ -140,7 +140,7 @@ export function HeroFeatured({
             })()}
 
             {heroMovie.tagline && (
-              <p className="text-zinc-200 text-base sm:text-lg md:text-xl font-medium italic leading-snug mb-4 md:mb-5 drop-shadow-md max-w-2xl text-center md:text-left [text-wrap:balance]">
+              <p className="text-zinc-100 text-base sm:text-lg md:text-xl font-medium italic leading-snug mb-4 md:mb-5 drop-shadow-md max-w-2xl text-center md:text-left [text-wrap:balance]">
                 {heroMovie.tagline
                   .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
                   .trim()}

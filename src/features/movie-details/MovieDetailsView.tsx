@@ -217,7 +217,7 @@ export function MovieDetailsView({
 
               {/* Tagline Oficial colada ao título */}
               {movie.tagline ? (
-                <p className="text-base sm:text-lg md:text-xl font-medium italic text-zinc-300 drop-shadow leading-snug [text-wrap:balance]">
+                <p className="text-base sm:text-lg md:text-xl font-medium italic text-zinc-100 drop-shadow leading-snug [text-wrap:balance]">
                   {movie.tagline.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim()}
                 </p>
               ) : null}
@@ -247,7 +247,7 @@ export function MovieDetailsView({
 
               {/* Linha 2 no mobile: Categorias */}
               {curatedGenres && (
-                <div className="text-zinc-200 font-medium text-center md:text-left">
+                <div className="text-zinc-100 font-semibold text-center md:text-left">
                   {curatedGenres}
                 </div>
               )}

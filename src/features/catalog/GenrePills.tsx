@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GENRES } from "./constants";
 import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
@@ -11,72 +10,34 @@ interface GenrePillsProps {
 export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
   const {
     containerRef: genresRowRef,
-    containerElement,
     canScrollLeft: canScrollLeftGenres,
     canScrollRight: canScrollRightGenres,
     scroll: scrollGenres,
-  } = useHorizontalScroll({ defaultScrollFraction: 0.6 });
-
-  // Rola a barra horizontal para centralizar a pílula ativa com precisão milimétrica em qualquer tela
-  useEffect(() => {
-    if (!containerElement) return;
-
-    const scrollToActivePill = () => {
-      const activePill = containerElement.querySelector<HTMLElement>(
-        `[data-genre-name="${selectedGenre}"]`
-      );
-      if (!activePill) return;
-
-      const containerRect = containerElement.getBoundingClientRect();
-      const pillRect = activePill.getBoundingClientRect();
-
-      // Deslocamento relativo da pílula em relação ao container horizontal
-      const relativePillLeft = pillRect.left - containerRect.left + containerElement.scrollLeft;
-      const targetScroll = Math.max(
-        0,
-        relativePillLeft - (containerRect.width / 2) + (pillRect.width / 2)
-      );
-
-      containerElement.scrollTo({
-        left: targetScroll,
-        behavior: "smooth",
-      });
-    };
-
-    // Executa imediatamente e com um micro-tick para garantir que o layout pós-modal já completou
-    scrollToActivePill();
-    const rafId = requestAnimationFrame(() => {
-      scrollToActivePill();
-    });
-    const timer = setTimeout(scrollToActivePill, 60);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      clearTimeout(timer);
-    };
-  }, [selectedGenre, containerElement]);
+  } = useHorizontalScroll({ defaultScrollFraction: 0.75, threshold: 28 });
 
   return (
     <section className="relative group/pills">
-      {/* Borda de fade esquerda contínua (evita corte seco nos botões) */}
+      {/* Borda de fade esquerda suave e aveludada sem corte brusco */}
       <div
-        className={`hidden md:block absolute left-0 inset-y-0 w-24 sm:w-28 bg-gradient-to-r from-black from-35% via-black/75 to-transparent z-20 pointer-events-none transition-opacity duration-300 ${
-          canScrollLeftGenres ? "opacity-100" : "opacity-0"
+        className={`hidden md:block absolute left-0 top-0 bottom-0 w-14 sm:w-20 md:w-24 bg-gradient-to-r from-black via-black/40 via-40% to-transparent z-20 pointer-events-none transition-opacity duration-300 ease-in-out ${
+          canScrollLeftGenres
+            ? "opacity-100"
+            : "opacity-0"
         }`}
       />
 
-      {/* Seta esquerda (aparece apenas no hover da seção de pílulas) */}
+      {/* Seta esquerda com estilo tonal estável de streaming */}
       <button
         onClick={() => scrollGenres("left")}
         aria-label="Rolar gêneros para a esquerda"
         tabIndex={canScrollLeftGenres ? 0 : -1}
-        className={`hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+        className={`hidden md:flex absolute left-2.5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer pointer-events-none ${
           canScrollLeftGenres
-            ? "opacity-0 group-hover/pills:opacity-100 pointer-events-auto"
+            ? "opacity-0 group-hover/pills:opacity-100 group-hover/pills:pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+        <ChevronLeft className="w-5 h-5 stroke-[2.5] pointer-events-none" />
       </button>
 
       <div
@@ -103,25 +64,27 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
         <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
       </div>
 
-      {/* Borda de fade direita contínua (evita corte seco nos botões) */}
+      {/* Borda de fade direita suave e aveludada sem corte brusco */}
       <div
-        className={`hidden md:block absolute right-0 inset-y-0 w-24 sm:w-28 bg-gradient-to-l from-black from-35% via-black/75 to-transparent z-20 pointer-events-none transition-opacity duration-300 ${
-          canScrollRightGenres ? "opacity-100" : "opacity-0"
+        className={`hidden md:block absolute right-0 top-0 bottom-0 w-14 sm:w-20 md:w-24 bg-gradient-to-l from-black via-black/40 via-40% to-transparent z-20 pointer-events-none transition-opacity duration-300 ease-in-out ${
+          canScrollRightGenres
+            ? "opacity-100"
+            : "opacity-0"
         }`}
       />
 
-      {/* Seta direita (aparece apenas no hover da seção de pílulas) */}
+      {/* Seta direita com estilo tonal estável de streaming */}
       <button
         onClick={() => scrollGenres("right")}
         aria-label="Rolar gêneros para a direita"
         tabIndex={canScrollRightGenres ? 0 : -1}
-        className={`hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+        className={`hidden md:flex absolute right-2.5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer pointer-events-none ${
           canScrollRightGenres
-            ? "opacity-0 group-hover/pills:opacity-100 pointer-events-auto"
+            ? "opacity-0 group-hover/pills:opacity-100 group-hover/pills:pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+        <ChevronRight className="w-5 h-5 stroke-[2.5] pointer-events-none" />
       </button>
     </section>
   );
