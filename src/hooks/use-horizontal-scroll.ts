@@ -210,6 +210,7 @@ export function useHorizontalScroll({
 
   return {
     containerRef,
+    containerElement: node,
     canScrollLeft,
     canScrollRight,
     scroll,

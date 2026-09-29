@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GENRES } from "./constants";
 import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
@@ -10,10 +11,50 @@ interface GenrePillsProps {
 export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
   const {
     containerRef: genresRowRef,
+    containerElement,
     canScrollLeft: canScrollLeftGenres,
     canScrollRight: canScrollRightGenres,
     scroll: scrollGenres,
   } = useHorizontalScroll({ defaultScrollFraction: 0.6 });
+
+  // Rola a barra horizontal para centralizar a pílula ativa com precisão milimétrica em qualquer tela
+  useEffect(() => {
+    if (!containerElement) return;
+
+    const scrollToActivePill = () => {
+      const activePill = containerElement.querySelector<HTMLElement>(
+        `[data-genre-name="${selectedGenre}"]`
+      );
+      if (!activePill) return;
+
+      const containerRect = containerElement.getBoundingClientRect();
+      const pillRect = activePill.getBoundingClientRect();
+
+      // Deslocamento relativo da pílula em relação ao container horizontal
+      const relativePillLeft = pillRect.left - containerRect.left + containerElement.scrollLeft;
+      const targetScroll = Math.max(
+        0,
+        relativePillLeft - (containerRect.width / 2) + (pillRect.width / 2)
+      );
+
+      containerElement.scrollTo({
+        left: targetScroll,
+        behavior: "smooth",
+      });
+    };
+
+    // Executa imediatamente e com um micro-tick para garantir que o layout pós-modal já completou
+    scrollToActivePill();
+    const rafId = requestAnimationFrame(() => {
+      scrollToActivePill();
+    });
+    const timer = setTimeout(scrollToActivePill, 60);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+    };
+  }, [selectedGenre, containerElement]);
 
   return (
     <section className="relative group/pills">
@@ -45,6 +86,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
           return (
             <button
               key={genre}
+              data-genre-name={genre}
               onClick={() => onSelectGenre(genre)}
               className={`flex-shrink-0 px-7 py-2.5 rounded-full text-sm md:text-base transition-all duration-200 cursor-pointer ${
                 isSelected
