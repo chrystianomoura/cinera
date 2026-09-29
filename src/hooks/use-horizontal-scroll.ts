@@ -186,11 +186,6 @@ export function useHorizontalScroll({
 
         el.scrollLeft = Math.round(startLeft + distance * ease);
 
-        // Inicia o fade-out do lado esquerdo na segunda metade da desaceleração ao voltar ao início
-        if (newTarget <= 6 && progress >= 0.45) {
-          setCanScrollLeft(false);
-        }
-
         if (progress < 1) {
           animRafRef.current = requestAnimationFrame(step);
         } else {

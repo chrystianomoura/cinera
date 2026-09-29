@@ -189,20 +189,19 @@ export default function App() {
       }, 550);
     } else {
       if (selectedGenre === "Todos") {
-        setSelectedGenre(genre);
-        setLastCategoryGenre(genre);
         setPendingGenre(genre);
         setIsFadingOutHome(true);
 
         transitionTimerRef.current = window.setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "instant" });
+          setSelectedGenre(genre);
+          setLastCategoryGenre(genre);
           setPendingGenre(null);
           setActiveCatalogView("genre");
           setIsFadingOutHome(false);
-        }, 220);
+        }, 180);
       } else {
-        if (window.scrollY > 0) {
-          smoothScrollToTop();
-        }
+        window.scrollTo({ top: 0, behavior: "instant" });
         setPendingGenre(null);
         setIsFadingOutGenre(false);
         setSelectedGenre(genre);

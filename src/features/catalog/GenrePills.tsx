@@ -58,25 +58,26 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
 
   return (
     <section className="relative group/pills">
-      {/* Borda de fade e seta esquerda (aparece apenas no hover da seção de pílulas) */}
+      {/* Borda de fade esquerda contínua (evita corte seco nos botões) */}
       <div
-        className={`hidden md:flex absolute left-0 inset-y-0 w-28 bg-gradient-to-r from-black from-35% via-black/70 to-transparent z-20 items-center justify-start pointer-events-none transition-opacity duration-300 ${
+        className={`hidden md:block absolute left-0 inset-y-0 w-24 sm:w-28 bg-gradient-to-r from-black from-35% via-black/75 to-transparent z-20 pointer-events-none transition-opacity duration-300 ${
+          canScrollLeftGenres ? "opacity-100" : "opacity-0"
+        }`}
+      />
+
+      {/* Seta esquerda (aparece apenas no hover da seção de pílulas) */}
+      <button
+        onClick={() => scrollGenres("left")}
+        aria-label="Rolar gêneros para a esquerda"
+        tabIndex={canScrollLeftGenres ? 0 : -1}
+        className={`hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
           canScrollLeftGenres
-            ? "opacity-0 group-hover/pills:opacity-100"
+            ? "opacity-0 group-hover/pills:opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <button
-          onClick={() => scrollGenres("left")}
-          aria-label="Rolar gêneros para a esquerda"
-          tabIndex={canScrollLeftGenres ? 0 : -1}
-          className={`pointer-events-auto w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ml-4 ${
-            !canScrollLeftGenres ? "pointer-events-none invisible" : ""
-          }`}
-        >
-          <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
-        </button>
-      </div>
+        <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+      </button>
 
       <div
         ref={genresRowRef}
@@ -102,25 +103,26 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
         <div className="flex-shrink-0 w-12 md:w-16 pointer-events-none" aria-hidden="true" />
       </div>
 
-      {/* Borda de fade e seta direita (aparece apenas no hover da seção de pílulas) */}
+      {/* Borda de fade direita contínua (evita corte seco nos botões) */}
       <div
-        className={`hidden md:flex absolute right-0 inset-y-0 w-28 bg-gradient-to-l from-black from-35% via-black/70 to-transparent z-20 items-center justify-end pointer-events-none transition-opacity duration-300 ${
+        className={`hidden md:block absolute right-0 inset-y-0 w-24 sm:w-28 bg-gradient-to-l from-black from-35% via-black/75 to-transparent z-20 pointer-events-none transition-opacity duration-300 ${
+          canScrollRightGenres ? "opacity-100" : "opacity-0"
+        }`}
+      />
+
+      {/* Seta direita (aparece apenas no hover da seção de pílulas) */}
+      <button
+        onClick={() => scrollGenres("right")}
+        aria-label="Rolar gêneros para a direita"
+        tabIndex={canScrollRightGenres ? 0 : -1}
+        className={`hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
           canScrollRightGenres
-            ? "opacity-0 group-hover/pills:opacity-100"
+            ? "opacity-0 group-hover/pills:opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <button
-          onClick={() => scrollGenres("right")}
-          aria-label="Rolar gêneros para a direita"
-          tabIndex={canScrollRightGenres ? 0 : -1}
-          className={`pointer-events-auto w-8 h-8 rounded-full bg-zinc-950/90 hover:bg-white text-zinc-300 hover:text-black border border-white/20 shadow-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer mr-4 ${
-            !canScrollRightGenres ? "pointer-events-none invisible" : ""
-          }`}
-        >
-          <ChevronRight className="w-4 h-4 stroke-[2.5]" />
-        </button>
-      </div>
+        <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+      </button>
     </section>
   );
 }
