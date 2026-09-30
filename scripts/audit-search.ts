@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Carrega .env.local caso rode standalone via node
+// Execute este script via: npx tsx scripts/audit-search.ts
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
@@ -10,18 +10,32 @@ const envLocalPath = path.join(projectRoot, ".env.local");
 
 if (fs.existsSync(envLocalPath)) {
   const content = fs.readFileSync(envLocalPath, "utf8");
-  for (const line of content.split("\n")) {
+  for (const line of content.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
     const [key, ...rest] = trimmed.split("=");
-    if (key && rest.length > 0) {
-      process.env[key.trim()] = rest.join("=").trim();
+    if (key && rest.length > 0 && process.env[key.trim()] === undefined) {
+      let val = rest.join("=").trim();
+      val = val.replace(/^["']|["']$/g, "").replace(/\s+#.*$/, "");
+      process.env[key.trim()] = val;
     }
   }
 }
 
 // Importa dinamicamente após injetar variáveis de ambiente
 const { searchCineraMovies } = await import("../src/infrastructure/search/search-service.js");
+
+const REQUEST_TIMEOUT_MS = 10_000;
+const searchWithTimeout = (query: string) =>
+  Promise.race([
+    searchCineraMovies(query),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Timeout de rede (${REQUEST_TIMEOUT_MS}ms) excedido na busca por "${query}"`)),
+        REQUEST_TIMEOUT_MS
+      )
+    ),
+  ]);
 
 /**
  * Normalizador resiliente para asserções de teste:
@@ -461,28 +475,33 @@ const failures: string[] = [];
 
 for (const test of TEST_CASES) {
   process.stdout.write(`⏳ [${test.category}] "${test.query}"... `);
-  const startTime = Date.now();
 
   try {
-    // 1. Simulação opcional de digitação letra a letra
+    // 1. Simulação opcional de digitação incremental (não afeta o cronômetro da busca final)
     if (test.simulateTyping) {
       for (let len = 2; len < test.query.length; len++) {
         const partial = test.query.substring(0, len);
-        const { movies: partialMovies } = await searchCineraMovies(partial);
+        const { movies: partialMovies } = await searchWithTimeout(partial);
         if (partialMovies.length === 0) {
           throw new Error(`Digitação parcial "${partial}" falhou retornando 0 filmes (tela vazia prematura).`);
         }
       }
     }
 
-    const { movies } = await searchCineraMovies(test.query);
+    const startTime = Date.now();
+    const { movies } = await searchWithTimeout(test.query);
     const elapsed = Date.now() - startTime;
     totalLatency += elapsed;
 
-    const normTitles = movies.map((m) => normalizeAssertString(m.title));
+    if (!Array.isArray(movies) || movies.length === 0) {
+      throw new Error(`Busca retornou 0 filmes (estado vazio prematuro para "${test.query}").`);
+    }
 
-    // Validação de Integridade / Higiene dos Cards
+    // Validação preventiva de integridade básica dos itens
     for (const movie of movies) {
+      if (!movie || typeof movie.title !== "string" || !movie.title.trim()) {
+        throw new Error(`Payload corrompido: filme sem título válido retornado.`);
+      }
       if (!movie.posterPath) {
         throw new Error(`Filme "${movie.title}" violou a higiene de catálogo (veio sem imagem de pôster).`);
       }
@@ -490,6 +509,8 @@ for (const test of TEST_CASES) {
         throw new Error(`Filme "${movie.title}" violou a integridade de dados (veio sem data de lançamento).`);
       }
     }
+
+    const normTitles = movies.map((m) => normalizeAssertString(m.title));
 
     // Validação: Mínimo de resultados
     if (test.minResults && movies.length < test.minResults) {
@@ -564,6 +585,13 @@ for (const test of TEST_CASES) {
       }
     }
 
+    // Validação: Limite Máximo de Latência (SLA)
+    if (test.maxLatencyMs !== undefined && elapsed > test.maxLatencyMs) {
+      throw new Error(
+        `Latência excedida. Limite SLA: ${test.maxLatencyMs}ms, observado: ${elapsed}ms`
+      );
+    }
+
     // Formatador de latência
     const latencyColor = elapsed < 400 ? "\x1b[32m" : elapsed < 800 ? "\x1b[33m" : "\x1b[31m";
     console.log(`\x1b[32m✅ PASS\x1b[0m (${movies.length} filmes, ${latencyColor}${elapsed}ms\x1b[0m)`);
@@ -588,7 +616,7 @@ if (failedCount > 0) {
   console.log("DIAGNÓSTICO DETALHADO:");
   failures.forEach((f, idx) => console.log(`${idx + 1}. ${f}`));
   console.log("================================================================================\n");
-  process.exit(1);
+  process.exitCode = 1;
 } else {
   console.log("\x1b[32mSUCESSO TOTAL! TODAS AS VALIDAÇÕES DE PRECISÃO INDUSTRIAL FORAM APROVADAS!\x1b[0m");
   console.log("================================================================================\n");

@@ -45,7 +45,8 @@ export function useHorizontalScroll({
   const syncState = useCallback(() => {
     const el = nodeRef.current;
     if (!el) return;
-    const max = maxScrollRef.current || Math.max(0, el.scrollWidth - el.clientWidth);
+    const max = Math.max(0, el.scrollWidth - el.clientWidth);
+    maxScrollRef.current = max;
     const left = el.scrollLeft > threshold;
     const right = el.scrollLeft < max - threshold;
 
@@ -101,6 +102,26 @@ export function useHorizontalScroll({
       }
     };
 
+    // ResizeObserver para detectar redimensionamento de viewport/layout
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        updateMeasurements();
+        syncState();
+      });
+      resizeObserver.observe(el);
+    }
+
+    // MutationObserver para detectar adição/remoção de filhos dinâmicos (que expandem scrollWidth sem mudar clientWidth)
+    let mutationObserver: MutationObserver | null = null;
+    if (typeof MutationObserver !== "undefined") {
+      mutationObserver = new MutationObserver(() => {
+        updateMeasurements();
+        syncState();
+      });
+      mutationObserver.observe(el, { childList: true, subtree: false });
+    }
+
     el.addEventListener("scroll", onScroll, { passive: true });
     el.addEventListener("wheel", onManualIntervention, { passive: true });
     el.addEventListener("touchstart", onManualIntervention, { passive: true });
@@ -109,6 +130,8 @@ export function useHorizontalScroll({
     return () => {
       cancelAnimationFrame(initialRaf);
       window.clearTimeout(timer);
+      if (resizeObserver) resizeObserver.disconnect();
+      if (mutationObserver) mutationObserver.disconnect();
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
       if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
       if (resizeTimer) window.clearTimeout(resizeTimer);
@@ -117,6 +140,12 @@ export function useHorizontalScroll({
       el.removeEventListener("wheel", onManualIntervention);
       el.removeEventListener("touchstart", onManualIntervention);
       window.removeEventListener("resize", onResize);
+
+      // Reset defensivo dos refs de animação para garantir que o próximo container ou ciclo inicie zerado
+      isProgrammaticScrollRef.current = false;
+      targetScrollLeftRef.current = null;
+      animRafRef.current = null;
+      rafIdRef.current = null;
     };
   }, [node, updateMeasurements, syncState]);
 
@@ -182,6 +211,7 @@ export function useHorizontalScroll({
 
         const currentPos = Math.round(startLeft + distance * ease);
         el.scrollLeft = currentPos;
+        syncState();
 
         if (progress < 1) {
           animRafRef.current = requestAnimationFrame(step);

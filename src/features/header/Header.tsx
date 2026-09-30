@@ -14,6 +14,7 @@ export function Header({ onSearchClick }: HeaderProps) {
       const scrolled = window.scrollY > 25;
       setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -34,7 +35,7 @@ export function Header({ onSearchClick }: HeaderProps) {
         type="button"
         onClick={onSearchClick}
         aria-label="Pesquisar filmes"
-        className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white transition-all duration-200 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 cursor-pointer"
+        className="group w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white transition-all duration-200 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
         <Search
           size={19}

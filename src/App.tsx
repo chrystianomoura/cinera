@@ -55,13 +55,18 @@ export default function App() {
   const [trailerMovie, setTrailerMovie] = useState<Movie | null>(null);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
+  const trailerRequestIdRef = useRef(0);
 
   const handleOpenTrailer = async (movie: Movie) => {
+    const requestId = ++trailerRequestIdRef.current;
     setTrailerMovie(movie);
     setIsTrailerOpen(true);
     setIsLoadingTrailer(true);
     try {
       const videos = await movieService.getMovieVideos(movie.id);
+      // Descarta se outra requisição de trailer foi iniciada enquanto esta estava em trânsito
+      if (requestId !== trailerRequestIdRef.current) return;
+
       const trailer =
         videos.find(
           (v) =>
@@ -72,14 +77,18 @@ export default function App() {
         videos[0];
       setTrailerKey(trailer?.key || null);
     } catch (err) {
+      if (requestId !== trailerRequestIdRef.current) return;
       console.error("Erro ao carregar trailer:", err);
       setTrailerKey(null);
     } finally {
-      setIsLoadingTrailer(false);
+      if (requestId === trailerRequestIdRef.current) {
+        setIsLoadingTrailer(false);
+      }
     }
   };
 
   const handleCloseTrailer = () => {
+    trailerRequestIdRef.current++;
     setIsTrailerOpen(false);
   };
 
@@ -114,6 +123,8 @@ export default function App() {
 
   // Sincronização bidirecional do filme ativo com a URL (carregamento inicial e histórico do navegador)
   useEffect(() => {
+    let cancelled = false;
+
     const syncMovieFromUrl = () => {
       const url = new URL(window.location.href);
       const filmParam = url.searchParams.get("filme");
@@ -127,7 +138,13 @@ export default function App() {
       }
       const id = Number(filmParam);
       if (id) {
+        const currentId = id;
         movieService.getMovieById(id).then((movie) => {
+          if (cancelled) return;
+          // Ignora resposta desatualizada se a URL mudou enquanto o fetch estava em trânsito
+          const currentParam = new URL(window.location.href).searchParams.get("filme");
+          if (Number(currentParam) !== currentId) return;
+
           if (movie) {
             setSelectedMovie(movie);
             setIsDetailsOpen(true);
@@ -138,7 +155,19 @@ export default function App() {
 
     syncMovieFromUrl();
     window.addEventListener("popstate", syncMovieFromUrl);
-    return () => window.removeEventListener("popstate", syncMovieFromUrl);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("popstate", syncMovieFromUrl);
+    };
+  }, []);
+
+  // Limpeza de timers pendentes ao desmontar o componente
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+      }
+    };
   }, []);
 
   // Atalho global de teclado: Cmd + K (Mac) e Ctrl + K (Windows) para abrir a busca

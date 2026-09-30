@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
@@ -5,7 +6,7 @@ import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
 
 interface MovieCarouselProps {
   title: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   movies?: Movie[];
   isLoading?: boolean;
   isError?: boolean;
@@ -16,7 +17,7 @@ interface MovieCarouselProps {
 export function MovieCarousel({
   title,
   icon,
-  movies = [],
+  movies,
   isLoading = false,
   isError = false,
   isEager = false,
@@ -33,6 +34,32 @@ export function MovieCarousel({
     threshold: 12,
   });
 
+  const safeMovies = movies ?? [];
+
+  // Se ocorreu erro, exibe banner limpo e não renderiza fileira vazia
+  if (isError) {
+    return (
+      <section className="relative group/carousel">
+        <div className="flex items-center gap-2.5 sm:gap-3 mb-2 md:mb-5 px-4 md:px-0">
+          {icon && <span className="text-xl md:text-2xl select-none">{icon}</span>}
+          <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+            {title}
+          </h3>
+        </div>
+        <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-8 text-center backdrop-blur-sm mx-4 md:mx-0">
+          <p className="text-zinc-400">
+            Ocorreu um erro ao carregar os filmes desta seção. Tente novamente mais tarde.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  // Se não está carregando e a lista está vazia, omite a seção silenciosamente
+  if (!isLoading && safeMovies.length === 0) {
+    return null;
+  }
+
   return (
     <section className="relative group/carousel">
       <div className="flex items-center gap-2.5 sm:gap-3 mb-2 md:mb-5 px-4 md:px-0">
@@ -41,15 +68,6 @@ export function MovieCarousel({
           {title}
         </h3>
       </div>
-
-      {isError && (
-        <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-8 text-center backdrop-blur-sm">
-          <p className="text-zinc-400">
-            Ocorreu um erro ao carregar os filmes desta seção. Tente novamente mais
-            tarde.
-          </p>
-        </div>
-      )}
 
       {isLoading ? (
         <div className="flex gap-4 md:gap-6 overflow-hidden px-4 md:px-0">
@@ -66,20 +84,22 @@ export function MovieCarousel({
         </div>
       ) : (
         <div className="relative">
-          {/* Borda de fade esquerda - rápida, suave e sem flash */}
-          <div
-            className={`hidden md:block absolute left-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-r from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
-              canScrollLeft ? "opacity-100" : "opacity-0"
-            }`}
-          />
+          {/* Borda de fade esquerda - instantâneo (0ms) */}
+          {canScrollLeft && (
+            <div
+              className="hidden md:block absolute left-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none"
+            />
+          )}
 
           <button
+            type="button"
             onClick={() => scroll("left")}
             aria-label={`Rolar ${title} para a esquerda`}
+            aria-hidden={!canScrollLeft}
             tabIndex={canScrollLeft ? 0 : -1}
-            className={`hidden md:flex absolute left-2.5 top-[calc(1rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer pointer-events-none ${
+            className={`hidden md:flex absolute left-2.5 top-[calc(1rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer ${
               canScrollLeft
-                ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto"
+                ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
                 : "opacity-0 pointer-events-none"
             }`}
           >
@@ -90,7 +110,7 @@ export function MovieCarousel({
             ref={rowRef}
             className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-4 scrollbar-hide px-4 md:px-0"
           >
-            {movies.map((movie) => (
+            {safeMovies.map((movie) => (
               <MovieCard
                 key={movie.id}
                 movie={movie}
@@ -100,20 +120,22 @@ export function MovieCarousel({
             ))}
           </div>
 
-          {/* Borda de fade direita - rápida, suave e sem flash */}
-          <div
-            className={`hidden md:block absolute right-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-l from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
-              canScrollRight ? "opacity-100" : "opacity-0"
-            }`}
-          />
+          {/* Borda de fade direita - instantâneo (0ms) */}
+          {canScrollRight && (
+            <div
+              className="hidden md:block absolute right-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none"
+            />
+          )}
 
           <button
+            type="button"
             onClick={() => scroll("right")}
             aria-label={`Rolar ${title} para a direita`}
+            aria-hidden={!canScrollRight}
             tabIndex={canScrollRight ? 0 : -1}
-            className={`hidden md:flex absolute right-2.5 top-[calc(1rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer pointer-events-none ${
+            className={`hidden md:flex absolute right-2.5 top-[calc(1rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer ${
               canScrollRight
-                ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto"
+                ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
                 : "opacity-0 pointer-events-none"
             }`}
           >

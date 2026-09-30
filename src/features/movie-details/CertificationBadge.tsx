@@ -8,37 +8,56 @@ interface CertificationBadgeProps {
  * Mapeia códigos nacionais (L, 10, 12, 14, 16, 18) com as cores padronizadas.
  */
 export function CertificationBadge({ certification, className = "" }: CertificationBadgeProps) {
-  if (!certification || !certification.trim()) return null;
+  if (certification == null) return null;
 
-  const raw = certification.trim().toUpperCase();
+  const raw = String(certification).trim().toUpperCase();
+  if (!raw) return null;
 
-  let label = raw;
+  let label = "";
   let bgClass = "bg-zinc-800 text-zinc-300 border-zinc-700";
+  let descriptiveLabel = "";
 
-  if (raw === "L" || raw === "LIVRE" || raw === "G") {
+  // Suporte a formatos: "L", "LIVRE", "G", "10", "A10", "12 ANOS", "PG-13", etc.
+  if (/^(L|LIVRE|G)\b/.test(raw)) {
     label = "L";
     bgClass = "bg-[#00a651] text-white border-[#00a651]";
-  } else if (raw === "10" || raw === "PG") {
-    label = "10";
-    bgClass = "bg-[#008bd2] text-white border-[#008bd2]";
-  } else if (raw === "12") {
-    label = "12";
-    bgClass = "bg-[#ffcc00] text-black border-[#ffcc00] font-black";
-  } else if (raw === "14" || raw === "PG-13") {
-    label = "14";
-    bgClass = "bg-[#f58220] text-white border-[#f58220]";
-  } else if (raw === "16" || raw === "R") {
-    label = "16";
-    bgClass = "bg-[#ed1c24] text-white border-[#ed1c24]";
-  } else if (raw === "18" || raw === "NC-17") {
-    label = "18";
-    bgClass = "bg-black text-white border-white/50";
+    descriptiveLabel = "Livre para todos os públicos";
+  } else {
+    const match = raw.match(/\d+/);
+    const numeric = match ? match[0] : null;
+
+    if (numeric === "10" || raw === "PG") {
+      label = "10";
+      bgClass = "bg-[#008bd2] text-white border-[#008bd2]";
+      descriptiveLabel = "Não recomendado para menores de 10 anos";
+    } else if (numeric === "12") {
+      label = "12";
+      bgClass = "bg-[#ffcc00] text-black border-[#ffcc00]";
+      descriptiveLabel = "Não recomendado para menores de 12 anos";
+    } else if (numeric === "14" || raw === "PG-13") {
+      label = "14";
+      bgClass = "bg-[#f58220] text-white border-[#f58220]";
+      descriptiveLabel = "Não recomendado para menores de 14 anos";
+    } else if (numeric === "16" || raw === "R") {
+      label = "16";
+      bgClass = "bg-[#ed1c24] text-white border-[#ed1c24]";
+      descriptiveLabel = "Não recomendado para menores de 16 anos";
+    } else if (numeric === "18" || raw === "NC-17") {
+      label = "18";
+      bgClass = "bg-black text-white border-white/50";
+      descriptiveLabel = "Não recomendado para menores de 18 anos";
+    } else {
+      // Se não for uma classificação conhecida, não renderiza badge quebrado
+      return null;
+    }
   }
 
   return (
     <span
+      role="img"
+      aria-label={`Classificação indicativa: ${descriptiveLabel}`}
       title={`Classificação Indicativa: ${label}`}
-      className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold leading-none select-none border shadow-sm ${bgClass} ${className}`}
+      className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-black leading-none select-none border shadow-sm ${bgClass} ${className}`}
     >
       {label}
     </span>

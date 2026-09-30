@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Play, Info } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
@@ -24,68 +24,96 @@ export function HeroFeatured({
   const [isFading, setIsFading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Trava dupla: prioriza estritamente filmes com tagline oficial
-  const validCandidates = candidates.filter(
-    (m) => Boolean(m.tagline && m.tagline.trim().length > 0),
-  );
-  const heroList = validCandidates.length > 0 ? validCandidates : candidates;
+  // Trava dupla: prioriza estritamente filmes com tagline oficial (memoizado)
+  const heroList = useMemo(() => {
+    const valid = candidates.filter(
+      (m) => Boolean(m.tagline && m.tagline.trim().length > 0)
+    );
+    return valid.length > 0 ? valid : candidates;
+  }, [candidates]);
 
   const heroMovie =
     heroList.length > 0 ? heroList[heroIndex % heroList.length] : null;
 
-  // Rotação automática a cada 6 segundos com crossfade suave (pausa no hover ou trailer aberto)
+  // Rotação limpa a cada 6.5 segundos: fade aveludado de 650ms, troca filme, fade-in suave
   useEffect(() => {
-    if (heroList.length <= 1 || isTrailerOpen || isHovered) return;
+    if (heroList.length <= 1 || isTrailerOpen || isHovered || !isVisible) {
+      setIsFading(false);
+      return;
+    }
+
+    let fadeTimer: ReturnType<typeof setTimeout> | undefined;
 
     const interval = setInterval(() => {
+      // 1. Desvanece tudo junto suavemente em fade-out aveludado
       setIsFading(true);
-      setTimeout(() => {
+
+      // 2. Após 650ms (quando a imagem e texto dissolveram no breu do cinema), troca o filme e reacende suave
+      fadeTimer = setTimeout(() => {
         setHeroIndex((prev) => (prev + 1) % heroList.length);
         setIsFading(false);
-      }, 700);
-    }, 6000);
+      }, 650);
+    }, 6500);
 
-    return () => clearInterval(interval);
-  }, [heroList.length, isTrailerOpen, isHovered]);
+    return () => {
+      clearInterval(interval);
+      if (fadeTimer) clearTimeout(fadeTimer);
+    };
+  }, [heroList.length, isTrailerOpen, isHovered, isVisible]);
 
   return (
     <section
+      aria-label="Destaque em cartaz"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full h-[calc(100svh-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden"
+      onFocus={() => setIsHovered(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsHovered(false);
+        }
+      }}
+      className="relative w-full h-[calc(100svh-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden bg-black select-none"
     >
       {(isLoading || !heroMovie) && (
-        <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
+        <div className="absolute inset-0 bg-black animate-pulse" />
       )}
 
       {!isLoading && heroMovie && (
         <>
+          {/* Pôster em destaque: imagem nítida, 100% estável ao mudar de aba, com transição sincronizada */}
           <div
-            className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${
+            className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ease-in-out ${
               isFading ? "opacity-0" : "opacity-100"
             }`}
           >
             <img
-              key={heroMovie.id}
               src={getBackdropUrl(heroMovie.backdropPath)}
               alt={heroMovie.title}
-              className="w-full h-full object-cover object-top animate-kenburns origin-center"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              onError={(e) => {
+                e.currentTarget.style.opacity = "0";
+              }}
+              className="w-full h-full object-cover object-top origin-center"
             />
 
+            {/* Gradiente cinematográfico inferior */}
             <div
-              className="absolute inset-x-0 bottom-0 h-[38%] pointer-events-none"
+              className="absolute inset-x-0 bottom-0 h-[45%] pointer-events-none"
               style={{
                 background:
-                  "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 35%, rgba(0,0,0,0.2) 75%, transparent 100%)",
+                  "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.2) 80%, transparent 100%)",
               }}
             />
           </div>
 
+          {/* Textos e CTAs: sincronizados no milissegundo exato com a imagem */}
           <div
-            className={`relative z-10 max-w-3xl lg:max-w-4xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transition-all duration-700 transform ${
+            className={`relative z-10 max-w-3xl lg:max-w-4xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transition-opacity duration-700 ease-in-out ${
               isFading || !isVisible
-                ? "opacity-0 translate-y-6"
-                : "opacity-100 translate-y-0 delay-200"
+                ? "opacity-0 pointer-events-none"
+                : "opacity-100"
             }`}
           >
             {(() => {
@@ -149,18 +177,22 @@ export function HeroFeatured({
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-3.5 w-full">
               <button
+                type="button"
                 onClick={() => onOpenTrailer(heroMovie)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black font-bold text-sm border border-white hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-200 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+                aria-label={`Assistir ao trailer de ${heroMovie.title}`}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black font-bold text-sm border border-white hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-200 shadow-md hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                <Play className="w-4.5 h-4.5 fill-current" />
+                <Play className="w-5 h-5 fill-current" />
                 <span>Trailer</span>
               </button>
 
               <button
+                type="button"
                 onClick={() => onOpenDetails?.(heroMovie)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-950/80 backdrop-blur-md hover:bg-zinc-800 text-white font-medium text-sm border border-white/20 hover:border-white/40 transition-all duration-200 shadow-lg hover:scale-105 active:scale-95 cursor-pointer group"
+                aria-label={`Ver detalhes de ${heroMovie.title}`}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-950/80 backdrop-blur-md hover:bg-zinc-800 text-white font-medium text-sm border border-white/20 hover:border-white/40 transition-all duration-200 shadow-lg hover:scale-105 active:scale-95 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                <Info className="w-4.5 h-4.5 text-zinc-300 group-hover:text-white transition-colors" />
+                <Info className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
                 <span>Ver Detalhes</span>
               </button>
             </div>

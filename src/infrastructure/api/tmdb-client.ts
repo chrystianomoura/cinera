@@ -59,12 +59,28 @@ export async function fetchFromTMDB<T>(pathWithQuery: string, signal?: AbortSign
     fullUrl += `${separator}api_key=${API_KEY}`;
   }
 
-  const response = await fetch(fullUrl, { headers, signal });
-  if (!response.ok) {
-    throw new Error(
-      `Erro na chamada da API TMDB (${response.status}): ${response.statusText}`
-    );
+  // Timeout interno protetivo de 10s para impedir requisições zumbis congelando a UI
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort();
+    } else {
+      signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
   }
 
-  return response.json() as Promise<T>;
+  try {
+    const response = await fetch(fullUrl, { headers, signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(
+        `Erro na chamada da API TMDB (${response.status}): ${response.statusText}`
+      );
+    }
+
+    return response.json() as Promise<T>;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

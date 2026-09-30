@@ -55,10 +55,19 @@ export function MovieDetailsView({
   const posterPath = movie?.posterPath;
   useEffect(() => {
     if (!posterPath) return;
+
+    let cancelled = false;
     const imgUrl = getPosterUrl(posterPath, "w342");
+
     extractDominantColor(imgUrl).then((color) => {
-      setAmbientColor(color.rgbString);
+      if (!cancelled) {
+        setAmbientColor(color.rgbString);
+      }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [posterPath]);
 
   // Tecla ESC para fechar e trava do scroll do body

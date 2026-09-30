@@ -1,9 +1,40 @@
+import { useState } from "react";
 import type { MovieWatchProviders, WatchProvider } from "@/domain";
 
 interface WatchProvidersRowProps {
   providers?: MovieWatchProviders | null;
   isLoading?: boolean;
   movieTitle?: string;
+}
+
+/**
+ * Componente isolado para o logo com fallback para iniciais se a imagem falhar
+ */
+function ProviderLogo({
+  logoUrl,
+  name,
+}: {
+  logoUrl: string | null;
+  name: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!logoUrl || hasError) {
+    return (
+      <div className="w-7 h-7 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center text-[10px] font-bold text-zinc-300 flex-shrink-0 shadow-sm">
+        {name.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={logoUrl}
+      alt=""
+      className="w-7 h-7 rounded-xl object-cover shadow-sm flex-shrink-0"
+      onError={() => setHasError(true)}
+    />
+  );
 }
 
 /**
@@ -22,13 +53,13 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
 
   const lower = cleanName.toLowerCase();
 
-  // 2. Mapeamento exaustivo das marcas do catálogo brasileiro (TMDB)
+  // 2. Mapeamento exaustivo das marcas do catálogo brasileiro (TMDB) com limites de palavra em termos curtos
   if (lower.includes("netflix")) return { brandKey: "netflix", displayName: "Netflix" };
-  if (lower.includes("mgm")) return { brandKey: "mgm", displayName: "MGM+" };
+  if (/\bmgm\b/.test(lower)) return { brandKey: "mgm", displayName: "MGM+" };
   if (lower.includes("diamond")) return { brandKey: "diamond_films", displayName: "Diamond Films" };
   if (lower.includes("paramount")) return { brandKey: "paramount", displayName: "Paramount+" };
   if (lower.includes("disney") || lower.includes("star+") || lower.includes("star plus")) return { brandKey: "disney", displayName: "Disney+" };
-  if (lower.includes("hbo max") || lower.includes("max")) return { brandKey: "max", displayName: "HBO Max" };
+  if (/\b(hbo\s*max|max)\b/.test(lower)) return { brandKey: "max", displayName: "HBO Max" };
   if (lower.includes("telecine")) return { brandKey: "telecine", displayName: "Telecine" };
   if (lower.includes("globoplay")) return { brandKey: "globoplay", displayName: "Globoplay" };
   if (lower.includes("multishow")) return { brandKey: "multishow", displayName: "Multishow" };
@@ -41,7 +72,7 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("adrenalina pura")) return { brandKey: "adrenalina_pura", displayName: "Adrenalina Pura" };
   if (lower.includes("mubi")) return { brandKey: "mubi", displayName: "MUBI" };
   if (lower.includes("claro")) return { brandKey: "claro", displayName: "Claro tv+" };
-  if (lower.includes("vivo")) return { brandKey: "vivo", displayName: "Vivo TV" };
+  if (/\bvivo\b/.test(lower)) return { brandKey: "vivo", displayName: "Vivo TV" };
   if (lower.includes("crunchyroll")) return { brandKey: "crunchyroll", displayName: "Crunchyroll" };
   if (lower.includes("looke")) return { brandKey: "looke", displayName: "Looke" };
   if (lower.includes("oldflix")) return { brandKey: "oldflix", displayName: "Oldflix" };
@@ -57,7 +88,7 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("univer video")) return { brandKey: "univer_video", displayName: "Univer Vídeo" };
   if (lower.includes("tv brasil")) return { brandKey: "tv_brasil", displayName: "TV Brasil Play" };
   if (lower.includes("box brazil")) return { brandKey: "box_brazil", displayName: "Box Brazil Play" };
-  if (lower.includes("sony one") || lower.includes("sony")) return { brandKey: "sony", displayName: "Sony One" };
+  if (/\b(sony\s*one|sony)\b/.test(lower)) return { brandKey: "sony", displayName: "Sony One" };
   if (lower.includes("filmelier")) return { brandKey: "filmelier", displayName: "Filmelier+" };
   if (lower.includes("stingray")) return { brandKey: "stingray", displayName: "Stingray" };
   if (lower.includes("discovery kids")) return { brandKey: "discovery_kids", displayName: "Discovery Kids" };
@@ -74,9 +105,9 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("bloodstream")) return { brandKey: "bloodstream", displayName: "Bloodstream" };
   if (lower.includes("movieme")) return { brandKey: "movieme", displayName: "MovieMe" };
   if (lower.includes("kableone")) return { brandKey: "kableone", displayName: "KableOne" };
-  if (lower.includes("arte")) return { brandKey: "arte", displayName: "Arte" };
+  if (/\barte\b/.test(lower)) return { brandKey: "arte", displayName: "Arte" };
   if (lower.includes("aquarius")) return { brandKey: "aquarius", displayName: "Aquarius" };
-  if (lower.includes("booh")) return { brandKey: "booh", displayName: "Booh" };
+  if (/\bbooh\b/.test(lower)) return { brandKey: "booh", displayName: "Booh" };
   if (lower.includes("caixaforum")) return { brandKey: "caixaforum", displayName: "CaixaForum+" };
   if (lower.includes("artiflix")) return { brandKey: "artiflix", displayName: "Artiflix" };
   if (lower.includes("artify")) return { brandKey: "artify", displayName: "Artify" };
@@ -172,6 +203,44 @@ function getStreamingHomeUrl(brandKey: string): string | null {
   return STREAMING_HOMEPAGES[brandKey] || null;
 }
 
+type ProcessedProvider = WatchProvider & {
+  cleanName: string;
+  homeUrl: string;
+  logoUrl: string | null;
+};
+
+/**
+ * Filtra e consolida uma lista bruta de provedores em marcas brasileiras com link ativo
+ */
+function filterValidProviders(list: WatchProvider[]): ProcessedProvider[] {
+  const result: ProcessedProvider[] = [];
+  const seenBrands = new Set<string>();
+
+  for (const p of list) {
+    const { brandKey, displayName } = getBrandInfo(p.providerName);
+    const homeUrl = getStreamingHomeUrl(brandKey);
+
+    // Se a plataforma não tem assinatura/operação direta no Brasil, não exibe o badge
+    if (!homeUrl || seenBrands.has(brandKey)) {
+      continue;
+    }
+
+    seenBrands.add(brandKey);
+    const logoUrl =
+      BRAND_LOGOS[brandKey] ||
+      (p.logoPath ? `https://image.tmdb.org/t/p/original${p.logoPath}` : null);
+
+    result.push({
+      ...p,
+      cleanName: displayName,
+      homeUrl,
+      logoUrl,
+    });
+  }
+
+  return result;
+}
+
 export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowProps) {
   if (isLoading) {
     return (
@@ -191,44 +260,17 @@ export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowPro
     );
   }
 
-  // Prioriza plataformas por assinatura (flatrate), e se não houver, exibe compra/aluguel
-  const streamingList: WatchProvider[] =
-    providers?.flatrate && providers.flatrate.length > 0
-      ? providers.flatrate
-      : [
+  // 1. Tenta plataformas de assinatura (flatrate)
+  const flatrateList = filterValidProviders(providers?.flatrate || []);
+
+  // 2. Se nenhuma plataforma de assinatura tiver URL mapeada válida, faz fallback para aluguel e compra
+  const uniqueProviders =
+    flatrateList.length > 0
+      ? flatrateList
+      : filterValidProviders([
           ...(providers?.rent || []),
           ...(providers?.buy || []),
-        ];
-
-  // Remove clones e variações de canais/planos, mantendo APENAS serviços com assinatura ativa no Brasil
-  const uniqueProviders: Array<
-    WatchProvider & { cleanName: string; homeUrl: string; logoUrl: string | null }
-  > = [];
-  const seenBrands = new Set<string>();
-
-  for (const p of streamingList) {
-    const { brandKey, displayName } = getBrandInfo(p.providerName);
-    const homeUrl = getStreamingHomeUrl(brandKey);
-
-    // Se a plataforma não tem assinatura/operação direta no Brasil, não exibe o badge
-    if (!homeUrl) {
-      continue;
-    }
-
-    if (!seenBrands.has(brandKey)) {
-      seenBrands.add(brandKey);
-      const logoUrl =
-        BRAND_LOGOS[brandKey] ||
-        (p.logoPath ? `https://image.tmdb.org/t/p/original${p.logoPath}` : null);
-
-      uniqueProviders.push({
-        ...p,
-        cleanName: displayName,
-        homeUrl,
-        logoUrl,
-      });
-    }
-  }
+        ]);
 
   if (uniqueProviders.length === 0) {
     return null;
@@ -241,42 +283,21 @@ export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowPro
       </h3>
 
       <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full">
-        {uniqueProviders.map((provider) => {
-          const content = (
-            <>
-              {provider.logoUrl ? (
-                <img
-                  src={provider.logoUrl}
-                  alt={provider.cleanName}
-                  className="w-7 h-7 rounded-xl object-cover shadow-sm flex-shrink-0"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div className="w-7 h-7 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center text-[10px] font-bold text-zinc-300 flex-shrink-0 shadow-sm">
-                  {provider.cleanName.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              <span className="text-xs font-semibold text-zinc-200 group-hover/provider:text-white tracking-wide transition-colors">
-                {provider.cleanName}
-              </span>
-            </>
-          );
-
-          return (
-            <a
-              key={provider.providerId}
-              href={provider.homeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`Acessar home do ${provider.cleanName} (Abre em nova aba)`}
-              className="group/provider relative flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-all duration-200 shadow-md backdrop-blur-md cursor-pointer hover:scale-105 active:scale-95"
-            >
-              {content}
-            </a>
-          );
-        })}
+        {uniqueProviders.map((provider) => (
+          <a
+            key={provider.providerId}
+            href={provider.homeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Acessar home do ${provider.cleanName} (Abre em nova aba)`}
+            className="group/provider relative flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-all duration-200 shadow-md backdrop-blur-md cursor-pointer hover:scale-105 active:scale-95"
+          >
+            <ProviderLogo logoUrl={provider.logoUrl} name={provider.cleanName} />
+            <span className="text-xs font-semibold text-zinc-200 group-hover/provider:text-white tracking-wide transition-colors">
+              {provider.cleanName}
+            </span>
+          </a>
+        ))}
       </div>
     </div>
   );

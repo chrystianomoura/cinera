@@ -12,26 +12,39 @@ interface MovieCardProps {
 
 export const MovieCard = memo(function MovieCard({
   movie,
-  isEager = true,
+  isEager = false,
   className,
   onClick,
 }: MovieCardProps) {
   const [hasError, setHasError] = useState(false);
 
   const posterUrl = movie.posterPath ? getPosterUrl(movie.posterPath, "w342") : "";
+  // Extração rápida e imune a 'NaN' da data da API
+  const releaseYear = movie.releaseDate?.slice(0, 4) || "—";
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.(movie);
+    }
+  };
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick?.(movie)}
-      className={`group/card relative flex flex-col gap-2 cursor-pointer ${
+      onKeyDown={handleKeyDown}
+      aria-label={`Ver detalhes de ${movie.title}`}
+      className={`group/card movie-card relative flex flex-col gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 rounded-xl select-none ${
         className ?? "flex-shrink-0 w-36 sm:w-44 md:w-52 lg:w-60"
       }`}
     >
-      <div className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-zinc-900 border border-white/5 relative transition-all duration-300 ease-out group-hover/card:-translate-y-3 group-hover/card:shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
+      <div className="movie-poster aspect-[2/3] w-full overflow-hidden rounded-xl bg-zinc-900 border border-white/5 relative transition-all duration-300 ease-out group-hover/card:-translate-y-3 group-hover/card:shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
         {posterUrl && !hasError ? (
           <img
             src={posterUrl}
-            alt={movie.title}
+            alt={`Pôster de ${movie.title}`}
             className="h-full w-full object-cover"
             loading={isEager ? "eager" : "lazy"}
             decoding="async"
@@ -55,7 +68,7 @@ export const MovieCard = memo(function MovieCard({
           {movie.title}
         </h4>
         <span className="text-xs md:text-[13px] font-medium text-zinc-400 mt-0.5 tracking-normal">
-          {movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : "—"}
+          {releaseYear}
         </span>
       </div>
     </div>

@@ -32,7 +32,11 @@ export function useMovieSearch(query: string) {
   });
 
   const isPlaceholderData = searchQuery.isPlaceholderData;
-  const isSettled = query.trim() === debouncedQuery && !isPlaceholderData && !searchQuery.isFetching;
+  const isSettled =
+    query.trim() === debouncedQuery &&
+    !isPlaceholderData &&
+    !searchQuery.isFetching &&
+    !searchQuery.isError;
 
   return {
     results: isEnabled ? searchQuery.data?.movies ?? [] : [],
@@ -44,7 +48,12 @@ export function useMovieSearch(query: string) {
     isError: searchQuery.isError,
     refetch: searchQuery.refetch,
     debouncedQuery,
-    // hasSearched suprime o estado vazio enquanto placeholderData estiver ativo em voo
-    hasSearched: isEnabled && !searchQuery.isLoading && !isPlaceholderData && !searchQuery.isError,
+    // hasSearched ativo apenas quando a requisição terminou completamente sem erro, suprimindo falsos 'Nenhum resultado'
+    hasSearched:
+      isEnabled &&
+      !searchQuery.isLoading &&
+      !searchQuery.isFetching &&
+      !isPlaceholderData &&
+      !searchQuery.isError,
   };
 }

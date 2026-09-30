@@ -33,9 +33,9 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Guarda o elemento ativo antes de abrir o modal e restaura o foco apenas no fechamento definitivo (não ao pausar para detalhes)
+  // Ao abrir o modal, foca no campo de busca com leve delay. Ao fechar, limpa o foco para não deixar anel residual na lupa.
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isPausedForDetails) {
       previouslyFocusedRef.current ??= document.activeElement as HTMLElement | null;
       const timer = setTimeout(() => {
         inputRef.current?.focus();
@@ -43,15 +43,18 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       return () => clearTimeout(timer);
     }
 
-    if (isPausedForDetails) return;
-
-    previouslyFocusedRef.current?.focus();
-    previouslyFocusedRef.current = null;
+    if (!isOpen && !isPausedForDetails) {
+      // Padrão Linear/Apple: remove o foco forçado para manter a interface limpa e cinematográfica
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      previouslyFocusedRef.current = null;
+    }
   }, [isOpen, isPausedForDetails]);
 
   // Listener global no document para fechar no Escape, conter o Tab no diálogo e travar o scroll
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isPausedForDetails) return;
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -93,7 +96,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, [isOpen, closeSearch]);
+  }, [isOpen, isPausedForDetails, closeSearch]);
 
   // Protege selectedIndex contra encolhimento assíncrono de lista de resultados
   useEffect(() => {
@@ -173,10 +176,15 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       aria-modal="true"
       aria-label="Pesquisa global do Cinera"
       className="fixed inset-0 z-50 flex items-start justify-center pt-0 md:pt-16 lg:pt-20 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200"
-      onClick={closeSearch}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          closeSearch();
+        }
+      }}
     >
       <div
         ref={dialogRef}
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full h-full md:h-auto md:max-h-[82vh] md:max-w-2xl bg-zinc-950/95 border-0 md:border md:border-white/10 rounded-none md:rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden text-white cursor-default"
       >

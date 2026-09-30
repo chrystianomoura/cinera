@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Loader2, ArrowUp } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
-import { GENRE_PROFILES } from "./constants";
+import { getGenreProfile } from "./constants";
 import { useScrollTopButton } from "@/hooks/use-scroll-top-button";
 
 interface GenreCatalogGridProps {
@@ -28,7 +28,7 @@ export function GenreCatalogGrid({
 }: GenreCatalogGridProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { showScrollTop, scrollToTop } = useScrollTopButton(400);
-  const profile = GENRE_PROFILES[genreName];
+  const profile = getGenreProfile(genreName);
   const description = profile?.description || "Explorando os títulos mais populares e aclamados deste gênero";
 
   // Paginação infinita via IntersectionObserver

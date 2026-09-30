@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, Image as ImageIcon, ZoomIn } from "lucide-react";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
 import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
@@ -8,15 +9,68 @@ interface GalleryCarouselProps {
   onSelectImage?: (index: number) => void;
 }
 
+interface GalleryItemProps {
+  path: string;
+  idx: number;
+  isInteractive: boolean;
+  onSelectImage?: (index: number) => void;
+}
+
+function GalleryItem({ path, idx, isInteractive, onSelectImage }: GalleryItemProps) {
+  const [hasError, setHasError] = useState(false);
+  const imgUrl = getBackdropUrl(path, "w780");
+
+  return (
+    <button
+      type="button"
+      disabled={!isInteractive}
+      aria-label={isInteractive ? `Ampliar cena ${idx + 1}` : undefined}
+      onClick={isInteractive ? () => onSelectImage?.(idx) : undefined}
+      className={`relative aspect-video w-64 sm:w-80 md:w-96 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shadow-md flex-shrink-0 group/item transition-colors duration-200 text-left p-0 ${
+        isInteractive
+          ? "cursor-pointer hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+          : "cursor-default disabled:pointer-events-none"
+      }`}
+    >
+      {imgUrl && !hasError ? (
+        <>
+          <img
+            src={imgUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onError={() => setHasError(true)}
+            className="w-full h-full object-cover pointer-events-none"
+          />
+          {isInteractive && (
+            <span className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity duration-[160ms] ease-out flex items-center justify-center pointer-events-none">
+              <span className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl">
+                <ZoomIn aria-hidden="true" className="w-5 h-5 pointer-events-none" />
+              </span>
+            </span>
+          )}
+        </>
+      ) : (
+        <span className="w-full h-full flex flex-col items-center justify-center gap-2 text-zinc-600 bg-zinc-900/80">
+          <ImageIcon aria-hidden="true" className="w-8 h-8 opacity-40" />
+          <span className="text-[11px] font-medium tracking-wide text-zinc-500">Cena indisponível</span>
+        </span>
+      )}
+    </button>
+  );
+}
+
 /**
  * Galeria de cenas widescreen com título limpo 'Galeria'
  * e clique para abrir visualização ampliada em janela dedicada.
  */
 export function GalleryCarousel({
-  images = [],
+  images,
   isLoading,
   onSelectImage,
 }: GalleryCarouselProps) {
+  const safeImages = images ?? [];
+
   const {
     containerRef,
     canScrollLeft,
@@ -31,12 +85,14 @@ export function GalleryCarousel({
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
-        <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">Galeria</h3>
-        <div className="flex gap-4 overflow-hidden py-2">
+        <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+          Galeria
+        </h3>
+        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-0">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="aspect-video w-64 sm:w-80 rounded-2xl bg-zinc-900 border border-white/5 animate-pulse flex-shrink-0"
+              className="aspect-video w-64 sm:w-80 md:w-96 rounded-xl bg-zinc-900 border border-white/5 animate-pulse flex-shrink-0"
             />
           ))}
         </div>
@@ -44,12 +100,14 @@ export function GalleryCarousel({
     );
   }
 
-  if (images.length === 0) {
+  if (safeImages.length === 0) {
     return null;
   }
 
+  const isInteractive = Boolean(onSelectImage);
+
   return (
-    <div className="relative flex flex-col gap-4 group/gallery">
+    <div className="relative flex flex-col gap-4">
       {/* Título Centralizado com controles na lateral */}
       <div className="relative flex items-center justify-center">
         <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
@@ -59,84 +117,57 @@ export function GalleryCarousel({
         {/* Controles de rolagem */}
         <div className="hidden sm:flex items-center gap-1.5 absolute right-0">
           <button
-            onClick={() => canScrollLeft && scroll("left")}
+            type="button"
+            disabled={!canScrollLeft}
+            onClick={() => scroll("left")}
             aria-label="Rolar galeria para a esquerda"
-            tabIndex={canScrollLeft ? 0 : -1}
-            className={`w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer ${
-              canScrollLeft
-                ? "opacity-100 cursor-pointer"
-                : "opacity-30 pointer-events-none cursor-default"
-            }`}
+            className="w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:opacity-30 disabled:pointer-events-none disabled:cursor-default"
           >
-            <ChevronLeft className="w-4 h-4 pointer-events-none" />
+            <ChevronLeft aria-hidden="true" className="w-4 h-4 pointer-events-none" />
           </button>
           <button
-            onClick={() => canScrollRight && scroll("right")}
+            type="button"
+            disabled={!canScrollRight}
+            onClick={() => scroll("right")}
             aria-label="Rolar galeria para a direita"
-            tabIndex={canScrollRight ? 0 : -1}
-            className={`w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer ${
-              canScrollRight
-                ? "opacity-100 cursor-pointer"
-                : "opacity-30 pointer-events-none cursor-default"
-            }`}
+            className="w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:opacity-30 disabled:pointer-events-none disabled:cursor-default"
           >
-            <ChevronRight className="w-4 h-4 pointer-events-none" />
+            <ChevronRight aria-hidden="true" className="w-4 h-4 pointer-events-none" />
           </button>
         </div>
       </div>
 
       <div className="relative">
-        {/* Borda de fade esquerda - rápida e ágil */}
-        <div
-          className={`hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-24 bg-gradient-to-r from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
-            canScrollLeft ? "opacity-100" : "opacity-0"
-          }`}
-        />
+        {/* Borda de fade esquerda - TESTE instantâneo (0ms) */}
+        {canScrollLeft && (
+          <div
+            className="hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none"
+          />
+        )}
 
         <div
           ref={containerRef}
+          role="region"
+          aria-label="Carrossel da galeria"
           className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0"
         >
-          {images.map((path, idx) => {
-            const imgUrl = getBackdropUrl(path, "w780");
-
-            return (
-              <div
-                key={idx}
-                onClick={() => onSelectImage?.(idx)}
-                className="relative aspect-video w-64 sm:w-80 md:w-96 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/35 shadow-md flex-shrink-0 select-none group/item cursor-pointer transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                {imgUrl ? (
-                  <>
-                    <img
-                      src={imgUrl}
-                      alt={`Cena do filme ${idx + 1}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105 pointer-events-none"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl">
-                        <ZoomIn className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                    <ImageIcon className="w-8 h-8" />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {safeImages.map((path, idx) => (
+            <GalleryItem
+              key={`${idx}-${path}`}
+              path={path}
+              idx={idx}
+              isInteractive={isInteractive}
+              onSelectImage={onSelectImage}
+            />
+          ))}
         </div>
 
-        {/* Borda de fade direita - rápida e ágil */}
-        <div
-          className={`hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-24 bg-gradient-to-l from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
-            canScrollRight ? "opacity-100" : "opacity-0"
-          }`}
-        />
+        {/* Borda de fade direita - TESTE instantâneo (0ms) */}
+        {canScrollRight && (
+          <div
+            className="hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none"
+          />
+        )}
       </div>
     </div>
   );

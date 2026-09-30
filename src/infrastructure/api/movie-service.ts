@@ -56,8 +56,14 @@ class MovieService {
   async getTrendingMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (isTmdbConfigured()) {
-        const pagesToFetch = page === 1 ? [1, 2] : [page];
-        const responses = await Promise.all(
+        const pagesPerAppPage = 2;
+        const startTmdb = (page - 1) * pagesPerAppPage + 1;
+        const pagesToFetch = Array.from(
+          { length: pagesPerAppPage },
+          (_, i) => startTmdb + i,
+        );
+
+        const settled = await Promise.allSettled(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
               `/trending/movie/day?language=pt-BR&page=${p}`,
@@ -65,14 +71,27 @@ class MovieService {
           ),
         );
 
+        const responses = settled
+          .filter(
+            (r): r is PromiseFulfilledResult<TMDBPaginatedResponse<TMDBMovieRaw>> =>
+              r.status === "fulfilled",
+          )
+          .map((r) => r.value);
+
+        if (responses.length === 0) {
+          throw new Error("Nenhuma página respondeu para trending");
+        }
+
         const allRaw = responses.flatMap((r) => r.results);
         const mapped = allRaw.map(mapTMDBMovie);
         const qualified = filterQualifiedMovies(mapped, 6.0, 30);
+        const tmdbTotalPages = responses[0]?.total_pages ?? 1;
+        const appTotalPages = Math.max(1, Math.ceil(tmdbTotalPages / pagesPerAppPage));
 
         return {
           page,
           results: qualified,
-          totalPages: responses[0]?.total_pages ?? 1,
+          totalPages: appTotalPages,
           totalResults: responses[0]?.total_results ?? qualified.length,
         };
       }
@@ -123,9 +142,15 @@ class MovieService {
 
         // Inspeciona até 15 candidatos para garantir os 5 melhores com tagline oficial
         const candidatesToInspect = candidates.slice(0, 15);
-        const detailedMovies = await Promise.all(
+        const settledDetailed = await Promise.allSettled(
           candidatesToInspect.map((m) => this.getMovieById(m.id)),
         );
+        const detailedMovies = settledDetailed
+          .filter(
+            (r): r is PromiseFulfilledResult<Movie | null> =>
+              r.status === "fulfilled",
+          )
+          .map((r) => r.value);
 
         // Filtro ESTRITO: Apenas filmes com tagline oficial válida e não-vazia
         const heroValid = detailedMovies.filter((m): m is Movie =>
@@ -259,8 +284,14 @@ class MovieService {
     try {
       if (isTmdbConfigured()) {
         const currentYear = new Date().getFullYear();
-        const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
-        const responses = await Promise.all(
+        const pagesPerAppPage = 3;
+        const startTmdb = (page - 1) * pagesPerAppPage + 1;
+        const pagesToFetch = Array.from(
+          { length: pagesPerAppPage },
+          (_, i) => startTmdb + i,
+        );
+
+        const settled = await Promise.allSettled(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
               `/discover/movie?language=pt-BR&sort_by=popularity.desc&primary_release_date.gte=${currentYear}-01-01&vote_count.gte=30&vote_average.gte=6.0&page=${p}`,
@@ -268,14 +299,27 @@ class MovieService {
           ),
         );
 
+        const responses = settled
+          .filter(
+            (r): r is PromiseFulfilledResult<TMDBPaginatedResponse<TMDBMovieRaw>> =>
+              r.status === "fulfilled",
+          )
+          .map((r) => r.value);
+
+        if (responses.length === 0) {
+          throw new Error("Nenhuma página respondeu para lançamentos");
+        }
+
         const allRaw = responses.flatMap((r) => r.results);
         const mapped = allRaw.map(mapTMDBMovie);
         const qualified = filterQualifiedMovies(mapped, 6.0, 30);
+        const tmdbTotalPages = responses[0]?.total_pages ?? 1;
+        const appTotalPages = Math.max(1, Math.ceil(tmdbTotalPages / pagesPerAppPage));
 
         return {
           page,
           results: qualified,
-          totalPages: responses[0]?.total_pages ?? 1,
+          totalPages: appTotalPages,
           totalResults: responses[0]?.total_results ?? qualified.length,
         };
       }
@@ -316,8 +360,14 @@ class MovieService {
   async getTopRatedMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (isTmdbConfigured()) {
-        const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
-        const responses = await Promise.all(
+        const pagesPerAppPage = 3;
+        const startTmdb = (page - 1) * pagesPerAppPage + 1;
+        const pagesToFetch = Array.from(
+          { length: pagesPerAppPage },
+          (_, i) => startTmdb + i,
+        );
+
+        const settled = await Promise.allSettled(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
               `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=2000&primary_release_date.gte=2000-01-01&without_genres=16&page=${p}`,
@@ -325,15 +375,28 @@ class MovieService {
           ),
         );
 
+        const responses = settled
+          .filter(
+            (r): r is PromiseFulfilledResult<TMDBPaginatedResponse<TMDBMovieRaw>> =>
+              r.status === "fulfilled",
+          )
+          .map((r) => r.value);
+
+        if (responses.length === 0) {
+          throw new Error("Nenhuma página respondeu para top-rated");
+        }
+
         const allRaw = responses.flatMap((r) => r.results);
         const mapped = allRaw.map(mapTMDBMovie);
         const qualified = filterQualifiedMovies(mapped, 7.5, 500);
         const franchiseChampionOnly = dedupeFranchises(qualified);
+        const tmdbTotalPages = responses[0]?.total_pages ?? 1;
+        const appTotalPages = Math.max(1, Math.ceil(tmdbTotalPages / pagesPerAppPage));
 
         return {
           page,
           results: franchiseChampionOnly,
-          totalPages: responses[0]?.total_pages ?? 1,
+          totalPages: appTotalPages,
           totalResults:
             responses[0]?.total_results ?? franchiseChampionOnly.length,
         };
@@ -372,8 +435,14 @@ class MovieService {
   async getClassicMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (isTmdbConfigured()) {
-        const pagesToFetch = page === 1 ? [1, 2, 3] : [page];
-        const responses = await Promise.all(
+        const pagesPerAppPage = 3;
+        const startTmdb = (page - 1) * pagesPerAppPage + 1;
+        const pagesToFetch = Array.from(
+          { length: pagesPerAppPage },
+          (_, i) => startTmdb + i,
+        );
+
+        const settled = await Promise.allSettled(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
               `/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=3000&primary_release_date.lte=1999-12-31&without_genres=16&page=${p}`,
@@ -381,15 +450,28 @@ class MovieService {
           ),
         );
 
+        const responses = settled
+          .filter(
+            (r): r is PromiseFulfilledResult<TMDBPaginatedResponse<TMDBMovieRaw>> =>
+              r.status === "fulfilled",
+          )
+          .map((r) => r.value);
+
+        if (responses.length === 0) {
+          throw new Error("Nenhuma página respondeu para clássicos");
+        }
+
         const allRaw = responses.flatMap((r) => r.results);
         const mapped = allRaw.map(mapTMDBMovie);
         const qualified = filterQualifiedMovies(mapped, 7.5, 1000);
         const franchiseChampionOnly = dedupeFranchises(qualified);
+        const tmdbTotalPages = responses[0]?.total_pages ?? 1;
+        const appTotalPages = Math.max(1, Math.ceil(tmdbTotalPages / pagesPerAppPage));
 
         return {
           page,
           results: franchiseChampionOnly,
-          totalPages: responses[0]?.total_pages ?? 1,
+          totalPages: appTotalPages,
           totalResults:
             responses[0]?.total_results ?? franchiseChampionOnly.length,
         };
@@ -428,8 +510,14 @@ class MovieService {
   async getPopularMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
       if (isTmdbConfigured()) {
-        const pagesToFetch = page === 1 ? [1, 2, 3, 4, 5] : [page];
-        const responses = await Promise.all(
+        const pagesPerAppPage = 5;
+        const startTmdb = (page - 1) * pagesPerAppPage + 1;
+        const pagesToFetch = Array.from(
+          { length: pagesPerAppPage },
+          (_, i) => startTmdb + i,
+        );
+
+        const settled = await Promise.allSettled(
           pagesToFetch.map((p) =>
             fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
               `/movie/popular?language=pt-BR&page=${p}`,
@@ -437,14 +525,27 @@ class MovieService {
           ),
         );
 
+        const responses = settled
+          .filter(
+            (r): r is PromiseFulfilledResult<TMDBPaginatedResponse<TMDBMovieRaw>> =>
+              r.status === "fulfilled",
+          )
+          .map((r) => r.value);
+
+        if (responses.length === 0) {
+          throw new Error("Nenhuma página respondeu para populares");
+        }
+
         const allRaw = responses.flatMap((r) => r.results);
         const mapped = allRaw.map(mapTMDBMovie);
         const qualified = filterQualifiedMovies(mapped, 6.0, 30);
+        const tmdbTotalPages = responses[0]?.total_pages ?? 1;
+        const appTotalPages = Math.max(1, Math.ceil(tmdbTotalPages / pagesPerAppPage));
 
         return {
           page,
           results: qualified,
-          totalPages: responses[0]?.total_pages ?? 1,
+          totalPages: appTotalPages,
           totalResults: responses[0]?.total_results ?? qualified.length,
         };
       }

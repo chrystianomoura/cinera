@@ -74,18 +74,20 @@ export function getFranchiseKey(title: string, originalTitle?: string): string {
 }
 
 /**
- * Deduplica títulos pertencentes à mesma franquia, mantendo estritamente
- * o filme com a maior nota (já que a lista original vem ordenada decrescente por nota).
+ * Deduplica títulos pertencentes à mesma franquia, garantindo autonomamente
+ * que o filme com a maior nota de cada saga seja selecionado, independentemente
+ * da ordem de entrada do array recebido.
  */
 export function dedupeFranchises(movies: Movie[]): Movie[] {
-  const seenFranchises = new Set<string>();
-  const result: Movie[] = [];
+  const bestByFranchise = new Map<string, Movie>();
   for (const m of movies) {
     const key = getFranchiseKey(m.title, m.originalTitle);
-    if (!seenFranchises.has(key)) {
-      seenFranchises.add(key);
-      result.push(m);
+    const existing = bestByFranchise.get(key);
+    if (!existing || m.voteAverage > existing.voteAverage) {
+      bestByFranchise.set(key, m);
     }
   }
-  return result;
+  return Array.from(bestByFranchise.values()).sort(
+    (a, b) => b.voteAverage - a.voteAverage,
+  );
 }

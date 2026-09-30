@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
 
@@ -23,9 +23,42 @@ export function PhotoModal({
   onClose,
   onSelectIndex,
 }: PhotoModalProps) {
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   const total = images.length;
   const currentPath = images[currentIndex];
 
+  // Guarda defensiva: se a galeria mudar e o índice ficar fora dos limites, fecha o modal
+  useEffect(() => {
+    if (!isOpen) return;
+    if (currentIndex >= images.length) {
+      onClose();
+    }
+  }, [isOpen, currentIndex, images.length, onClose]);
+
+  // Foco inicial no botão de fechar ao abrir e restauração perfeita para a foto na galeria ao fechar
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    const raf = requestAnimationFrame(() => {
+      closeBtnRef.current?.focus();
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      const previous = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (previous && document.contains(previous)) {
+        previous.focus();
+      }
+    };
+  }, [isOpen]);
+
+  // Navegação por teclado e Focus Trap nativo (não deixa o Tab escapar para a página de trás)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -36,6 +69,33 @@ export function PhotoModal({
         onSelectIndex(currentIndex - 1);
       } else if (e.key === "ArrowRight" && currentIndex < total - 1) {
         onSelectIndex(currentIndex + 1);
+      } else if (e.key === "Tab") {
+        // Focus trap nativo: cicla o foco estritamente dentro dos elementos focáveis do modal
+        const container = modalContainerRef.current;
+        if (!container) return;
+
+        const focusableElements = container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        const active = document.activeElement;
+        const isInside = container.contains(active);
+
+        if (e.shiftKey) {
+          if (!isInside || active === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (!isInside || active === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
 
@@ -62,20 +122,25 @@ export function PhotoModal({
     });
   }, [isOpen, images, currentIndex, total]);
 
+  const photoUrl = currentPath ? getBackdropUrl(currentPath, "w1280") : "";
 
-  if (!isOpen || !currentPath) return null;
-
-  const photoUrl = getBackdropUrl(currentPath, "w1280");
+  if (!isOpen || !currentPath || !photoUrl) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Visualizador de fotos em alta resolução"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
       className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6 md:p-10 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
     >
       <div
+        ref={modalContainerRef}
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-5xl bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col cursor-default"
       >
@@ -86,8 +151,9 @@ export function PhotoModal({
           </h4>
 
           <button
+            ref={closeBtnRef}
             onClick={onClose}
-            className="absolute right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors cursor-pointer flex-shrink-0"
+            className="absolute right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors cursor-pointer flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             title="Fechar (Esc)"
           >
             <X className="w-5 h-5" />
@@ -102,28 +168,30 @@ export function PhotoModal({
             alt={`Cena do filme ${currentIndex + 1}`}
             draggable={false}
             decoding="async"
-            className="w-full h-full object-contain select-none"
+            className="w-full h-full object-contain select-none animate-photo-soft"
           />
 
           {/* Botão Foto Anterior */}
           {currentIndex > 0 ? (
             <button
+              type="button"
               onClick={() => onSelectIndex(currentIndex - 1)}
               aria-label="Foto anterior"
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-white text-white hover:text-black border border-white/20 shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-white text-white hover:text-black border border-white/20 shadow-lg flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             >
-              <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+              <ChevronLeft aria-hidden="true" className="w-6 h-6 stroke-[2.5] pointer-events-none" />
             </button>
           ) : null}
 
           {/* Botão Próxima Foto */}
           {currentIndex < total - 1 ? (
             <button
+              type="button"
               onClick={() => onSelectIndex(currentIndex + 1)}
               aria-label="Próxima foto"
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-white text-white hover:text-black border border-white/20 shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-white text-white hover:text-black border border-white/20 shadow-lg flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             >
-              <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+              <ChevronRight aria-hidden="true" className="w-6 h-6 stroke-[2.5] pointer-events-none" />
             </button>
           ) : null}
         </div>

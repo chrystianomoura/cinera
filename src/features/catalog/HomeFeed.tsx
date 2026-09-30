@@ -96,60 +96,54 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
           : "opacity-100 animate-in fade-in duration-500"
       }`}
     >
-      {/* 1. Em Alta */}
-      <MovieCarousel
-        title="Em Alta"
-        icon="🔥"
-        movies={trendingMovies}
-        isLoading={isLoadingTrending}
-        isError={isErrorTrending}
-        isEager={true}
-        onSelectMovie={onSelectMovie}
-      />
-
-      {/* 2. Novidades */}
-      <MovieCarousel
-        title="Novidades"
-        icon="✨"
-        movies={newReleasesMovies}
-        isLoading={isLoadingNewReleases}
-        isError={isErrorNewReleases}
-        isEager={true}
-        onSelectMovie={onSelectMovie}
-      />
-
-      {/* 3. Aclamados pela Crítica */}
-      <MovieCarousel
-        title="Aclamados pela Crítica"
-        icon="⭐"
-        movies={topRatedMovies}
-        isLoading={isLoadingTopRated}
-        isError={isErrorTopRated}
-        isEager={true}
-        onSelectMovie={onSelectMovie}
-      />
-
-      {/* 4. Clássicos Indispensáveis */}
-      <MovieCarousel
-        title="Clássicos Indispensáveis"
-        icon="🏆"
-        movies={classicMovies}
-        isLoading={isLoadingClassics}
-        isError={isErrorClassics}
-        isEager={true}
-        onSelectMovie={onSelectMovie}
-      />
-
-      {/* 5. Populares no Brasil */}
-      <MovieCarousel
-        title="Populares no Brasil"
-        icon="🇧🇷"
-        movies={popularMovies}
-        isLoading={isLoadingPopular}
-        isError={isErrorPopular}
-        isEager={true}
-        onSelectMovie={onSelectMovie}
-      />
+      {[
+        {
+          title: "Em Alta",
+          icon: "🔥",
+          movies: trendingMovies,
+          isLoading: isLoadingTrending,
+          isError: isErrorTrending,
+        },
+        {
+          title: "Novidades",
+          icon: "✨",
+          movies: newReleasesMovies,
+          isLoading: isLoadingNewReleases,
+          isError: isErrorNewReleases,
+        },
+        {
+          title: "Aclamados pela Crítica",
+          icon: "⭐",
+          movies: topRatedMovies,
+          isLoading: isLoadingTopRated,
+          isError: isErrorTopRated,
+        },
+        {
+          title: "Clássicos Indispensáveis",
+          icon: "🏆",
+          movies: classicMovies,
+          isLoading: isLoadingClassics,
+          isError: isErrorClassics,
+        },
+        {
+          title: "Populares no Brasil",
+          icon: "🇧🇷",
+          movies: popularMovies,
+          isLoading: isLoadingPopular,
+          isError: isErrorPopular,
+        },
+      ].map((section, index) => (
+        <MovieCarousel
+          key={section.title}
+          title={section.title}
+          icon={section.icon}
+          movies={section.movies}
+          isLoading={section.isLoading}
+          isError={section.isError}
+          isEager={index === 0}
+          onSelectMovie={onSelectMovie}
+        />
+      ))}
     </div>
   );
 }

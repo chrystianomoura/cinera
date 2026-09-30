@@ -167,11 +167,16 @@ export interface SearchMoviesResult {
  *    - Para termos compostos de 2+ palavras (ex: "temple of doom", "fight club"): aprova se o título original
  *      contiver a frase contígua.
  */
-function filterByVisibleTokens(movies: TMDBMovieRaw[], tokens: string[], cleanQuery: string): TMDBMovieRaw[] {
+function filterByVisibleTokens(
+  movies: TMDBMovieRaw[],
+  tokens: string[],
+  cleanQuery: string,
+  hasTrailingSpace: boolean = false
+): TMDBMovieRaw[] {
   if (tokens.length === 0) return movies;
 
   const rawQ = normalizeSearchString(cleanQuery);
-  const isTrailingSpace = /\s$/.test(cleanQuery);
+  const isTrailingSpace = hasTrailingSpace || /\s$/.test(cleanQuery);
 
   const tokenMatchers = tokens.map((token, index) => {
     const isLastToken = index === tokens.length - 1;
@@ -408,8 +413,9 @@ export async function searchCineraMovies(
       });
 
       // Filtro de integridade visual com tokens significativos da consulta normalizada
+      const hasTrailingSpace = /\s$/.test(rawQuery);
       const visibleTokens = unaccentedQuery.split(/\s+/).filter((t) => t.length >= 2);
-      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens, unaccentedQuery);
+      const tokenFilteredMovies = filterByVisibleTokens(validMovies, visibleTokens, unaccentedQuery, hasTrailingSpace);
 
       // 2. Verifica se a busca casa com uma Coleção Canônica Oficial (ex: Star Wars, Senhor dos Anéis, Predador)
       let canonicalCollectionMovies: TMDBMovieRaw[] = [];
@@ -635,11 +641,12 @@ export async function searchCineraMovies(
         movies: rankSearchResults(finalMapped, normalizedQuery),
       };
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === "AbortError") {
+      // Apenas engole silenciosamente se o cancelamento foi intencional do usuário (digitando outra query)
+      if (err instanceof Error && err.name === "AbortError" && signal?.aborted) {
         return { movies: [] };
       }
       console.warn(`Falha na busca remota para "${rawQuery}":`, err);
-      // Se TMDB está configurado, relança o erro para a UI refletir a falha de rede real
+      // Se for timeout de 10s ou erro de rede real, relança para a UI exibir tela de erro e botão 'tentar novamente'
       throw err;
     }
   }

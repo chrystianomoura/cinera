@@ -1,5 +1,5 @@
 import type { Movie, PaginatedResponse } from '@/domain';
-import { GENRE_PROFILES, type GenreProfile } from '@/features/catalog/constants';
+import { getGenreProfile, type GenreProfile } from '@/features/catalog/constants';
 import { moviesMock } from '../mock/movies.mock';
 import { fetchFromTMDB, isTmdbConfigured } from './tmdb-client';
 import { mapTMDBMovie } from './tmdb-mappers';
@@ -27,13 +27,7 @@ export async function fetchGenreMoviesPage(
       const inputKey = String(categoryOrQuery).trim();
 
       // Localiza o perfil editorial da categoria (seja pelo nome "Comédia" ou pelo ID/Query "35")
-      let profile: GenreProfile | undefined = GENRE_PROFILES[inputKey];
-      if (!profile) {
-        // Busca reversa caso tenha sido passado o ID legado (ex: "35" ou "28|12")
-        profile = Object.values(GENRE_PROFILES).find(
-          (p) => p.withGenres === inputKey
-        );
-      }
+      const profile = getGenreProfile(inputKey);
 
       // Perfil de fallback caso seja um gênero avulso desconhecido
       const effectiveProfile: GenreProfile = profile || {
@@ -91,9 +85,25 @@ export async function fetchGenreMoviesPage(
           )
           .map((r) => r.value);
 
+        // Se todas as requisições deste chunk falharem (queda de rede, timeout ou 429)
+        if (pageResponses.length === 0) {
+          if (collectedMovies.length === 0) {
+            // Sem nenhum dado no lote: dispara erro para ativar o catch e entregar o fallback de mock
+            throw new Error(`Todas as requisições do lote para ${categoryOrQuery} falharam na rede`);
+          }
+          // Se já coletou filmes em iterações anteriores, interrompe o loop sem disparar novas chamadas
+          break;
+        }
+
         for (const data of pageResponses) {
-          totalPages = Math.min(totalPages, data.total_pages);
-          totalResults = Math.max(totalResults, data.total_results);
+          if (!data || !Array.isArray(data.results)) continue;
+
+          if (Number.isFinite(data.total_pages)) {
+            totalPages = Math.min(totalPages, data.total_pages);
+          }
+          if (Number.isFinite(data.total_results)) {
+            totalResults = Math.max(totalResults, data.total_results);
+          }
 
           const qualified = filterQualifiedMovies(
             data.results.map(mapTMDBMovie),
@@ -147,14 +157,16 @@ export async function fetchGenreMoviesPage(
         });
       }
 
+      // hasNext só é verdadeiro se totalPages foi respondido pelo TMDB com número finito real
       const hasNext =
+        Number.isFinite(totalPages) &&
         currentTmdbPage <= totalPages &&
         (uniqueMovies.length > 0 || currentTmdbPage < totalPages);
 
       return {
         page,
         results: uniqueMovies,
-        totalPages,
+        totalPages: Number.isFinite(totalPages) ? totalPages : 1,
         totalResults,
         nextPage: hasNext ? currentTmdbPage : undefined,
       };
@@ -165,7 +177,7 @@ export async function fetchGenreMoviesPage(
 
   // Fallback Mock
   const inputKey = String(categoryOrQuery).trim();
-  const profile = GENRE_PROFILES[inputKey];
+  const profile = getGenreProfile(inputKey);
   const withIds = profile ? profile.withGenres : inputKey;
   const queryIds = new Set(String(withIds).split('|').map(Number));
   const filtered = moviesMock.filter((m) =>

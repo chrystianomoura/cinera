@@ -34,7 +34,7 @@ export interface GenreProfile {
  * - Critérios de ordenação sob medida (sortBy) para valorizar clássicos do suspense e épicos da ficção
  * - Calibração de nota mínima e contagem de votos para manter um piso de qualidade impecável
  */
-export const GENRE_PROFILES: Record<string, GenreProfile> = {
+export const GENRE_PROFILES: Record<GenreCategory, GenreProfile> = {
   "Ação & Aventura": {
     withGenres: "28|12",
     withoutGenres: "16,14,10751", // Sem animações, sem fantasia mística e sem filmes infantis/família (Sonic) - mantendo Ficção para resgatar Matrix, Mad Max, etc.
@@ -83,7 +83,6 @@ export const GENRE_PROFILES: Record<string, GenreProfile> = {
   },
   "Animação": {
     withGenres: "16",
-    withoutGenres: undefined,
     sortBy: "vote_count.desc", // As maiores obras-primas da animação mundial
     minVoteAverage: 7.0,
     minVoteCount: 800,
@@ -120,12 +119,26 @@ export const GENRE_PROFILES: Record<string, GenreProfile> = {
 };
 
 /**
- * Mapeamento das categorias consolidadas para os IDs do TMDB.
- * Mantido para retrocompatibilidade de consultas legadas.
+ * Função utilitária para buscar com segurança o perfil editorial a partir de qualquer string.
  */
-export const GENRE_NAME_TO_QUERY: Record<string, string> = Object.fromEntries(
-  Object.entries(GENRE_PROFILES).map(([name, profile]) => [name, profile.withGenres])
-);
+export function getGenreProfile(nameOrQuery: string): GenreProfile | undefined {
+  if (nameOrQuery in GENRE_PROFILES) {
+    return GENRE_PROFILES[nameOrQuery as GenreCategory];
+  }
+  return Object.values(GENRE_PROFILES).find((p) => p.withGenres === nameOrQuery);
+}
 
-export const GENRE_NAME_TO_ID = GENRE_NAME_TO_QUERY;
+/**
+ * Mapeamento das categorias consolidadas para as strings de filtro do TMDB.
+ */
+export const GENRE_NAME_TO_QUERY: Record<GenreCategory, string> = Object.fromEntries(
+  GENRES.map((name) => [name, GENRE_PROFILES[name].withGenres])
+) as Record<GenreCategory, string>;
+
+/**
+ * Mapeamento das categorias consolidadas para os IDs numéricos primários do TMDB.
+ */
+export const GENRE_NAME_TO_ID: Record<GenreCategory, number> = Object.fromEntries(
+  GENRES.map((name) => [name, GENRE_PROFILES[name].primaryGenreId])
+) as Record<GenreCategory, number>;
 

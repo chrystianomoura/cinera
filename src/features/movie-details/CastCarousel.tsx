@@ -12,7 +12,7 @@ interface CastCarouselProps {
 /**
  * Carrossel horizontal do elenco principal.
  */
-export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
+export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
   const {
     containerRef,
     canScrollLeft,
@@ -25,7 +25,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
   });
 
   const topCast = useMemo(
-    () => cast.filter((actor) => Boolean(actor.profilePath)).slice(0, 18),
+    () => (cast ?? []).filter((actor) => Boolean(actor.profilePath)).slice(0, 18),
     [cast]
   );
 
@@ -35,14 +35,14 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
         <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Elenco Principal
         </h3>
-        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2">
+        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-1">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="flex flex-col items-center gap-2 flex-shrink-0 w-28 sm:w-32 md:w-36 animate-pulse"
+              className="flex flex-col items-center flex-shrink-0 w-28 sm:w-32 md:w-36 animate-pulse"
             >
-              <div className="aspect-[3/4] w-full rounded-2xl bg-zinc-900 border border-white/5" />
-              <div className="h-4 w-20 bg-zinc-900 rounded mt-1" />
+              <div className="aspect-[3/4] w-full rounded-xl bg-zinc-900 border border-white/5 mb-2.5" />
+              <div className="h-4 w-20 bg-zinc-900 rounded" />
             </div>
           ))}
         </div>
@@ -63,26 +63,20 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
 
         <div className="hidden sm:flex items-center gap-1.5 absolute right-0">
           <button
-            onClick={() => canScrollLeft && scroll("left")}
+            type="button"
+            disabled={!canScrollLeft}
+            onClick={() => scroll("left")}
             aria-label="Rolar elenco para a esquerda"
-            tabIndex={canScrollLeft ? 0 : -1}
-            className={`w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer ${
-              canScrollLeft
-                ? "opacity-100 cursor-pointer"
-                : "opacity-30 pointer-events-none cursor-default"
-            }`}
+            className="w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4 pointer-events-none" />
           </button>
           <button
-            onClick={() => canScrollRight && scroll("right")}
+            type="button"
+            disabled={!canScrollRight}
+            onClick={() => scroll("right")}
             aria-label="Rolar elenco para a direita"
-            tabIndex={canScrollRight ? 0 : -1}
-            className={`w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer ${
-              canScrollRight
-                ? "opacity-100 cursor-pointer"
-                : "opacity-30 pointer-events-none cursor-default"
-            }`}
+            className="w-7 h-7 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
           >
             <ChevronRight className="w-4 h-4 pointer-events-none" />
           </button>
@@ -90,12 +84,12 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
       </div>
 
       <div className="relative">
-        {/* Borda de fade esquerda - rápida e ágil */}
-        <div
-          className={`hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
-            canScrollLeft ? "opacity-100" : "opacity-0"
-          }`}
-        />
+        {/* Borda de fade esquerda - instantâneo (0ms) */}
+        {canScrollLeft && (
+          <div
+            className="hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none"
+          />
+        )}
 
         <div
           ref={containerRef}
@@ -125,7 +119,7 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
                   )}
                 </div>
 
-                <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-snug break-words tracking-tight w-full text-center">
+                <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-snug break-words tracking-tight w-full text-center line-clamp-2">
                   {actor.name}
                 </h4>
               </div>
@@ -133,12 +127,12 @@ export function CastCarousel({ cast = [], isLoading }: CastCarouselProps) {
           })}
         </div>
 
-        {/* Borda de fade direita - rápida e ágil */}
-        <div
-          className={`hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black from-30% via-black/70 to-transparent z-20 pointer-events-none transition-opacity duration-200 ease-out ${
-            canScrollRight ? "opacity-100" : "opacity-0"
-          }`}
-        />
+        {/* Borda de fade direita - instantâneo (0ms) */}
+        {canScrollRight && (
+          <div
+            className="hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none"
+          />
+        )}
       </div>
     </div>
   );
