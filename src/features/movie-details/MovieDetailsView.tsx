@@ -380,7 +380,7 @@ export function MovieDetailsView({
                     <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Direção:
                     </span>
-                    <span className="font-medium text-zinc-100 text-sm">
+                    <span className="font-medium text-zinc-100 text-xs sm:text-sm">
                       {credits!.directors!.join(", ")}
                     </span>
                   </div>
@@ -395,7 +395,7 @@ export function MovieDetailsView({
                           Orçamento:
                         </span>
                         <span
-                          className={`font-semibold text-xs sm:text-sm ${
+                          className={`font-medium text-xs sm:text-sm ${
                             hasFinancialContrast ? "text-rose-400" : "text-zinc-100"
                           }`}
                         >
@@ -410,7 +410,7 @@ export function MovieDetailsView({
                           Bilheteria:
                         </span>
                         <span
-                          className={`font-semibold text-xs sm:text-sm ${
+                          className={`font-medium text-xs sm:text-sm ${
                             hasFinancialContrast ? "text-emerald-400" : "text-zinc-100"
                           }`}
                         >
@@ -427,7 +427,7 @@ export function MovieDetailsView({
                     <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Título Original:
                     </span>
-                    <span className="font-medium text-zinc-100 text-sm">
+                    <span className="font-medium text-zinc-100 text-xs sm:text-sm">
                       {originalTitle}
                     </span>
                   </div>
@@ -439,7 +439,7 @@ export function MovieDetailsView({
                     <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
                       Produtoras:
                     </span>
-                    <span className="font-medium text-zinc-100 text-sm">
+                    <span className="font-medium text-zinc-100 text-xs sm:text-sm">
                       {companiesList}
                     </span>
                   </div>
