@@ -82,12 +82,18 @@ export function HeroFeatured({
         <>
           {/* Pôster em destaque: imagem nítida, 100% estável ao mudar de aba, com transição sincronizada */}
           <div
-            className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ease-in-out ${
+            className={`absolute inset-0 overflow-hidden transform-gpu will-change-[opacity] transition-opacity duration-700 ease-in-out ${
               isFading ? "opacity-0" : "opacity-100"
             }`}
           >
             <img
-              src={getBackdropUrl(heroMovie.backdropPath)}
+              src={getBackdropUrl(heroMovie.backdropPath, "w1280")}
+              srcSet={`
+                ${getBackdropUrl(heroMovie.backdropPath, "w780")} 780w,
+                ${getBackdropUrl(heroMovie.backdropPath, "w1280")} 1280w,
+                ${getBackdropUrl(heroMovie.backdropPath, "original")} 1920w
+              `}
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 1920px"
               alt={heroMovie.title}
               loading="eager"
               fetchPriority="high"
@@ -95,22 +101,22 @@ export function HeroFeatured({
               onError={(e) => {
                 e.currentTarget.style.opacity = "0";
               }}
-              className="w-full h-full object-cover object-top origin-center"
+              className="w-full h-full object-cover object-center md:object-top origin-center transform-gpu"
             />
 
-            {/* Gradiente cinematográfico inferior */}
+            {/* Gradiente cinematográfico inferior com reforço vertical para mobile */}
             <div
-              className="absolute inset-x-0 bottom-0 h-[45%] pointer-events-none"
+              className="absolute inset-x-0 bottom-0 h-[60%] md:h-[45%] pointer-events-none"
               style={{
                 background:
-                  "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.2) 80%, transparent 100%)",
+                  "linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.4) 65%, transparent 100%)",
               }}
             />
           </div>
 
-          {/* Textos e CTAs: sincronizados no milissegundo exato com a imagem */}
+          {/* Textos e CTAs: sincronizados no milissegundo exato com a imagem com aceleração por hardware */}
           <div
-            className={`relative z-10 max-w-3xl lg:max-w-4xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transition-opacity duration-700 ease-in-out ${
+            className={`relative z-10 max-w-3xl lg:max-w-4xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transform-gpu will-change-[opacity] transition-opacity duration-700 ease-in-out ${
               isFading || !isVisible
                 ? "opacity-0 pointer-events-none"
                 : "opacity-100"
