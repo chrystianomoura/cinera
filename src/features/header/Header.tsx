@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Search, Bookmark } from "lucide-react";
-import { useUserLibrary } from "@/stores/use-user-library";
 
 interface HeaderProps {
   onSearchClick?: () => void;
@@ -9,7 +8,6 @@ interface HeaderProps {
 
 export function Header({ onSearchClick, onLibraryClick }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
-  const watchlist = useUserLibrary((state) => state.watchlist);
 
   // Monitora a rolagem para adensar o Header dinamicamente durante a navegação
   useEffect(() => {
@@ -46,9 +44,7 @@ export function Header({ onSearchClick, onLibraryClick }: HeaderProps) {
           <Bookmark
             size={19}
             strokeWidth={2.2}
-            className={`transition-all duration-200 group-hover:scale-105 ${
-              watchlist.length > 0 ? "text-white fill-white/20" : ""
-            }`}
+            className="transition-transform duration-200 group-hover:scale-105"
           />
         </button>
 
