@@ -119,9 +119,11 @@ export class OmdbService {
         const apiKey = this.getApiKey();
         const response = await fetch(
           `https://www.omdbapi.com/?i=${encodeURIComponent(cleanId)}&apikey=${apiKey}`,
+          { signal: AbortSignal.timeout(8000) },
         );
 
-        if (response.status === 429) {
+        // Proteção contra Rate Limit (429) ou Chave Inválida/Revogada (401)
+        if (response.status === 429 || response.status === 401) {
           if (hasStorage) {
             try {
               window.localStorage.setItem(
@@ -135,8 +137,9 @@ export class OmdbService {
           return null;
         }
 
+        // Se for erro HTTP transitório do servidor (500, 502, 503, etc.), NÃO grava no cache negativo!
+        // Permite que o usuário tente novamente depois sem ficar 24h bloqueado.
         if (!response.ok) {
-          this.saveToCache(cleanId, null, hasStorage);
           return null;
         }
 
@@ -148,10 +151,13 @@ export class OmdbService {
           return null;
         }
 
+        const rawRating = typeof json.imdbRating === "string" ? json.imdbRating.trim() : "";
+        const isNumericRating = /^\d+(\.\d+)?$/.test(rawRating);
+
         if (
           json.Response === "False" ||
-          !json.imdbRating ||
-          json.imdbRating === "N/A"
+          !isNumericRating ||
+          rawRating === "N/A"
         ) {
           // Cache negativo: salva como null para não re-consultar a cada render
           this.saveToCache(cleanId, null, hasStorage);
@@ -159,10 +165,10 @@ export class OmdbService {
         }
 
         const result: ImdbRatingData = {
-          rating: String(json.imdbRating).trim(),
+          rating: rawRating,
           votes:
-            json.imdbVotes && json.imdbVotes !== "N/A"
-              ? String(json.imdbVotes).trim()
+            json.imdbVotes && typeof json.imdbVotes === "string" && json.imdbVotes !== "N/A"
+              ? json.imdbVotes.trim()
               : undefined,
         };
 
