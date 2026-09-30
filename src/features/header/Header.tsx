@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { Search, Bookmark } from "lucide-react";
+import { useUserLibrary } from "@/stores/use-user-library";
 
 interface HeaderProps {
   onSearchClick?: () => void;
+  onLibraryClick?: () => void;
 }
 
-export function Header({ onSearchClick }: HeaderProps) {
+export function Header({ onSearchClick, onLibraryClick }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
+  const watchlist = useUserLibrary((state) => state.watchlist);
 
   // Monitora a rolagem para adensar o Header dinamicamente durante a navegação
   useEffect(() => {
@@ -31,18 +34,38 @@ export function Header({ onSearchClick }: HeaderProps) {
         Cinera
       </h1>
 
-      <button
-        type="button"
-        onClick={onSearchClick}
-        aria-label="Pesquisar filmes"
-        className="group w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white transition-all duration-200 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-      >
-        <Search
-          size={19}
-          strokeWidth={2.2}
-          className="transition-transform duration-200 group-hover:scale-105"
-        />
-      </button>
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Botão Minha Biblioteca (Quero Assistir / Já Assisti) */}
+        <button
+          type="button"
+          onClick={onLibraryClick}
+          aria-label="Minha Biblioteca"
+          title="Minha Biblioteca"
+          className="group w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white transition-all duration-200 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        >
+          <Bookmark
+            size={19}
+            strokeWidth={2.2}
+            className={`transition-all duration-200 group-hover:scale-105 ${
+              watchlist.length > 0 ? "text-white fill-white/20" : ""
+            }`}
+          />
+        </button>
+
+        {/* Botão de Pesquisa */}
+        <button
+          type="button"
+          onClick={onSearchClick}
+          aria-label="Pesquisar filmes"
+          className="group w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white transition-all duration-200 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        >
+          <Search
+            size={19}
+            strokeWidth={2.2}
+            className="transition-transform duration-200 group-hover:scale-105"
+          />
+        </button>
+      </div>
     </header>
   );
 }

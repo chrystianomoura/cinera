@@ -18,6 +18,7 @@ interface MovieDetailsViewProps {
   onClose: () => void;
   onOpenTrailer: (movie: Movie) => void;
   isFromSearch?: boolean;
+  isFromLibrary?: boolean;
 }
 
 export function MovieDetailsView({
@@ -26,6 +27,7 @@ export function MovieDetailsView({
   onClose,
   onOpenTrailer,
   isFromSearch = false,
+  isFromLibrary = false,
 }: MovieDetailsViewProps) {
   const movieId = initialMovie?.id ?? null;
   const {
@@ -119,7 +121,7 @@ export function MovieDetailsView({
       role="dialog"
       aria-modal="true"
       aria-label={`Detalhes do filme ${movie.title}`}
-      className="fixed inset-0 z-50 overflow-y-auto bg-black scrollbar-hide animate-in fade-in duration-300"
+      className="fixed inset-0 z-[80] overflow-y-auto bg-black scrollbar-hide animate-in fade-in duration-300"
     >
       {/* Atmosfera cromática de fundo */}
       <div
@@ -156,8 +158,20 @@ export function MovieDetailsView({
 
         <button
           onClick={onClose}
-          aria-label={isFromSearch ? "Voltar para a pesquisa (Esc)" : "Fechar detalhes (Esc)"}
-          title={isFromSearch ? "Voltar para a pesquisa (Esc)" : "Fechar (Esc)"}
+          aria-label={
+            isFromSearch
+              ? "Voltar para a pesquisa (Esc)"
+              : isFromLibrary
+              ? "Voltar para a biblioteca (Esc)"
+              : "Fechar detalhes (Esc)"
+          }
+          title={
+            isFromSearch
+              ? "Voltar para a pesquisa (Esc)"
+              : isFromLibrary
+              ? "Voltar para a biblioteca (Esc)"
+              : "Fechar (Esc)"
+          }
           className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group"
         >
           {isFromSearch ? (
@@ -310,15 +324,15 @@ export function MovieDetailsView({
 
               {/* Ações de Biblioteca Pessoal: Grid de 2 colunas no mobile, linha flex no desktop */}
               <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full md:flex md:w-auto md:gap-4">
-                {/* 2. Quero Assistir (Watchlist com toggle e persistência) */}
+                {/* 2. Quero Assistir (Watchlist com toggle exclusivo e paleta Cinera) */}
                 <button
                   type="button"
                   onClick={() => toggleWatchlist(movie.id)}
                   aria-pressed={isWatchlist}
-                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-3 sm:px-5 py-3 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
+                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
                     isWatchlist
-                      ? "bg-[#ffcc00] text-black border border-[#ffcc00] font-bold shadow-[0_0_20px_rgba(255,204,0,0.3)]"
-                      : "bg-zinc-900/80 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
+                      ? "bg-white text-black border border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
+                      : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
                   }`}
                 >
                   <Bookmark
@@ -326,18 +340,18 @@ export function MovieDetailsView({
                       isWatchlist ? "fill-current stroke-current" : "stroke-[2.2]"
                     }`}
                   />
-                  <span className="truncate">{isWatchlist ? "Quero Assistir ✓" : "Quero Assistir"}</span>
+                  <span className="truncate">Quero Assistir</span>
                 </button>
 
-                {/* 3. Já Assisti (Watched History com toggle e persistência) */}
+                {/* 3. Já Assisti (Watched History com toggle exclusivo e paleta Cinera) */}
                 <button
                   type="button"
                   onClick={() => toggleWatched(movie.id)}
                   aria-pressed={isWatched}
-                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-3 sm:px-5 py-3 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
+                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
                     isWatched
-                      ? "bg-emerald-500 text-black border border-emerald-400 font-bold shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                      : "bg-zinc-900/80 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
+                      ? "bg-white text-black border border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
+                      : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
                   }`}
                 >
                   <Check
@@ -345,7 +359,7 @@ export function MovieDetailsView({
                       isWatched ? "stroke-[3]" : "stroke-[2.2]"
                     }`}
                   />
-                  <span className="truncate">{isWatched ? "Já Assisti ✓" : "Já Assisti"}</span>
+                  <span className="truncate">Já Assisti</span>
                 </button>
               </div>
             </div>

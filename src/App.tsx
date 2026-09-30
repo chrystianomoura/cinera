@@ -13,11 +13,14 @@ import { GenreCatalogGrid } from "@/features/catalog/GenreCatalogGrid";
 import { MovieDetailsView } from "@/features/movie-details/MovieDetailsView";
 import { TrailerModal } from "@/features/trailer/TrailerModal";
 import { SearchModal } from "@/features/search/SearchModal";
+import { UserLibraryView } from "@/features/library/UserLibraryView";
 import { useSearchStore } from "@/features/search/use-search-store";
 import { smoothScrollToTop } from "@/lib/smooth-scroll";
 
 export default function App() {
   const { data: heroMovies, isLoading: isLoadingHero } = useHeroFeaturedMovies();
+
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   const [selectedGenre, setSelectedGenre] = useState<string>("Todos");
   const [pendingGenre, setPendingGenre] = useState<string | null>(null);
@@ -95,10 +98,12 @@ export default function App() {
   // Estado da tela de detalhes
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isFromLibrary, setIsFromLibrary] = useState(false);
 
-  const handleOpenDetails = (movie: Movie) => {
+  const handleOpenDetails = (movie: Movie, fromLibrary: boolean = false) => {
     setSelectedMovie(movie);
     setIsDetailsOpen(true);
+    setIsFromLibrary(fromLibrary);
     // Sincroniza com a URL preservando o histórico de navegação
     const url = new URL(window.location.href);
     url.searchParams.set("filme", String(movie.id));
@@ -109,6 +114,7 @@ export default function App() {
 
   const handleCloseDetails = () => {
     setIsDetailsOpen(false);
+    setIsFromLibrary(false);
     const url = new URL(window.location.href);
     if (url.searchParams.has("filme")) {
       url.searchParams.delete("filme");
@@ -244,7 +250,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
-      <Header onSearchClick={useSearchStore.getState().openSearch} />
+      <Header
+        onSearchClick={useSearchStore.getState().openSearch}
+        onLibraryClick={() => setIsLibraryOpen(true)}
+      />
 
       {/* Hero em destaque */}
       <div
@@ -311,6 +320,7 @@ export default function App() {
         onClose={handleCloseDetails}
         onOpenTrailer={handleOpenTrailer}
         isFromSearch={isFromSearch}
+        isFromLibrary={isFromLibrary}
       />
 
       <TrailerModal
@@ -325,6 +335,13 @@ export default function App() {
       <SearchModal
         onSelectMovie={handleOpenDetails}
         onSelectGenre={handleSelectGenre}
+      />
+
+      {/* Tela de Minha Biblioteca (Quero Assistir / Já Assisti) */}
+      <UserLibraryView
+        isOpen={isLibraryOpen}
+        onClose={() => setIsLibraryOpen(false)}
+        onSelectMovie={(movie) => handleOpenDetails(movie, true)}
       />
     </div>
   );
