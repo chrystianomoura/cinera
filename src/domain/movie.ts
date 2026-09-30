@@ -34,6 +34,7 @@ export interface Movie {
   budget?: number;
   revenue?: number;
   productionCompanies?: ProductionCompany[];
+  imdbId?: string | null;
 }
 
 /**

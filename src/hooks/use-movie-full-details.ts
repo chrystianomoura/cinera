@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { movieService } from "@/infrastructure/api/movie-service";
+import { OmdbService, type ImdbRatingData } from "@/infrastructure/api/omdb-service";
 import type { Movie, MovieCredits, MovieWatchProviders } from "@/domain";
 import type { MovieVideo } from "@/infrastructure/api/movie-service";
 
@@ -14,6 +15,16 @@ export function useMovieFullDetails(movieId: number | null) {
     queryFn: () => (movieId ? movieService.getMovieById(movieId) : null),
     enabled: isEnabled,
     staleTime: 1000 * 60 * 60, // 1 hora
+  });
+
+  const imdbId = movieQuery.data?.imdbId;
+
+  // Busca nota do IMDb somente sob demanda na tela de detalhes
+  const imdbRatingQuery = useQuery<ImdbRatingData | null>({
+    queryKey: ["movie", "imdbRating", imdbId],
+    queryFn: () => OmdbService.getImdbRating(imdbId),
+    enabled: Boolean(imdbId && imdbId.trim().length > 0),
+    staleTime: 1000 * 60 * 60 * 24, // 24 horas em cache
   });
 
   const creditsQuery = useQuery<MovieCredits | null>({
@@ -72,6 +83,9 @@ export function useMovieFullDetails(movieId: number | null) {
     isLoadingProviders: providersQuery.isLoading,
 
     certification: certificationQuery.data,
+
+    imdbRating: imdbRatingQuery.data ?? null,
+    isLoadingImdbRating: imdbRatingQuery.isLoading,
 
     gallery: galleryQuery.data ?? [],
     isLoadingGallery: galleryQuery.isLoading,

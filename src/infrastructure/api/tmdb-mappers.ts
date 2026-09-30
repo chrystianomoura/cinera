@@ -43,6 +43,7 @@ export function mapTMDBMovie(raw: TMDBMovieRaw): Movie {
       logoPath: c.logo_path,
       originCountry: c.origin_country,
     })),
+    imdbId: raw.imdb_id || null,
   };
 }
 

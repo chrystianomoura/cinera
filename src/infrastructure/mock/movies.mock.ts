@@ -20,6 +20,7 @@ export const moviesMock: Movie[] = [
       { id: 878, name: "Ficção científica" },
     ],
     status: "Released",
+    imdbId: "tt0816692",
   },
   {
     id: 872585,
@@ -39,6 +40,7 @@ export const moviesMock: Movie[] = [
       { id: 36, name: "História" },
     ],
     status: "Released",
+    imdbId: "tt15398776",
   },
   {
     id: 693134,
@@ -58,6 +60,7 @@ export const moviesMock: Movie[] = [
       { id: 12, name: "Aventura" },
     ],
     status: "Released",
+    imdbId: "tt15239678",
   },
   {
     id: 238,

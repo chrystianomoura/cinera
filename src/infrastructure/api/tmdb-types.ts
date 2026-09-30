@@ -63,6 +63,7 @@ export interface TMDBMovieRaw {
     iso_3166_1: string;
     name: string;
   }>;
+  imdb_id?: string | null;
 }
 
 export interface TMDBPaginatedResponse<T> {

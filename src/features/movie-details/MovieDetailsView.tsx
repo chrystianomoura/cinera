@@ -36,6 +36,8 @@ export function MovieDetailsView({
     providers,
     isLoadingProviders,
     certification,
+    imdbRating,
+    isLoadingImdbRating,
     gallery,
     isLoadingGallery,
   } = useMovieFullDetails(movieId);
@@ -262,24 +264,32 @@ export function MovieDetailsView({
               )}
 
               {/* Separador no desktop entre Linha 2 e Linha 3 */}
-              {curatedGenres && (certification || movie.voteAverage > 0) && (
+              {curatedGenres && (certification || imdbRating || isLoadingImdbRating) && (
                 <span className="hidden md:inline-block w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)]" />
               )}
 
-              {/* Linha 3 no mobile: Classificação Indicativa e TMDB */}
-              {(certification || movie.voteAverage > 0) && (
+              {/* Linha 3 no mobile: Classificação Indicativa e IMDb */}
+              {(certification || imdbRating || isLoadingImdbRating) && (
                 <div className="flex items-center gap-2.5">
                   {certification && (
                     <CertificationBadge certification={certification} />
                   )}
 
-                  {certification && movie.voteAverage > 0 && (
+                  {certification && (imdbRating || isLoadingImdbRating) && (
                     <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
                   )}
 
-                  {movie.voteAverage > 0 && (
-                    <div className="flex items-center rounded overflow-hidden shadow-sm border border-black/30 bg-gradient-to-r from-[#90cea1] to-[#01b4e4] px-2 py-0.5 text-xs font-black text-[#0d253f] tracking-wider uppercase">
-                      TMDB: {movie.voteAverage.toFixed(1)}
+                  {/* Badge Oficial Dourada do IMDb */}
+                  {isLoadingImdbRating && (
+                    <div className="h-5 w-16 rounded bg-zinc-800 animate-pulse border border-white/10" />
+                  )}
+
+                  {!isLoadingImdbRating && imdbRating && (
+                    <div
+                      title={imdbRating.votes ? `${imdbRating.votes} votos no IMDb` : "Nota IMDb"}
+                      className="inline-flex items-center rounded px-2 py-0.5 text-xs font-black tracking-wide bg-[#f5c518] text-black shadow-sm select-none cursor-default hover:brightness-105 transition-all"
+                    >
+                      <span>IMDb: {imdbRating.rating}</span>
                     </div>
                   )}
                 </div>
