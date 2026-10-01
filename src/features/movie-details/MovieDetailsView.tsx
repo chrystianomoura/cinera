@@ -151,8 +151,8 @@ export function MovieDetailsView({
         </div>
       ) : null}
 
-      <header className="sticky top-0 inset-x-0 z-40 px-4 md:px-12 py-3.5 md:py-4 flex items-center justify-between backdrop-blur-md bg-black/40 border-b border-white/10">
-        <h1 className="tracking-widest font-black text-2xl sm:text-3xl text-white uppercase font-serif select-none drop-shadow-md">
+      <header className="sticky top-0 inset-x-0 z-40 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between border-b border-white/10 backdrop-blur-xl bg-black/60">
+        <h1 className="tracking-widest font-black text-2xl sm:text-3xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
           Cinera
         </h1>
 

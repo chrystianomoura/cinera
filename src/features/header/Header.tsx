@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Search, Bookmark } from "lucide-react";
 
 interface HeaderProps {
@@ -7,27 +6,8 @@ interface HeaderProps {
 }
 
 export function Header({ onSearchClick, onLibraryClick }: HeaderProps) {
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  // Monitora a rolagem para adensar o Header dinamicamente durante a navegação
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrolled = window.scrollY > 25;
-      setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
-    };
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
-    <header
-      className={`sticky top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b backdrop-blur-xl ${
-        isScrolled
-          ? "bg-black/95 border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.6)]"
-          : "bg-black/90 border-white/10 shadow-none"
-      }`}
-    >
+    <header className="sticky top-0 inset-x-0 z-50 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b border-white/10 backdrop-blur-xl bg-black/60">
       <h1 className="tracking-widest font-black text-2xl sm:text-3xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
         Cinera
       </h1>
