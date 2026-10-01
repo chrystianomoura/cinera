@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Play, Info } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
@@ -24,6 +24,24 @@ export function HeroFeatured({
 }: HeroFeaturedProps) {
   const [heroIndex, setHeroIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [isInViewport, setIsInViewport] = useState(true);
+
+  // Monitora visibilidade no viewport: ativo enquanto o Hero ocupa pelo menos 25% da tela
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInViewport(entry.isIntersecting && entry.intersectionRatio >= 0.25);
+      },
+      { threshold: [0, 0.25, 0.5, 1.0] }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Trava dupla: prioriza estritamente filmes com tagline oficial (memoizado)
   const heroList = useMemo(() => {
@@ -36,13 +54,14 @@ export function HeroFeatured({
   const heroMovie =
     heroList.length > 0 ? heroList[heroIndex % heroList.length] : null;
 
-  // Rotação limpa a cada 6s: não para no hover do mouse, apenas congela quando entrar em Detalhes ou Trailer
+  // Rotação limpa a cada 6s: congela quando entrar em modais OU quando estiver fora da tela
   useEffect(() => {
     if (
       heroList.length <= 1 ||
       isTrailerOpen ||
       isPaused ||
-      !isVisible
+      !isVisible ||
+      !isInViewport
     ) {
       setIsFading(false);
       return;
@@ -65,12 +84,13 @@ export function HeroFeatured({
       clearInterval(interval);
       if (fadeTimer) clearTimeout(fadeTimer);
     };
-  }, [heroList.length, isTrailerOpen, isPaused, isVisible]);
+  }, [heroList.length, isTrailerOpen, isPaused, isVisible, isInViewport]);
 
   return (
     <section
+      ref={sectionRef}
       aria-label="Destaque em cartaz"
-      className="relative w-full h-[calc(100svh-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden bg-black select-none"
+      className="relative w-full h-[calc(100svh-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden bg-black select-none [contain:layout_paint] [isolation:isolate] transform-gpu"
     >
       {(isLoading || !heroMovie) && (
         <div className="absolute inset-0 bg-black animate-pulse" />
@@ -100,7 +120,9 @@ export function HeroFeatured({
               onError={(e) => {
                 e.currentTarget.style.opacity = "0";
               }}
-              className="w-full h-full object-cover object-center md:object-top origin-center transform-gpu animate-kenburns"
+              className={`w-full h-full object-cover object-center md:object-top origin-center transform-gpu ${
+                isInViewport ? "animate-kenburns" : ""
+              }`}
             />
 
             {/* Gradiente cinematográfico inferior com reforço vertical para mobile */}

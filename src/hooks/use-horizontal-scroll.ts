@@ -68,6 +68,19 @@ export function useHorizontalScroll({
       scheduleSync();
     };
 
+    const onManualIntervention = () => {
+      if (isProgrammaticScrollRef.current) {
+        if (programmaticScrollTimerRef.current !== null) {
+          window.clearTimeout(programmaticScrollTimerRef.current);
+          programmaticScrollTimerRef.current = null;
+        }
+        el.style.pointerEvents = "";
+        isProgrammaticScrollRef.current = false;
+        targetScrollLeftRef.current = null;
+        scheduleSync();
+      }
+    };
+
     const onResize = () => {
       if (resizeTimer) window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(syncState, 100);
@@ -92,6 +105,8 @@ export function useHorizontalScroll({
     }
 
     el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("wheel", onManualIntervention, { passive: true });
+    el.addEventListener("touchstart", onManualIntervention, { passive: true });
     window.addEventListener("resize", onResize);
 
     return () => {
@@ -104,9 +119,13 @@ export function useHorizontalScroll({
       }
       if (programmaticScrollTimerRef.current !== null) {
         window.clearTimeout(programmaticScrollTimerRef.current);
+        programmaticScrollTimerRef.current = null;
       }
       if (resizeTimer) window.clearTimeout(resizeTimer);
+      el.style.pointerEvents = "";
       el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("wheel", onManualIntervention);
+      el.removeEventListener("touchstart", onManualIntervention);
       window.removeEventListener("resize", onResize);
     };
   }, [node, syncState, scheduleSync]);
@@ -119,55 +138,94 @@ export function useHorizontalScroll({
       const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
       if (maxScroll <= 0) return;
 
-      const scrollFactor = fraction ?? defaultScrollFraction;
-      const scrollDelta = Math.round(el.clientWidth * scrollFactor);
-      if (scrollDelta <= 0) return;
+      // 1. Tenta quantização por cards inteiros para alinhamento e física perfeitos
+      const children = Array.from(el.children) as HTMLElement[];
+      const firstChild = children[0];
+      const secondChild = children[1];
 
-      // Se já houver um deslocamento em curso, soma ao alvo anterior para resposta ágil e contínua
+      let cardStride = 0;
+      if (firstChild && secondChild) {
+        cardStride = secondChild.offsetLeft - firstChild.offsetLeft;
+      } else if (firstChild) {
+        cardStride = firstChild.offsetWidth;
+      }
+
       const currentTarget =
         targetScrollLeftRef.current !== null
           ? targetScrollLeftRef.current
           : el.scrollLeft;
 
-      const rawTarget = currentTarget + (direction === "left" ? -scrollDelta : scrollDelta);
-
-      // Se ao rolar para a direita a sobra restante até o final for menor que 1.4x a largura de um card (~180px),
-      // faz aterrissagem direta no limite máximo, evitando que o usuário precise dar um clique extra só para 1 item!
       let target: number;
-      if (direction === "right") {
-        const remainingAfter = maxScroll - rawTarget;
-        if (remainingAfter > 0 && remainingAfter < 200) {
-          target = maxScroll;
+
+      if (cardStride > 0 && !fraction) {
+        // Alinhamento milimétrico na grade de cards inteiros (Padrão Apple TV / Netflix)
+        const currentCardIndex = Math.round(currentTarget / cardStride);
+        const visibleCards = Math.max(1, Math.floor(el.clientWidth / cardStride));
+        const nextCardIndex =
+          direction === "right"
+            ? currentCardIndex + visibleCards
+            : currentCardIndex - visibleCards;
+
+        const candidateTarget = nextCardIndex * cardStride;
+        if (direction === "right") {
+          // Se a sobra até o final for menor que 1.2 cards, aterrissa no limite máximo
+          if (maxScroll - candidateTarget < cardStride * 1.2) {
+            target = maxScroll;
+          } else {
+            target = Math.min(maxScroll, candidateTarget);
+          }
         } else {
-          target = Math.min(maxScroll, rawTarget);
+          if (candidateTarget < cardStride * 1.2) {
+            target = 0;
+          } else {
+            target = Math.max(0, candidateTarget);
+          }
         }
       } else {
-        if (rawTarget > 0 && rawTarget < 200) {
-          target = 0;
+        const scrollFactor = fraction ?? defaultScrollFraction;
+        const scrollDelta = Math.round(el.clientWidth * scrollFactor);
+        const rawTarget = currentTarget + (direction === "left" ? -scrollDelta : scrollDelta);
+
+        if (direction === "right") {
+          const remainingAfter = maxScroll - rawTarget;
+          target = remainingAfter > 0 && remainingAfter < 200 ? maxScroll : Math.min(maxScroll, rawTarget);
         } else {
-          target = Math.max(0, rawTarget);
+          target = rawTarget > 0 && rawTarget < 200 ? 0 : Math.max(0, rawTarget);
         }
       }
 
       targetScrollLeftRef.current = target;
       isProgrammaticScrollRef.current = true;
 
-      // Executa no compositor em C++ da GPU
-      el.scrollTo({
-        left: target,
-        behavior: "smooth",
-      });
+      // Desativa ponteiro nos cards durante o percurso para eliminar hover thrashing (120 FPS cravados)
+      el.style.pointerEvents = "none";
+
+      const handleScrollEnd = () => {
+        if (programmaticScrollTimerRef.current !== null) {
+          window.clearTimeout(programmaticScrollTimerRef.current);
+          programmaticScrollTimerRef.current = null;
+        }
+        el.removeEventListener("scrollend", handleScrollEnd);
+        el.style.pointerEvents = "";
+        isProgrammaticScrollRef.current = false;
+        targetScrollLeftRef.current = null;
+        scheduleSync();
+      };
 
       if (programmaticScrollTimerRef.current !== null) {
         window.clearTimeout(programmaticScrollTimerRef.current);
       }
 
-      // Ao completar aterrissagem, desliga a trava programática e atualiza os botões
-      programmaticScrollTimerRef.current = window.setTimeout(() => {
-        isProgrammaticScrollRef.current = false;
-        targetScrollLeftRef.current = null;
-        scheduleSync();
-      }, 420);
+      // Ouve o evento nativo scrollend emitido pelo compositor da GPU assim que a física suave desacelera a zero
+      el.addEventListener("scrollend", handleScrollEnd, { once: true });
+      // Fallback timer de segurança para navegadores que não disparam scrollend
+      programmaticScrollTimerRef.current = window.setTimeout(handleScrollEnd, 700);
+
+      // Executa no compositor em C++ da GPU
+      el.scrollTo({
+        left: target,
+        behavior: "smooth",
+      });
     },
     [defaultScrollFraction, scheduleSync]
   );

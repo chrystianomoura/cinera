@@ -30,7 +30,7 @@ export const MovieCard = memo(function MovieCard({
 
   return (
     <div
-      className={`movie-card relative flex flex-col gap-2 select-none ${
+      className={`movie-card relative flex flex-col gap-2 select-none [scroll-snap-align:start] [scroll-snap-stop:normal] [contain:layout_style] ${
         className ?? "flex-shrink-0 w-36 sm:w-44 md:w-52 lg:w-60"
       }`}
     >
@@ -43,7 +43,7 @@ export const MovieCard = memo(function MovieCard({
         aria-label={`Ver detalhes de ${movie.title}`}
         className="group/poster aspect-[2/3] w-full relative cursor-pointer select-none focus-visible:outline-none"
       >
-        <div className="w-full h-full overflow-hidden rounded-xl bg-zinc-900 border border-white/10 group-hover/poster:border-black group-hover/poster:ring-2 group-hover/poster:ring-white group-hover/poster:shadow-[0_0_0_2px_#000,0_10px_30px_rgba(0,0,0,0.8)] relative transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-white focus-visible:shadow-[0_0_0_2px_#000]">
+        <div className="w-full h-full overflow-hidden rounded-xl bg-zinc-900 border border-white/10 group-hover/poster:border-black group-hover/poster:ring-2 group-hover/poster:ring-white group-hover/poster:shadow-[0_0_0_2px_#000,0_10px_30px_rgba(0,0,0,0.8)] relative transition-[border-color,box-shadow] duration-200 ease-out focus-visible:ring-2 focus-visible:ring-white focus-visible:shadow-[0_0_0_2px_#000]">
           {posterUrl && !hasError ? (
             <img
               src={posterUrl}

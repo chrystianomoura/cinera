@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   useInfiniteGenreMovies,
   useHeroFeaturedMovies,
@@ -100,7 +100,7 @@ export default function App() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isFromLibrary, setIsFromLibrary] = useState(false);
 
-  const handleOpenDetails = (movie: Movie, fromLibrary: boolean = false) => {
+  const handleOpenDetails = useCallback((movie: Movie, fromLibrary: boolean = false) => {
     setSelectedMovie(movie);
     setIsDetailsOpen(true);
     setIsFromLibrary(fromLibrary);
@@ -108,7 +108,7 @@ export default function App() {
     const url = new URL(window.location.href);
     url.searchParams.set("filme", String(movie.id));
     window.history.pushState({ movieId: movie.id }, "", url.toString());
-  };
+  }, []);
 
   const isFromSearch = useSearchStore((state) => state.isPausedForDetails);
 
@@ -258,9 +258,9 @@ export default function App() {
         onLibraryClick={() => setIsLibraryOpen(true)}
       />
 
-      {/* Hero em destaque */}
+      {/* Hero em destaque com isolamento estrito de camada para não interferir nos carrosséis */}
       <div
-        className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 ${
+        className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 [contain:paint_layout] [isolation:isolate] ${
           isHomeView && !isFadingOutHome
             ? "max-h-[850px] opacity-100"
             : isHomeView && isFadingOutHome

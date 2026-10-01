@@ -83,12 +83,13 @@ export function MovieCarousel({
         </div>
       ) : (
         <div className="relative">
-          {/* Borda de fade esquerda - instantâneo (0ms) */}
-          {canScrollLeft && (
-            <div
-              className="hidden md:block absolute left-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none"
-            />
-          )}
+          {/* Borda de fade esquerda estável via CSS puro */}
+          <div
+            aria-hidden="true"
+            className={`hidden md:block absolute left-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+              canScrollLeft ? "opacity-100" : "opacity-0"
+            }`}
+          />
 
           <button
             type="button"
@@ -107,7 +108,7 @@ export function MovieCarousel({
 
           <div
             ref={rowRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-4 scrollbar-hide px-4 md:px-0"
+            className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-4 scrollbar-hide px-4 md:px-0 [scroll-snap-type:x_mandatory] [overscroll-behavior-x:contain] [will-change:scroll-position]"
           >
             {safeMovies.map((movie) => (
               <MovieCard
@@ -119,12 +120,13 @@ export function MovieCarousel({
             ))}
           </div>
 
-          {/* Borda de fade direita - instantâneo (0ms) */}
-          {canScrollRight && (
-            <div
-              className="hidden md:block absolute right-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none"
-            />
-          )}
+          {/* Borda de fade direita estável via CSS puro */}
+          <div
+            aria-hidden="true"
+            className={`hidden md:block absolute right-0 top-0 bottom-2 w-12 sm:w-16 md:w-20 lg:w-24 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+              canScrollRight ? "opacity-100" : "opacity-0"
+            }`}
+          />
 
           <button
             type="button"

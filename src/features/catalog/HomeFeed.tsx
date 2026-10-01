@@ -132,7 +132,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
           isLoading: isLoadingPopular,
           isError: isErrorPopular,
         },
-      ].map((section, index) => (
+      ].map((section) => (
         <MovieCarousel
           key={section.title}
           title={section.title}
@@ -140,7 +140,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
           movies={section.movies}
           isLoading={section.isLoading}
           isError={section.isError}
-          isEager={index === 0}
+          isEager={true}
           onSelectMovie={onSelectMovie}
         />
       ))}
