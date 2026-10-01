@@ -258,12 +258,10 @@ export default function App() {
         onLibraryClick={() => setIsLibraryOpen(true)}
       />
 
-      {/* Hero em destaque: se um modal abrir (especialmente do próprio filme em cartaz), oculta o hero do fundo para zerar disputa de GPU */}
+      {/* Hero em destaque */}
       <div
         className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 ${
-          isAnyOverlayActive
-            ? "hidden pointer-events-none"
-            : isHomeView && !isFadingOutHome
+          isHomeView && !isFadingOutHome
             ? "max-h-[850px] opacity-100"
             : isHomeView && isFadingOutHome
             ? "max-h-[850px] opacity-0"
@@ -283,10 +281,6 @@ export default function App() {
 
       <main
         className={`relative z-10 px-0 md:px-12 flex flex-col gap-2.5 sm:gap-3.5 md:gap-6 ${
-          isAnyOverlayActive
-            ? "invisible pointer-events-none select-none"
-            : ""
-        } ${
           isHomeView
             ? "pt-0"
             : "pt-2 sm:pt-3 md:pt-4"
