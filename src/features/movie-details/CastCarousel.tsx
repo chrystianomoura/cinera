@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import type { CastMember } from "@/domain";
 import { getProfileUrl } from "@/infrastructure/api/movie-service";
@@ -8,6 +8,42 @@ interface CastCarouselProps {
   cast?: CastMember[];
   isLoading?: boolean;
 }
+
+interface CastItemProps {
+  actor: CastMember;
+}
+
+const CastItem = memo(function CastItem({ actor }: CastItemProps) {
+  const profileImg = getProfileUrl(actor.profilePath, "w185");
+
+  return (
+    <div className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor [contain:layout_style]">
+      <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-md mb-2">
+        {profileImg ? (
+          <img
+            src={profileImg}
+            alt={actor.name}
+            loading="lazy"
+            decoding="async"
+            width={144}
+            height={192}
+            className="w-full h-full object-cover object-top pointer-events-none"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-zinc-600">
+            <User className="w-9 h-9" />
+          </div>
+        )}
+      </div>
+
+      <div className="h-8 sm:h-9 flex items-start justify-center w-full px-0.5">
+        <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-tight break-words tracking-tight text-center line-clamp-2">
+          {actor.name}
+        </h4>
+      </div>
+    </div>
+  );
+});
 
 /**
  * Carrossel horizontal do elenco principal.
@@ -19,7 +55,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
     canScrollRight,
     scroll,
   } = useHorizontalScroll({
-    defaultScrollFraction: 0.75,
+    defaultScrollFraction: 0.55,
     threshold: 12,
   });
 
@@ -34,7 +70,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
         <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Elenco Principal
         </h3>
-        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-1">
+        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-0">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
@@ -83,55 +119,30 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
       </div>
 
       <div className="relative">
-        {/* Borda de fade esquerda - instantâneo (0ms) */}
-        {canScrollLeft && (
-          <div
-            className="hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none"
-          />
-        )}
+        {/* Borda de fade esquerda estável via CSS puro */}
+        <div
+          aria-hidden="true"
+          className={`hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+            canScrollLeft ? "opacity-100" : "opacity-0"
+          }`}
+        />
 
         <div
           ref={containerRef}
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-1 transform-gpu [contain:paint]"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0 [overscroll-behavior-x:contain] [will-change:scroll-position]"
         >
-          {topCast.map((actor) => {
-            const profileImg = getProfileUrl(actor.profilePath, "w185");
-
-            return (
-              <div
-                key={actor.id}
-                className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor"
-              >
-                <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-md mb-2.5 transform-gpu [contain:paint]">
-                  {profileImg ? (
-                    <img
-                      src={profileImg}
-                      alt={actor.name}
-                      loading="eager"
-                      decoding="async"
-                      className="w-full h-full object-cover object-top pointer-events-none"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                      <User className="w-9 h-9" />
-                    </div>
-                  )}
-                </div>
-
-                <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-snug break-words tracking-tight w-full text-center line-clamp-2">
-                  {actor.name}
-                </h4>
-              </div>
-            );
-          })}
+          {topCast.map((actor) => (
+            <CastItem key={actor.id} actor={actor} />
+          ))}
         </div>
 
-        {/* Borda de fade direita - instantâneo (0ms) */}
-        {canScrollRight && (
-          <div
-            className="hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none"
-          />
-        )}
+        {/* Borda de fade direita estável via CSS puro */}
+        <div
+          aria-hidden="true"
+          className={`hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+            canScrollRight ? "opacity-100" : "opacity-0"
+          }`}
+        />
       </div>
     </div>
   );

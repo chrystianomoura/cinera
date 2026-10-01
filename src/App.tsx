@@ -248,7 +248,8 @@ export default function App() {
 
   const isHomeView = selectedGenre === "Todos";
   const isSearchOpen = useSearchStore((state) => state.isOpen);
-  const isAnyOverlayActive = isDetailsOpen || isTrailerOpen || isLibraryOpen || isSearchOpen;
+  const isSearchPaused = useSearchStore((state) => state.isPausedForDetails);
+  const isAnyOverlayActive = isDetailsOpen || isTrailerOpen || isLibraryOpen || isSearchOpen || isSearchPaused;
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
@@ -282,6 +283,10 @@ export default function App() {
 
       <main
         className={`relative z-10 px-0 md:px-12 flex flex-col gap-2.5 sm:gap-3.5 md:gap-6 ${
+          isAnyOverlayActive
+            ? "invisible pointer-events-none select-none"
+            : ""
+        } ${
           isHomeView
             ? "pt-0"
             : "pt-2 sm:pt-3 md:pt-4"
@@ -344,7 +349,8 @@ export default function App() {
 
       {/* Tela de Minha Biblioteca (Quero Assistir / Já Assisti) */}
       <UserLibraryView
-        isOpen={isLibraryOpen}
+        isOpen={isLibraryOpen && !isDetailsOpen}
+        isLibraryActive={isLibraryOpen}
         onClose={() => setIsLibraryOpen(false)}
         onSelectMovie={(movie) => handleOpenDetails(movie, true)}
       />

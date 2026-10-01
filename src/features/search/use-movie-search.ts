@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { searchCineraMovies, SEARCH_CONFIG, type SearchMoviesResult } from "@/infrastructure/search/search-service";
 
-export function useMovieSearch(query: string) {
+export function useMovieSearch(query: string, enabled: boolean = true) {
   const [debouncedQuery, setDebouncedQuery] = useState(query);
 
   useEffect(() => {
@@ -13,7 +13,7 @@ export function useMovieSearch(query: string) {
     return () => clearTimeout(handler);
   }, [query]);
 
-  const isEnabled = debouncedQuery.length >= SEARCH_CONFIG.MIN_QUERY_LENGTH;
+  const isEnabled = enabled && debouncedQuery.length >= SEARCH_CONFIG.MIN_QUERY_LENGTH;
 
   const searchQuery = useQuery<SearchMoviesResult>({
     queryKey: ["search", "movies", debouncedQuery],

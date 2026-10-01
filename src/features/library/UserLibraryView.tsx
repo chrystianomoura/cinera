@@ -14,12 +14,14 @@ import { getPosterUrl } from "@/infrastructure/api/movie-service";
 
 interface UserLibraryViewProps {
   isOpen: boolean;
+  isLibraryActive?: boolean;
   onClose: () => void;
   onSelectMovie: (movie: Movie) => void;
 }
 
 export function UserLibraryView({
   isOpen,
+  isLibraryActive = true,
   onClose,
   onSelectMovie,
 }: UserLibraryViewProps) {
@@ -30,11 +32,11 @@ export function UserLibraryView({
   const toggleWatchlist = useUserLibrary((state) => state.toggleWatchlist);
   const toggleWatched = useUserLibrary((state) => state.toggleWatched);
 
-  // Carrega os dados dos filmes salvos somente quando a biblioteca estiver aberta (performance)
+  // Carrega os dados dos filmes salvos enquanto a biblioteca estiver ativa no fluxo
   const { movies: watchlistMovies, isLoading: isLoadingWatchlist } =
-    useLibraryMovies(watchlistIds, isOpen);
+    useLibraryMovies(watchlistIds, isLibraryActive);
   const { movies: watchedMovies, isLoading: isLoadingWatched } =
-    useLibraryMovies(watchedIds, isOpen);
+    useLibraryMovies(watchedIds, isLibraryActive);
 
   const titleId = useId();
 

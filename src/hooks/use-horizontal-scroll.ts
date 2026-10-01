@@ -129,13 +129,25 @@ export function useHorizontalScroll({
           ? targetScrollLeftRef.current
           : el.scrollLeft;
 
-      const target = Math.max(
-        0,
-        Math.min(
-          maxScroll,
-          currentTarget + (direction === "left" ? -scrollDelta : scrollDelta)
-        )
-      );
+      const rawTarget = currentTarget + (direction === "left" ? -scrollDelta : scrollDelta);
+
+      // Se ao rolar para a direita a sobra restante até o final for menor que 1.4x a largura de um card (~180px),
+      // faz aterrissagem direta no limite máximo, evitando que o usuário precise dar um clique extra só para 1 item!
+      let target: number;
+      if (direction === "right") {
+        const remainingAfter = maxScroll - rawTarget;
+        if (remainingAfter > 0 && remainingAfter < 200) {
+          target = maxScroll;
+        } else {
+          target = Math.min(maxScroll, rawTarget);
+        }
+      } else {
+        if (rawTarget > 0 && rawTarget < 200) {
+          target = 0;
+        } else {
+          target = Math.max(0, rawTarget);
+        }
+      }
 
       targetScrollLeftRef.current = target;
       isProgrammaticScrollRef.current = true;

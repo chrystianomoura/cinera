@@ -26,7 +26,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     moveSelection,
   } = useSearchStore();
   const { results, isLoading, isFetching, isError, hasSearched, debouncedQuery, isSettled, refetch } =
-    useMovieSearch(query);
+    useMovieSearch(query, !isPausedForDetails);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
