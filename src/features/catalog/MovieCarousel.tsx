@@ -30,7 +30,6 @@ export function MovieCarousel({
     scroll,
   } = useHorizontalScroll({
     defaultScrollFraction: 0.75,
-    scrollDuration: 680,
     threshold: 12,
   });
 

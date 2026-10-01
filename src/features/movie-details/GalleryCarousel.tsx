@@ -26,7 +26,7 @@ function GalleryItem({ path, idx, isInteractive, onSelectImage }: GalleryItemPro
       disabled={!isInteractive}
       aria-label={isInteractive ? `Ampliar cena ${idx + 1}` : undefined}
       onClick={isInteractive ? () => onSelectImage?.(idx) : undefined}
-      className={`relative aspect-video w-64 sm:w-80 md:w-96 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shadow-md flex-shrink-0 group/item transition-colors duration-200 text-left p-0 ${
+      className={`relative aspect-video w-64 sm:w-80 md:w-96 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shadow-md flex-shrink-0 group/item transition-colors duration-200 text-left p-0 transform-gpu [contain:paint] ${
         isInteractive
           ? "cursor-pointer hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
           : "cursor-default disabled:pointer-events-none"
@@ -37,14 +37,14 @@ function GalleryItem({ path, idx, isInteractive, onSelectImage }: GalleryItemPro
           <img
             src={imgUrl}
             alt=""
-            loading="lazy"
+            loading="eager"
             decoding="async"
             onError={() => setHasError(true)}
             className="w-full h-full object-cover pointer-events-none"
           />
           {isInteractive && (
-            <span className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity duration-[160ms] ease-out flex items-center justify-center pointer-events-none">
-              <span className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl">
+            <span className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity duration-150 ease-out flex items-center justify-center pointer-events-none">
+              <span className="w-10 h-10 rounded-full bg-zinc-950/90 border border-white/20 flex items-center justify-center text-white shadow-xl">
                 <ZoomIn aria-hidden="true" className="w-5 h-5 pointer-events-none" />
               </span>
             </span>
@@ -78,7 +78,6 @@ export function GalleryCarousel({
     scroll,
   } = useHorizontalScroll({
     defaultScrollFraction: 0.75,
-    scrollDuration: 680,
     threshold: 12,
   });
 
@@ -149,7 +148,7 @@ export function GalleryCarousel({
           ref={containerRef}
           role="region"
           aria-label="Carrossel da galeria"
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0 transform-gpu [contain:paint]"
         >
           {safeImages.map((path, idx) => (
             <GalleryItem

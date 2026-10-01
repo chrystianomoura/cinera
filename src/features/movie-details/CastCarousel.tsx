@@ -20,7 +20,6 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
     scroll,
   } = useHorizontalScroll({
     defaultScrollFraction: 0.75,
-    scrollDuration: 680,
     threshold: 12,
   });
 
@@ -93,7 +92,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
 
         <div
           ref={containerRef}
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-1"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-1 transform-gpu [contain:paint]"
         >
           {topCast.map((actor) => {
             const profileImg = getProfileUrl(actor.profilePath, "w185");
@@ -103,12 +102,12 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
                 key={actor.id}
                 className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor"
               >
-                <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-md mb-2.5 transition-transform duration-300 ease-out group-hover/actor:scale-105">
+                <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-md mb-2.5 transform-gpu [contain:paint]">
                   {profileImg ? (
                     <img
                       src={profileImg}
                       alt={actor.name}
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
                       className="w-full h-full object-cover object-top pointer-events-none"
                     />

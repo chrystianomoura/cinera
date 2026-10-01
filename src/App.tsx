@@ -247,6 +247,8 @@ export default function App() {
   };
 
   const isHomeView = selectedGenre === "Todos";
+  const isSearchOpen = useSearchStore((state) => state.isOpen);
+  const isAnyOverlayActive = isDetailsOpen || isTrailerOpen || isLibraryOpen || isSearchOpen;
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
@@ -255,10 +257,12 @@ export default function App() {
         onLibraryClick={() => setIsLibraryOpen(true)}
       />
 
-      {/* Hero em destaque */}
+      {/* Hero em destaque: se um modal abrir (especialmente do próprio filme em cartaz), oculta o hero do fundo para zerar disputa de GPU */}
       <div
         className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 ${
-          isHomeView && !isFadingOutHome
+          isAnyOverlayActive
+            ? "hidden pointer-events-none"
+            : isHomeView && !isFadingOutHome
             ? "max-h-[850px] opacity-100"
             : isHomeView && isFadingOutHome
             ? "max-h-[850px] opacity-0"
@@ -269,6 +273,7 @@ export default function App() {
           candidates={heroMovies || []}
           isLoading={isLoadingHero}
           isTrailerOpen={isTrailerOpen}
+          isPaused={isAnyOverlayActive}
           isVisible={isHomeView && !isFadingOutHome}
           onOpenTrailer={handleOpenTrailer}
           onOpenDetails={handleOpenDetails}

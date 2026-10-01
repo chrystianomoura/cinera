@@ -3,21 +3,18 @@ import { useState, useEffect, useRef, useCallback } from "react";
 interface UseHorizontalScrollOptions {
   /** Fração da largura visível a rolar por clique (padrão: 0.75 para ~75% da tela) */
   defaultScrollFraction?: number;
-  /** Duração em ms da rolagem suave (padrão: 820ms para um deslize relaxante e aveludado) */
-  scrollDuration?: number;
-  /** Limite em pixels para considerar que saiu das extremidades (padrão: 8) */
+  /** Limite em pixels para considerar que saiu das extremidades (padrão: 12) */
   threshold?: number;
 }
 
 /**
- * Hook para controle de rolagem horizontal fluida com:
- * - Rolagem suave acionada por RAF com curva easeInOutCubic
- * - Desativação temporária de pointer-events durante animação de setas
- * - Detecção de limites (canScrollLeft / canScrollRight) para controle de fades e setas
+ * Hook de alto desempenho para controle de rolagem horizontal:
+ * - Rolagem suave delegada 100% à thread do compositor nativo da GPU do navegador
+ * - Silenciamento total de recálculos de estado e DOM durante o deslize (Zero Layout Thrashing)
+ * - Leituras amortecidas de limites (canScrollLeft / canScrollRight) apenas ao iniciar/terminar
  */
 export function useHorizontalScroll({
   defaultScrollFraction = 0.75,
-  scrollDuration = 680,
   threshold = 12,
 }: UseHorizontalScrollOptions = {}) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
@@ -30,23 +27,16 @@ export function useHorizontalScroll({
     setNode(el);
   }, []);
 
-  const maxScrollRef = useRef<number>(0);
   const rafIdRef = useRef<number | null>(null);
-  const animRafRef = useRef<number | null>(null);
+  const isProgrammaticScrollRef = useRef(false);
   const targetScrollLeftRef = useRef<number | null>(null);
-  const isProgrammaticScrollRef = useRef<boolean>(false);
-
-  const updateMeasurements = useCallback(() => {
-    const el = nodeRef.current;
-    if (!el) return;
-    maxScrollRef.current = Math.max(0, el.scrollWidth - el.clientWidth);
-  }, []);
+  const programmaticScrollTimerRef = useRef<number | null>(null);
 
   const syncState = useCallback(() => {
     const el = nodeRef.current;
     if (!el) return;
+
     const max = Math.max(0, el.scrollWidth - el.clientWidth);
-    maxScrollRef.current = max;
     const left = el.scrollLeft > threshold;
     const right = el.scrollLeft < max - threshold;
 
@@ -54,100 +44,72 @@ export function useHorizontalScroll({
     setCanScrollRight((prev) => (prev !== right ? right : prev));
   }, [threshold]);
 
+  const scheduleSync = useCallback(() => {
+    if (rafIdRef.current !== null) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      syncState();
+      rafIdRef.current = null;
+    });
+  }, [syncState]);
+
   useEffect(() => {
     const el = node;
     if (!el) return;
 
-    updateMeasurements();
     syncState();
-    const initialRaf = requestAnimationFrame(syncState);
-    const timer = window.setTimeout(() => {
-      updateMeasurements();
-      syncState();
-    }, 60);
+    const timer = window.setTimeout(syncState, 60);
 
     let resizeTimer: number | null = null;
 
     const onScroll = () => {
-      // Durante a rolagem acionada pelas setas, ignoramos os eventos intermediários
-      // para não causar reflows ou re-renders no meio da animação.
+      // Durante o percurso suave acionado por seta, silencia completamente
+      // leituras de DOM e setStates para garantir 120 FPS cravados sem engasgo!
       if (isProgrammaticScrollRef.current) return;
-
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = requestAnimationFrame(() => {
-        syncState();
-      });
+      scheduleSync();
     };
 
     const onResize = () => {
       if (resizeTimer) window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => {
-        updateMeasurements();
-        syncState();
-      }, 100);
-    };
-
-    // Se o usuário interagir diretamente com trackpad ou toque durante o percurso,
-    // cancela imediatamente a animação programática e devolve o controle instantâneo
-    const onManualIntervention = () => {
-      if (animRafRef.current) {
-        cancelAnimationFrame(animRafRef.current);
-        animRafRef.current = null;
-      }
-      targetScrollLeftRef.current = null;
-      if (isProgrammaticScrollRef.current) {
-        isProgrammaticScrollRef.current = false;
-        el.style.pointerEvents = "";
-        syncState();
-      }
+      resizeTimer = window.setTimeout(syncState, 100);
     };
 
     // ResizeObserver para detectar redimensionamento de viewport/layout
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(() => {
-        updateMeasurements();
-        syncState();
+        scheduleSync();
       });
       resizeObserver.observe(el);
     }
 
-    // MutationObserver para detectar adição/remoção de filhos dinâmicos (que expandem scrollWidth sem mudar clientWidth)
+    // MutationObserver para detectar adição/remoção de filhos dinâmicos
     let mutationObserver: MutationObserver | null = null;
     if (typeof MutationObserver !== "undefined") {
       mutationObserver = new MutationObserver(() => {
-        updateMeasurements();
-        syncState();
+        scheduleSync();
       });
       mutationObserver.observe(el, { childList: true, subtree: false });
     }
 
     el.addEventListener("scroll", onScroll, { passive: true });
-    el.addEventListener("wheel", onManualIntervention, { passive: true });
-    el.addEventListener("touchstart", onManualIntervention, { passive: true });
     window.addEventListener("resize", onResize);
 
     return () => {
-      cancelAnimationFrame(initialRaf);
       window.clearTimeout(timer);
       if (resizeObserver) resizeObserver.disconnect();
       if (mutationObserver) mutationObserver.disconnect();
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      if (programmaticScrollTimerRef.current !== null) {
+        window.clearTimeout(programmaticScrollTimerRef.current);
+      }
       if (resizeTimer) window.clearTimeout(resizeTimer);
-      el.style.pointerEvents = "";
       el.removeEventListener("scroll", onScroll);
-      el.removeEventListener("wheel", onManualIntervention);
-      el.removeEventListener("touchstart", onManualIntervention);
       window.removeEventListener("resize", onResize);
-
-      // Reset defensivo dos refs de animação para garantir que o próximo container ou ciclo inicie zerado
-      isProgrammaticScrollRef.current = false;
-      targetScrollLeftRef.current = null;
-      animRafRef.current = null;
-      rafIdRef.current = null;
     };
-  }, [node, updateMeasurements, syncState]);
+  }, [node, syncState, scheduleSync]);
 
   const scroll = useCallback(
     (direction: "left" | "right", fraction?: number) => {
@@ -161,13 +123,13 @@ export function useHorizontalScroll({
       const scrollDelta = Math.round(el.clientWidth * scrollFactor);
       if (scrollDelta <= 0) return;
 
-      // Base inteligente: se já estiver rolando por cliques rápidos, encadeia a partir do alvo
+      // Se já houver um deslocamento em curso, soma ao alvo anterior para resposta ágil e contínua
       const currentTarget =
         targetScrollLeftRef.current !== null
           ? targetScrollLeftRef.current
           : el.scrollLeft;
 
-      const newTarget = Math.max(
+      const target = Math.max(
         0,
         Math.min(
           maxScroll,
@@ -175,59 +137,27 @@ export function useHorizontalScroll({
         )
       );
 
-      targetScrollLeftRef.current = newTarget;
-      const startLeft = el.scrollLeft;
-      const distance = newTarget - startLeft;
-
-      if (Math.abs(distance) < 2) {
-        targetScrollLeftRef.current = null;
-        return;
-      }
-
-      if (animRafRef.current) {
-        cancelAnimationFrame(animRafRef.current);
-        animRafRef.current = null;
-      }
-
+      targetScrollLeftRef.current = target;
       isProgrammaticScrollRef.current = true;
-      // Previne disparos de hover acidentais nos cards durante a rolagem
-      el.style.pointerEvents = "none";
 
-      const duration = scrollDuration ?? 680;
-      let startTime: number | null = null;
+      // Executa no compositor em C++ da GPU
+      el.scrollTo({
+        left: target,
+        behavior: "smooth",
+      });
 
-      // Curva aveludada clássica de streaming: entrada suave, percurso fluido e pouso macio
-      const easeInOutCubic = (t: number) =>
-        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      if (programmaticScrollTimerRef.current !== null) {
+        window.clearTimeout(programmaticScrollTimerRef.current);
+      }
 
-      const step = (currentTime: number) => {
-        if (startTime === null) {
-          startTime = currentTime;
-        }
-
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(1, elapsed / duration);
-        const ease = easeInOutCubic(progress);
-
-        const currentPos = Math.round(startLeft + distance * ease);
-        el.scrollLeft = currentPos;
-        syncState();
-
-        if (progress < 1) {
-          animRafRef.current = requestAnimationFrame(step);
-        } else {
-          el.scrollLeft = newTarget;
-          animRafRef.current = null;
-          targetScrollLeftRef.current = null;
-          el.style.pointerEvents = "";
-          isProgrammaticScrollRef.current = false;
-          syncState();
-        }
-      };
-
-      animRafRef.current = requestAnimationFrame(step);
+      // Ao completar aterrissagem, desliga a trava programática e atualiza os botões
+      programmaticScrollTimerRef.current = window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+        targetScrollLeftRef.current = null;
+        scheduleSync();
+      }, 420);
     },
-    [defaultScrollFraction, scrollDuration, syncState, threshold]
+    [defaultScrollFraction, scheduleSync]
   );
 
   return {
@@ -236,6 +166,6 @@ export function useHorizontalScroll({
     canScrollLeft,
     canScrollRight,
     scroll,
-    updateMeasurements,
+    updateMeasurements: syncState,
   };
 }
