@@ -43,7 +43,7 @@ export const MovieCard = memo(function MovieCard({
         aria-label={`Ver detalhes de ${movie.title}`}
         className="group/poster aspect-[2/3] w-full relative cursor-pointer select-none focus-visible:outline-none"
       >
-        <div className="w-full h-full overflow-hidden rounded-xl bg-zinc-900 border border-white/10 group-hover/poster:border-black group-hover/poster:ring-2 group-hover/poster:ring-white group-hover/poster:shadow-[0_0_0_2px_#000,0_10px_30px_rgba(0,0,0,0.8)] relative transition-[border-color,box-shadow] duration-200 ease-out focus-visible:ring-2 focus-visible:ring-white focus-visible:shadow-[0_0_0_2px_#000]">
+        <div className="w-full h-full overflow-hidden rounded-xl bg-zinc-900 border border-white/10 relative transition-colors duration-150 ease-out">
           {posterUrl && !hasError ? (
             <img
               src={posterUrl}
@@ -64,6 +64,9 @@ export const MovieCard = memo(function MovieCard({
               </span>
             </div>
           )}
+
+          {/* Borda de seleção nítida de alto contraste sobreposta ao pôster (zero vazamento para fora) */}
+          <div className="absolute inset-0 rounded-xl border-[2.5px] border-white pointer-events-none transition-opacity duration-150 opacity-0 group-hover/poster:opacity-100 group-focus-visible/poster:opacity-100 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.8)]" />
         </div>
       </div>
 
