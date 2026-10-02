@@ -4,6 +4,7 @@ import {
   useHeroFeaturedMovies,
 } from "@/hooks/use-movies";
 import { movieService } from "@/infrastructure/api/movie-service";
+import { useTrailerStore } from "@/features/trailer/use-trailer-store";
 import type { Movie } from "@/domain";
 import { Header } from "@/features/header/Header";
 import { HeroFeatured } from "@/features/hero/HeroFeatured";
@@ -18,6 +19,9 @@ import { useSearchStore } from "@/features/search/use-search-store";
 import { smoothScrollToTop } from "@/lib/smooth-scroll";
 
 export default function App() {
+  // Referência estável: o App não assina o estado do trailer
+  const openTrailer = useTrailerStore.getState().openTrailer;
+
   const { data: heroMovies, isLoading: isLoadingHero } = useHeroFeaturedMovies();
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
@@ -52,48 +56,6 @@ export default function App() {
       return true;
     });
   }, [genreInfiniteData]);
-
-  // Modal de Trailer
-  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
-  const [trailerMovie, setTrailerMovie] = useState<Movie | null>(null);
-  const [trailerKey, setTrailerKey] = useState<string | null>(null);
-  const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
-  const trailerRequestIdRef = useRef(0);
-
-  const handleOpenTrailer = async (movie: Movie) => {
-    const requestId = ++trailerRequestIdRef.current;
-    setTrailerMovie(movie);
-    setIsTrailerOpen(true);
-    setIsLoadingTrailer(true);
-    try {
-      const videos = await movieService.getMovieVideos(movie.id);
-      // Descarta se outra requisição de trailer foi iniciada enquanto esta estava em trânsito
-      if (requestId !== trailerRequestIdRef.current) return;
-
-      const trailer =
-        videos.find(
-          (v) =>
-            v.site === "YouTube" &&
-            (v.type === "Trailer" || v.type === "Teaser")
-        ) ||
-        videos.find((v) => v.site === "YouTube") ||
-        videos[0];
-      setTrailerKey(trailer?.key || null);
-    } catch (err) {
-      if (requestId !== trailerRequestIdRef.current) return;
-      console.error("Erro ao carregar trailer:", err);
-      setTrailerKey(null);
-    } finally {
-      if (requestId === trailerRequestIdRef.current) {
-        setIsLoadingTrailer(false);
-      }
-    }
-  };
-
-  const handleCloseTrailer = () => {
-    trailerRequestIdRef.current++;
-    setIsTrailerOpen(false);
-  };
 
   // Estado da tela de detalhes
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
@@ -249,7 +211,7 @@ export default function App() {
   const isHomeView = selectedGenre === "Todos";
   const isSearchOpen = useSearchStore((state) => state.isOpen);
   const isSearchPaused = useSearchStore((state) => state.isPausedForDetails);
-  const isAnyOverlayActive = isDetailsOpen || isTrailerOpen || isLibraryOpen || isSearchOpen || isSearchPaused;
+  const isAnyOverlayActive = isDetailsOpen || isLibraryOpen || isSearchOpen || isSearchPaused;
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
@@ -271,10 +233,9 @@ export default function App() {
         <HeroFeatured
           candidates={heroMovies || []}
           isLoading={isLoadingHero}
-          isTrailerOpen={isTrailerOpen}
           isPaused={isAnyOverlayActive}
           isVisible={isHomeView && !isFadingOutHome}
-          onOpenTrailer={handleOpenTrailer}
+          onOpenTrailer={openTrailer}
           onOpenDetails={handleOpenDetails}
         />
       </div>
@@ -322,18 +283,12 @@ export default function App() {
         isOpen={isDetailsOpen}
         movie={selectedMovie}
         onClose={handleCloseDetails}
-        onOpenTrailer={handleOpenTrailer}
+        onOpenTrailer={openTrailer}
         isFromSearch={isFromSearch}
         isFromLibrary={isFromLibrary}
       />
 
-      <TrailerModal
-        isOpen={isTrailerOpen}
-        movie={trailerMovie}
-        trailerKey={trailerKey}
-        isLoading={isLoadingTrailer}
-        onClose={handleCloseTrailer}
-      />
+      <TrailerModal />
 
       {/* Modal de Pesquisa Global (Command Palette) */}
       <SearchModal

@@ -3,11 +3,11 @@ import { Play, Info } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
 import { usePageVisibility } from "@/hooks/use-page-visibility";
+import { useTrailerStore } from "@/features/trailer/use-trailer-store";
 
 interface HeroFeaturedProps {
   candidates: Movie[];
   isLoading: boolean;
-  isTrailerOpen: boolean;
   isPaused?: boolean;
   isVisible?: boolean;
   onOpenTrailer: (movie: Movie) => void;
@@ -17,7 +17,6 @@ interface HeroFeaturedProps {
 export function HeroFeatured({
   candidates,
   isLoading,
-  isTrailerOpen,
   isPaused = false,
   isVisible = true,
   onOpenTrailer,
@@ -28,6 +27,7 @@ export function HeroFeatured({
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isInViewport, setIsInViewport] = useState(true);
   const isPageVisible = usePageVisibility();
+  const isTrailerOpen = useTrailerStore((state) => state.isOpen);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
   // Congela o Ken Burns no frame exato ao ocultar a aba e retoma do mesmo ponto ao voltar.

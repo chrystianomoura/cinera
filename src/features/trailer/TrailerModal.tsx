@@ -1,39 +1,33 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
-import type { Movie } from "@/domain";
+import { useTrailerStore } from "./use-trailer-store";
 
-interface TrailerModalProps {
-  isOpen: boolean;
-  movie: Movie | null;
-  trailerKey: string | null;
-  isLoading: boolean;
-  onClose: () => void;
-}
+export function TrailerModal() {
+  const isOpen = useTrailerStore((state) => state.isOpen);
+  const movie = useTrailerStore((state) => state.movie);
+  const trailerKey = useTrailerStore((state) => state.trailerKey);
+  const isLoading = useTrailerStore((state) => state.isLoading);
+  const onClose = useTrailerStore((state) => state.closeTrailer);
 
-export function TrailerModal({
-  isOpen,
-  movie,
-  trailerKey,
-  isLoading,
-  onClose,
-}: TrailerModalProps) {
   useEffect(() => {
     if (!isOpen) return;
 
+    // Captura antes dos demais: o ESC fecha só o trailer, sem fechar a tela de detalhes por baixo
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.stopImmediatePropagation();
         onClose();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
         {/* Cabeçalho com título centralizado */}
         <div className="relative flex items-center justify-center px-12 py-4 border-b border-white/10 bg-zinc-900/80">
