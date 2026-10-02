@@ -1,4 +1,4 @@
-import { useState, useId, useEffect } from "react";
+import { useState, useId, useEffect, useRef } from "react";
 import {
   X,
   Bookmark,
@@ -11,6 +11,7 @@ import type { Movie } from "@/domain";
 import { useUserLibrary } from "@/stores/use-user-library";
 import { useLibraryMovies } from "@/hooks/use-library-movies";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
+import { BrandLogo } from "@/features/header/BrandLogo";
 
 interface UserLibraryViewProps {
   isOpen: boolean;
@@ -39,6 +40,12 @@ export function UserLibraryView({
     useLibraryMovies(watchedIds, isLibraryActive);
 
   const titleId = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const scrollLibraryToTop = () => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    containerRef.current?.scrollTo({ top: 0, behavior: prefersReducedMotion ? "instant" : "smooth" });
+  };
 
   // Fecha com ESC (protegendo caso esteja digitando em inputs)
   useEffect(() => {
@@ -72,6 +79,7 @@ export function UserLibraryView({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -79,12 +87,7 @@ export function UserLibraryView({
     >
       {/* Topo / Header da Biblioteca (Identidade Consistente Cinera) */}
       <div className="sticky top-0 z-20 bg-black/90 backdrop-blur-xl border-b border-white/10 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between">
-        <h1
-          id={titleId}
-          className="tracking-widest font-black text-2xl sm:text-3xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]"
-        >
-          Cinera
-        </h1>
+        <BrandLogo onClick={scrollLibraryToTop} titleId={titleId} />
 
         <button
           type="button"

@@ -208,6 +208,13 @@ export default function App() {
     }
   };
 
+  // Logo: apenas sobe ao topo de onde está, sem trocar de tela
+  const handleLogoClick = () => {
+    if (window.scrollY > 0) {
+      smoothScrollToTop();
+    }
+  };
+
   const isHomeView = selectedGenre === "Todos";
   const isSearchOpen = useSearchStore((state) => state.isOpen);
   const isSearchPaused = useSearchStore((state) => state.isPausedForDetails);
@@ -218,6 +225,7 @@ export default function App() {
       <Header
         onSearchClick={useSearchStore.getState().openSearch}
         onLibraryClick={() => setIsLibraryOpen(true)}
+        onLogoClick={handleLogoClick}
       />
 
       {/* Hero em destaque com isolamento estrito de camada para não interferir nos carrosséis */}

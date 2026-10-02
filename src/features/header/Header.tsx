@@ -1,16 +1,16 @@
 import { Search, Bookmark } from "lucide-react";
+import { BrandLogo } from "./BrandLogo";
 
 interface HeaderProps {
   onSearchClick?: () => void;
   onLibraryClick?: () => void;
+  onLogoClick: () => void;
 }
 
-export function Header({ onSearchClick, onLibraryClick }: HeaderProps) {
+export function Header({ onSearchClick, onLibraryClick, onLogoClick }: HeaderProps) {
   return (
     <header className="sticky top-0 inset-x-0 z-50 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b border-white/10 backdrop-blur-xl bg-black/60">
-      <h1 className="tracking-widest font-black text-2xl sm:text-3xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
-        Cinera
-      </h1>
+      <BrandLogo onClick={onLogoClick} />
 
       <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Botão Minha Biblioteca (Quero Assistir / Já Assisti) */}
