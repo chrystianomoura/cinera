@@ -108,7 +108,7 @@ export function MovieCarousel({
 
           <div
             ref={rowRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-4 scrollbar-hide px-4 md:px-0 [scroll-snap-type:x_mandatory] [overscroll-behavior-x:contain] [will-change:scroll-position] md:[scroll-padding-left:5rem] lg:[scroll-padding-left:6rem]"
+            className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-4 scrollbar-hide px-4 md:px-0 pointer-fine:[scroll-snap-type:x_mandatory] [overscroll-behavior-x:contain] [will-change:scroll-position] md:[scroll-padding-left:5rem] lg:[scroll-padding-left:6rem]"
           >
             {safeMovies.map((movie) => (
               <MovieCard
