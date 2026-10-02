@@ -13,6 +13,22 @@ interface CastItemProps {
   actor: CastMember;
 }
 
+/**
+ * Aquece a decodificação da foto fora do momento da interação: na primeira rolagem do carrossel
+ * as fotos novas já estão decodificadas e não competem com o movimento.
+ */
+function warmImageDecode(img: HTMLImageElement | null) {
+  if (!img || typeof img.decode !== "function") return;
+  const decode = () => {
+    img.decode().catch(() => {});
+  };
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(decode, { timeout: 1500 });
+  } else {
+    setTimeout(decode, 200);
+  }
+}
+
 const CastItem = memo(function CastItem({ actor }: CastItemProps) {
   const profileImg = getProfileUrl(actor.profilePath, "w185");
 
@@ -21,9 +37,10 @@ const CastItem = memo(function CastItem({ actor }: CastItemProps) {
       <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-md mb-2">
         {profileImg ? (
           <img
+            ref={warmImageDecode}
             src={profileImg}
             alt={actor.name}
-            loading="lazy"
+            loading="eager"
             decoding="async"
             width={144}
             height={192}
