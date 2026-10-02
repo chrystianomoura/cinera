@@ -1,6 +1,44 @@
 let activeScrollRaf: number | null = null;
 let cleanUpListeners: (() => void) | null = null;
 
+/** Ponteiro principal grosso (celular/tablet): usa a rolagem nativa do navegador. */
+const isCoarsePointer = () =>
+  typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
+/**
+ * Subida ao topo no toque: o movimento é conduzido pelo motor de rolagem do próprio navegador
+ * (nativo em cada sistema), sem loop de JavaScript por quadro, sem listeners de interrupção
+ * (o navegador cancela sozinho quando o usuário toca) e sem alterar pointer-events.
+ * - Trecho animado limitado a ~1 tela: se o usuário está mais longe, a página vai direto a esse
+ *   ponto e só o último trecho desliza, evitando o borrão de cobrir milhares de pixels.
+ * - Respeita prefers-reduced-motion: vai direto ao topo.
+ */
+function scrollToTopNative(start: number, onComplete?: () => void) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    onComplete?.();
+    return;
+  }
+
+  const bound = window.innerHeight;
+  if (start > bound) {
+    window.scrollTo({ top: bound, behavior: "instant" });
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  if (!onComplete) return;
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    window.removeEventListener("scrollend", finish);
+    onComplete();
+  };
+  window.addEventListener("scrollend", finish, { once: true });
+  // Navegadores sem scrollend: segue após a duração típica da rolagem suave
+  window.setTimeout(finish, 1000);
+}
+
 /**
  * Executa uma rolagem suave, aveludada e sem engasgos até o topo da página.
  *
@@ -26,6 +64,11 @@ export function smoothScrollToTop(onComplete?: () => void) {
   const start = window.scrollY;
   if (start <= 0) {
     onComplete?.();
+    return;
+  }
+
+  if (isCoarsePointer()) {
+    scrollToTopNative(start, onComplete);
     return;
   }
 
