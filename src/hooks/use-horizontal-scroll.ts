@@ -159,26 +159,36 @@ export function useHorizontalScroll({
 
       if (cardStride > 0 && !fraction) {
         // Alinhamento milimétrico na grade de cards inteiros (Padrão Apple TV / Netflix)
+        // Lê o scroll-padding-left do CSS (igual à largura do fade esquerdo por breakpoint — 0 em mobile).
+        // Deve ser lido ANTES do visibleCards para reduzir o espaço útil e evitar overflow no lado direito.
+        const scrollPaddingLeft = parseFloat(getComputedStyle(el).scrollPaddingLeft) || 0;
         const currentCardIndex = Math.round(currentTarget / cardStride);
-        const visibleCards = Math.max(1, Math.floor(el.clientWidth / cardStride));
+        // Espaço útil para cards = viewport − fade. O salto encaixa sem transbordar na direita.
+        const visibleCards = Math.max(1, Math.floor((el.clientWidth - scrollPaddingLeft) / cardStride));
         const nextCardIndex =
           direction === "right"
             ? currentCardIndex + visibleCards
             : currentCardIndex - visibleCards;
 
         const candidateTarget = nextCardIndex * cardStride;
+        // Recua o alvo pelo padding → card anterior faz peek atrás do fade (coberto); novo primeiro card fica limpo.
+        // Exceção: target=0 (início) mantém 0, pois o fade some quando canScrollLeft=false.
+        const adjustedTarget = candidateTarget > 0
+          ? Math.max(0, candidateTarget - scrollPaddingLeft)
+          : 0;
+
         if (direction === "right") {
           // Se a sobra até o final for menor que 1.2 cards, aterrissa no limite máximo
-          if (maxScroll - candidateTarget < cardStride * 1.2) {
+          if (maxScroll - adjustedTarget < cardStride * 1.2) {
             target = maxScroll;
           } else {
-            target = Math.min(maxScroll, candidateTarget);
+            target = Math.min(maxScroll, adjustedTarget);
           }
         } else {
-          if (candidateTarget < cardStride * 1.2) {
+          if (adjustedTarget < cardStride * 1.2) {
             target = 0;
           } else {
-            target = Math.max(0, candidateTarget);
+            target = Math.max(0, adjustedTarget);
           }
         }
       } else {
