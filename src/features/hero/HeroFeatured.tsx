@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Play, Info } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
+import { usePageVisibility } from "@/hooks/use-page-visibility";
 
 interface HeroFeaturedProps {
   candidates: Movie[];
@@ -26,6 +27,39 @@ export function HeroFeatured({
   const [isFading, setIsFading] = useState(false);
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isInViewport, setIsInViewport] = useState(true);
+  const isPageVisible = usePageVisibility();
+  const imageRef = useRef<HTMLImageElement | null>(null);
+
+  // Congela o Ken Burns no frame exato ao ocultar a aba e retoma do mesmo ponto ao voltar.
+  // Aba oculta não renderiza frames: uma classe CSS de pausa só seria aplicada na volta, com o
+  // relógio da animação já adiantado (salto de zoom). A pausa via API é aplicada no próprio evento.
+  useEffect(() => {
+    let frozen: { animation: Animation; time: CSSNumberish | null }[] = [];
+
+    const onVisibilityChange = () => {
+      const img = imageRef.current;
+
+      if (document.visibilityState === "hidden") {
+        if (!img) return;
+        frozen = img
+          .getAnimations()
+          .filter((animation) => animation.playState === "running")
+          .map((animation) => ({ animation, time: animation.currentTime }));
+        frozen.forEach(({ animation }) => animation.pause());
+        return;
+      }
+
+      frozen.forEach(({ animation, time }) => {
+        if (animation.playState === "idle") return;
+        animation.currentTime = time;
+        animation.play();
+      });
+      frozen = [];
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   // Monitora visibilidade no viewport: ativo enquanto o Hero ocupa pelo menos 25% da tela
   useEffect(() => {
@@ -54,14 +88,16 @@ export function HeroFeatured({
   const heroMovie =
     heroList.length > 0 ? heroList[heroIndex % heroList.length] : null;
 
-  // Rotação limpa a cada 6s: congela quando entrar em modais OU quando estiver fora da tela
+  // Rotação limpa a cada 6s: congela em modais, fora da tela ou com a aba oculta.
+  // Ao retomar, o intervalo recomeça do zero e o usuário vê a foto atual por 6s completos.
   useEffect(() => {
     if (
       heroList.length <= 1 ||
       isTrailerOpen ||
       isPaused ||
       !isVisible ||
-      !isInViewport
+      !isInViewport ||
+      !isPageVisible
     ) {
       setIsFading(false);
       return;
@@ -84,7 +120,7 @@ export function HeroFeatured({
       clearInterval(interval);
       if (fadeTimer) clearTimeout(fadeTimer);
     };
-  }, [heroList.length, isTrailerOpen, isPaused, isVisible, isInViewport]);
+  }, [heroList.length, isTrailerOpen, isPaused, isVisible, isInViewport, isPageVisible]);
 
   return (
     <section
@@ -106,6 +142,7 @@ export function HeroFeatured({
           >
             <img
               key={heroMovie.id}
+              ref={imageRef}
               src={getBackdropUrl(heroMovie.backdropPath, "w1280")}
               srcSet={`
                 ${getBackdropUrl(heroMovie.backdropPath, "w780")} 780w,
