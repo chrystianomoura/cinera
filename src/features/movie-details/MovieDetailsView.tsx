@@ -193,7 +193,7 @@ export function MovieDetailsView({
       </header>
 
       {/* 4. CONTEÚDO PRINCIPAL (HERO + METADADOS + FICHA) */}
-      <main className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-24 flex flex-col gap-6 md:gap-8">
+      <main className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-page-end flex flex-col gap-6 md:gap-8">
         {/* Bloco Superior: Cartaz Flutuante + Informações de Capa perfeitamente alinhados no topo */}
         <section className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start px-4 md:px-0">
           {/* Cartaz com borda em vidro */}

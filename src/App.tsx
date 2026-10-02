@@ -214,7 +214,7 @@ export default function App() {
   const isAnyOverlayActive = isDetailsOpen || isLibraryOpen || isSearchOpen || isSearchPaused;
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-20 relative flex flex-col">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-page-end relative flex flex-col">
       <Header
         onSearchClick={useSearchStore.getState().openSearch}
         onLibraryClick={() => setIsLibraryOpen(true)}

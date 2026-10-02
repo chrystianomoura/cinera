@@ -101,7 +101,7 @@ export function UserLibraryView({
       </div>
 
       {/* Conteúdo Principal */}
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-12 py-8 flex flex-col items-center">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-12 pt-8 pb-page-end flex flex-col items-center">
         {/* Switcher Estratégico com GAP um pouco maior e refinado */}
         <div className="inline-flex p-1.5 rounded-full bg-zinc-900/90 border border-white/10 backdrop-blur-md shadow-2xl relative mb-8 select-none gap-3">
           <button

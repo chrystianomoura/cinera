@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Respiro padrão no fim de qualquer tela rolável: 48px no celular, 64px a partir de md */
+:root {
+  --page-end-space: 3rem;
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --page-end-space: 4rem;
+  }
+}
+
+@utility pb-page-end {
+  padding-bottom: var(--page-end-space);
+}
+
 body {
   background-color: #000000;
   color: #ffffff;
