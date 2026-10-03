@@ -265,6 +265,12 @@ const KEEP_OWN_IDENTITY_KEYS = new Set([
   "universal",
 ]);
 
+/**
+ * Dentre as marcas acima, as que também têm assinatura direta no Brasil: o TMDB as lista como
+ * canal, mas o usuário pode assinar direto, então não recebem o aviso de canal extra.
+ */
+const DIRECT_SUBSCRIPTION_KEYS = new Set(["universal"]);
+
 /** Se o provedor é um canal dentro de outro serviço, devolve o serviço e o nome do canal. */
 function getChannelInfo(
   rawName: string
@@ -334,7 +340,7 @@ function filterValidProviders(list: WatchProvider[]): ProcessedProvider[] {
         cleanName: displayName,
         homeUrl,
         logoUrl,
-        requiresAddon: Boolean(channel),
+        requiresAddon: Boolean(channel) && !(ownIdentity && DIRECT_SUBSCRIPTION_KEYS.has(brandKey)),
         addonNote: null,
       },
     });
@@ -430,7 +436,7 @@ export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowPro
 
       {lines.length === 0 ? (
         <p className="text-zinc-100 font-medium text-xs sm:text-sm text-center md:text-left">
-          Atualmente indisponível para assinatura ou aluguel no Brasil.
+          Não encontramos este filme em assinatura ou aluguel no Brasil.
         </p>
       ) : (
         <div className="flex flex-col gap-2.5 w-full">
