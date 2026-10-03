@@ -40,7 +40,7 @@ export function MovieCarousel({
   if (isError) {
     return (
       <section className="relative group/carousel">
-        <div className="flex items-center gap-2.5 sm:gap-3 mb-2 md:mb-5 px-4 md:px-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 mb-2 md:mb-3 px-4 md:px-0">
           {icon && <span className="text-xl md:text-2xl select-none">{icon}</span>}
           <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
             {title}
@@ -63,7 +63,7 @@ export function MovieCarousel({
 
   return (
     <section className="relative group/carousel">
-      <div className="flex items-center gap-2.5 sm:gap-3 mb-2 md:mb-5 px-4 md:px-0">
+      <div className="flex items-center gap-2.5 sm:gap-3 mb-2 md:mb-3 px-4 md:px-0">
         {icon && <span className="text-xl md:text-2xl select-none">{icon}</span>}
         <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
           {title}
@@ -71,7 +71,7 @@ export function MovieCarousel({
       </div>
 
       {isLoading ? (
-        <div className="flex gap-4 md:gap-6 overflow-hidden px-4 md:px-0">
+        <div className="flex gap-4 md:gap-6 overflow-hidden pt-1 md:pt-2 px-4 md:px-0">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
@@ -99,7 +99,7 @@ export function MovieCarousel({
             aria-label={`Rolar ${title} para a esquerda`}
             aria-hidden={!canScrollLeft}
             tabIndex={canScrollLeft ? 0 : -1}
-            className={`hidden md:flex absolute left-2.5 top-[calc(1rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer ${
+            className={`hidden md:flex absolute left-2.5 top-[calc(0.5rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer ${
               canScrollLeft
                 ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
                 : "opacity-0 pointer-events-none"
@@ -110,7 +110,7 @@ export function MovieCarousel({
 
           <div
             ref={rowRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-4 scrollbar-hide px-4 md:px-0 pointer-fine:[scroll-snap-type:x_mandatory] [overscroll-behavior-x:contain] [will-change:scroll-position] md:[scroll-padding-left:5rem] lg:[scroll-padding-left:6rem]"
+            className="flex gap-4 md:gap-6 overflow-x-auto pb-1 md:pb-2 pt-1 md:pt-2 scrollbar-hide px-4 md:px-0 pointer-fine:[scroll-snap-type:x_mandatory] [overscroll-behavior-x:contain] [will-change:scroll-position] md:[scroll-padding-left:5rem] lg:[scroll-padding-left:6rem]"
           >
             {safeMovies.map((movie) => (
               <MovieCard
@@ -136,7 +136,7 @@ export function MovieCarousel({
             aria-label={`Rolar ${title} para a direita`}
             aria-hidden={!canScrollRight}
             tabIndex={canScrollRight ? 0 : -1}
-            className={`hidden md:flex absolute right-2.5 top-[calc(1rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer ${
+            className={`hidden md:flex absolute right-2.5 top-[calc(0.5rem+min(38vw,168px))] -translate-y-1/2 z-30 w-11 h-11 items-center justify-center rounded-full bg-zinc-900/95 hover:bg-zinc-800 text-white border border-white/20 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.8)] transition-opacity duration-150 cursor-pointer ${
               canScrollRight
                 ? "opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
                 : "opacity-0 pointer-events-none"
