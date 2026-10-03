@@ -15,6 +15,17 @@
   padding-bottom: var(--page-end-space);
 }
 
+/* Barras de rolagem escondidas em todo o app: a rolagem (roda, trackpad, teclado e toque) segue
+   funcionando normalmente, só o desenho da barra some. */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   background-color: #000000;
   color: #ffffff;
