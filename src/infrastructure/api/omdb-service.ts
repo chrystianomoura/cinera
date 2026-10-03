@@ -154,11 +154,7 @@ export class OmdbService {
         const rawRating = typeof json.imdbRating === "string" ? json.imdbRating.trim() : "";
         const isNumericRating = /^\d+(\.\d+)?$/.test(rawRating);
 
-        if (
-          json.Response === "False" ||
-          !isNumericRating ||
-          rawRating === "N/A"
-        ) {
+        if (json.Response === "False" || !isNumericRating) {
           // Cache negativo: salva como null para não re-consultar a cada render
           this.saveToCache(cleanId, null, hasStorage);
           return null;
