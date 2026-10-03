@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Play, Info } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
@@ -77,13 +77,9 @@ export function HeroFeatured({
     return () => observer.disconnect();
   }, []);
 
-  // Trava dupla: prioriza estritamente filmes com tagline oficial (memoizado)
-  const heroList = useMemo(() => {
-    const valid = candidates.filter(
-      (m) => Boolean(m.tagline && m.tagline.trim().length > 0)
-    );
-    return valid.length > 0 ? valid : candidates;
-  }, [candidates]);
+  // A seleção (catálogo curado ou busca ao vivo) já decide quem pode ser destaque; o filme sem
+  // tagline aprovado à mão entra normalmente e o layout simplesmente omite a tagline.
+  const heroList = candidates;
 
   const heroMovie =
     heroList.length > 0 ? heroList[heroIndex % heroList.length] : null;

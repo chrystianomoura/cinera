@@ -2,38 +2,43 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { movieService } from '@/infrastructure/api/movie-service';
 import type { Movie, PaginatedResponse } from '@/domain';
 
-export function useTrendingMovies(page: number = 1) {
+export function useTrendingMovies(page: number = 1, enabled: boolean = true) {
   return useQuery<PaginatedResponse<Movie>>({
     queryKey: ['movies', 'trending', page],
     queryFn: () => movieService.getTrendingMovies(page),
+    enabled,
   });
 }
 
-export function useNewReleasesMovies(page: number = 1) {
+export function useNewReleasesMovies(page: number = 1, enabled: boolean = true) {
   return useQuery<PaginatedResponse<Movie>>({
     queryKey: ['movies', 'new-releases', page],
     queryFn: () => movieService.getNewReleasesMovies(page),
+    enabled,
   });
 }
 
-export function useTopRatedMovies(page: number = 1) {
+export function useTopRatedMovies(page: number = 1, enabled: boolean = true) {
   return useQuery<PaginatedResponse<Movie>>({
     queryKey: ['movies', 'top-rated', page],
     queryFn: () => movieService.getTopRatedMovies(page),
+    enabled,
   });
 }
 
-export function useClassicMovies(page: number = 1) {
+export function useClassicMovies(page: number = 1, enabled: boolean = true) {
   return useQuery<PaginatedResponse<Movie>>({
     queryKey: ['movies', 'classics', page],
     queryFn: () => movieService.getClassicMovies(page),
+    enabled,
   });
 }
 
-export function usePopularMovies(page: number = 1) {
+export function usePopularMovies(page: number = 1, enabled: boolean = true) {
   return useQuery<PaginatedResponse<Movie>>({
     queryKey: ['movies', 'popular', page],
     queryFn: () => movieService.getPopularMovies(page),
+    enabled,
   });
 }
 
@@ -60,10 +65,11 @@ export function useMovieDetails(id?: number) {
   });
 }
 
-export function useHeroFeaturedMovies() {
+export function useHeroFeaturedMovies(enabled: boolean = true) {
   return useQuery<Movie[]>({
     queryKey: ['movies', 'hero-featured'],
     queryFn: () => movieService.getHeroFeaturedMovies(),
     staleTime: 10 * 60 * 1000,
+    enabled,
   });
 }

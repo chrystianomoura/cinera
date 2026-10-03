@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import type { Movie } from "@/domain";
 import { MovieCarousel } from "./MovieCarousel";
+import { useCatalog } from "@/hooks/use-catalog";
+import type { CatalogRowId } from "@/infrastructure/catalog/catalog-schema";
 import {
   useTrendingMovies,
   useNewReleasesMovies,
@@ -10,56 +12,40 @@ import {
 } from "@/hooks/use-movies";
 
 interface HomeFeedProps {
+  /** Filmes que já aparecem no destaque e não devem se repetir nas fileiras */
+  excludeIds?: number[];
   isFadingOut?: boolean;
   onSelectMovie?: (movie: Movie) => void;
 }
 
 /**
  * Feed principal da Home com os 5 carrosséis editoriais do Cinera.
- * Aplica deduplicação inteligente em cascata (seenIds) garantindo que
- * nenhum filme se repita entre as diferentes fileiras temáticas.
+ * Cada fileira vem do catálogo curado quando ele a possui; senão, da busca ao vivo (retorno por
+ * fileira, então o catálogo pode ser adotado aos poucos). Aplica deduplicação em cascata (seenIds)
+ * para nenhum filme se repetir entre as fileiras nem com o destaque.
  */
-export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) {
-  const {
-    data: trendingData,
-    isLoading: isLoadingTrending,
-    isError: isErrorTrending,
-  } = useTrendingMovies(1);
+export function HomeFeed({ excludeIds, isFadingOut = false, onSelectMovie }: HomeFeedProps) {
+  const { data: catalog, isLoading: isLoadingCatalog } = useCatalog();
 
-  const {
-    data: newReleasesData,
-    isLoading: isLoadingNewReleases,
-    isError: isErrorNewReleases,
-  } = useNewReleasesMovies(1);
+  // A busca ao vivo só roda para fileiras que o catálogo curado não fornece
+  const needsLive = (id: CatalogRowId) =>
+    !isLoadingCatalog && !catalog?.rows.some((row) => row.id === id);
 
-  const {
-    data: topRatedData,
-    isLoading: isLoadingTopRated,
-    isError: isErrorTopRated,
-  } = useTopRatedMovies(1);
+  const { data: trendingData, isLoading: isLoadingTrending, isError: isErrorTrending } = useTrendingMovies(1, needsLive("em-alta"));
+  const { data: newData, isLoading: isLoadingNew, isError: isErrorNew } = useNewReleasesMovies(1, needsLive("novidades"));
+  const { data: topData, isLoading: isLoadingTop, isError: isErrorTop } = useTopRatedMovies(1, needsLive("aclamados"));
+  const { data: classicsData, isLoading: isLoadingClassics, isError: isErrorClassics } = useClassicMovies(1, needsLive("classicos"));
+  const { data: popularData, isLoading: isLoadingPopular, isError: isErrorPopular } = usePopularMovies(1, needsLive("populares"));
 
-  const {
-    data: classicsData,
-    isLoading: isLoadingClassics,
-    isError: isErrorClassics,
-  } = useClassicMovies(1);
+  const excludedKey = (excludeIds ?? []).join(",");
 
-  const {
-    data: popularData,
-    isLoading: isLoadingPopular,
-    isError: isErrorPopular,
-  } = usePopularMovies(1);
+  // Fileiras na ordem de exibição
+  const sections = useMemo(() => {
+    const curated = (id: CatalogRowId): Movie[] | undefined =>
+      catalog?.rows.find((row) => row.id === id)?.movies;
 
-// Garante unicidade de filmes entre as diferentes seções do feed
-  const {
-    trendingMovies,
-    newReleasesMovies,
-    topRatedMovies,
-    classicMovies,
-    popularMovies,
-  } = useMemo(() => {
-    const seenIds = new Set<number>();
-
+    // Garante unicidade de filmes entre as seções (e em relação ao destaque)
+    const seenIds = new Set<number>(excludedKey ? excludedKey.split(",").map(Number) : []);
     const dedupe = (list?: Movie[], limit: number = 20) => {
       if (!list) return [];
       const result: Movie[] = [];
@@ -73,19 +59,49 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
       return result;
     };
 
-    return {
-      trendingMovies: dedupe(trendingData?.results),
-      newReleasesMovies: dedupe(newReleasesData?.results),
-      topRatedMovies: dedupe(topRatedData?.results),
-      classicMovies: dedupe(classicsData?.results),
-      popularMovies: dedupe(popularData?.results),
+    const define = (
+      id: CatalogRowId,
+      title: string,
+      icon: string,
+      live: { results?: Movie[]; isLoading: boolean; isError: boolean },
+    ) => {
+      const fromCatalog = curated(id);
+      return {
+        title,
+        icon,
+        movies: dedupe(fromCatalog ?? live.results),
+        // Enquanto o catálogo carrega, a fileira espera: evita mostrar a busca ao vivo e trocar depois
+        isLoading: isLoadingCatalog || (!fromCatalog && live.isLoading),
+        isError: !fromCatalog && live.isError,
+      };
     };
+
+    return [
+      define("em-alta", "Em Alta", "🔥", { results: trendingData?.results, isLoading: isLoadingTrending, isError: isErrorTrending }),
+      define("novidades", "Novidades", "✨", { results: newData?.results, isLoading: isLoadingNew, isError: isErrorNew }),
+      define("aclamados", "Aclamados pela Crítica", "⭐", { results: topData?.results, isLoading: isLoadingTop, isError: isErrorTop }),
+      define("classicos", "Clássicos Indispensáveis", "🏆", { results: classicsData?.results, isLoading: isLoadingClassics, isError: isErrorClassics }),
+      define("populares", "Populares no Brasil", "🇧🇷", { results: popularData?.results, isLoading: isLoadingPopular, isError: isErrorPopular }),
+    ];
   }, [
+    catalog,
+    isLoadingCatalog,
+    excludedKey,
     trendingData?.results,
-    newReleasesData?.results,
-    topRatedData?.results,
+    isLoadingTrending,
+    isErrorTrending,
+    newData?.results,
+    isLoadingNew,
+    isErrorNew,
+    topData?.results,
+    isLoadingTop,
+    isErrorTop,
     classicsData?.results,
+    isLoadingClassics,
+    isErrorClassics,
     popularData?.results,
+    isLoadingPopular,
+    isErrorPopular,
   ]);
 
   return (
@@ -96,43 +112,7 @@ export function HomeFeed({ isFadingOut = false, onSelectMovie }: HomeFeedProps) 
           : "opacity-100 animate-in fade-in duration-500"
       }`}
     >
-      {[
-        {
-          title: "Em Alta",
-          icon: "🔥",
-          movies: trendingMovies,
-          isLoading: isLoadingTrending,
-          isError: isErrorTrending,
-        },
-        {
-          title: "Novidades",
-          icon: "✨",
-          movies: newReleasesMovies,
-          isLoading: isLoadingNewReleases,
-          isError: isErrorNewReleases,
-        },
-        {
-          title: "Aclamados pela Crítica",
-          icon: "⭐",
-          movies: topRatedMovies,
-          isLoading: isLoadingTopRated,
-          isError: isErrorTopRated,
-        },
-        {
-          title: "Clássicos Indispensáveis",
-          icon: "🏆",
-          movies: classicMovies,
-          isLoading: isLoadingClassics,
-          isError: isErrorClassics,
-        },
-        {
-          title: "Populares no Brasil",
-          icon: "🇧🇷",
-          movies: popularMovies,
-          isLoading: isLoadingPopular,
-          isError: isErrorPopular,
-        },
-      ].map((section) => (
+      {sections.map((section) => (
         <MovieCarousel
           key={section.title}
           title={section.title}

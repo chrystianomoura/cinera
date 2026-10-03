@@ -4,6 +4,7 @@ import {
   useHeroFeaturedMovies,
 } from "@/hooks/use-movies";
 import { movieService } from "@/infrastructure/api/movie-service";
+import { useCatalog } from "@/hooks/use-catalog";
 import { useTrailerStore } from "@/features/trailer/use-trailer-store";
 import type { Movie } from "@/domain";
 import { Header } from "@/features/header/Header";
@@ -23,7 +24,16 @@ export default function App() {
   // Referência estável: o App não assina o estado do trailer
   const openTrailer = useTrailerStore.getState().openTrailer;
 
-  const { data: heroMovies, isLoading: isLoadingHero } = useHeroFeaturedMovies();
+  // Destaque: do catálogo curado quando existir; senão, da busca ao vivo
+  const { data: catalog, isLoading: isLoadingCatalog } = useCatalog();
+  const catalogHero = catalog?.hero?.length ? catalog.hero : null;
+  const { data: liveHero, isLoading: isLoadingLiveHero } = useHeroFeaturedMovies(
+    !isLoadingCatalog && !catalogHero,
+  );
+  const heroMovies = catalogHero ?? liveHero;
+  const isLoadingHero = isLoadingCatalog || (!catalogHero && isLoadingLiveHero);
+  // Os filmes do destaque não se repetem nas fileiras
+  const heroIds = useMemo(() => (heroMovies ?? []).map((movie) => movie.id), [heroMovies]);
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
@@ -263,6 +273,7 @@ export default function App() {
 
         {activeCatalogView === "todos" ? (
           <HomeFeed
+            excludeIds={heroIds}
             isFadingOut={isFadingOutHome}
             onSelectMovie={handleOpenDetails}
           />
