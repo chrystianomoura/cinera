@@ -4,7 +4,11 @@ import { moviesMock } from '../mock/movies.mock';
 import { fetchFromTMDB, isTmdbConfigured } from './tmdb-client';
 import { mapTMDBMovie } from './tmdb-mappers';
 import { filterQualifiedMovies } from './curation-filters';
+import { fetchGenreCatalog } from '../catalog/genre-catalog';
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from './tmdb-types';
+
+/** Filmes por página da categoria curada (o mesmo lote da busca ao vivo) */
+const CURATED_PAGE_SIZE = 18;
 
 /**
  * Retorna filmes filtrados por macrogênero de streaming (suporta união com '|', ex: '28|12').
@@ -22,6 +26,21 @@ export async function fetchGenreMoviesPage(
   categoryOrQuery: string | number,
   page: number = 1
 ): Promise<PaginatedResponse<Movie>> {
+  // Categoria curada: lista pronta, paginada aqui mesmo, sem chamar o TMDB
+  const curated = await fetchGenreCatalog(String(categoryOrQuery).trim());
+  if (curated) {
+    const start = (page - 1) * CURATED_PAGE_SIZE;
+    const results = curated.slice(start, start + CURATED_PAGE_SIZE);
+    const hasNext = start + CURATED_PAGE_SIZE < curated.length;
+    return {
+      page,
+      results,
+      totalPages: Math.ceil(curated.length / CURATED_PAGE_SIZE),
+      totalResults: curated.length,
+      nextPage: hasNext ? page + 1 : undefined,
+    };
+  }
+
   try {
     if (isTmdbConfigured()) {
       const inputKey = String(categoryOrQuery).trim();
