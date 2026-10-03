@@ -12,6 +12,7 @@ import { useUserLibrary } from "@/stores/use-user-library";
 import { useLibraryMovies } from "@/hooks/use-library-movies";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import { BrandLogo } from "@/features/header/BrandLogo";
+import { StatusMessage, statusButtonClassName } from "@/features/feedback/StatusMessage";
 
 interface UserLibraryViewProps {
   isOpen: boolean;
@@ -162,32 +163,24 @@ export function UserLibraryView({
 
         {/* Empty State Estratégico: exibido quando não há itens */}
         {!isLoading && currentCount === 0 && (
-          <div className="pt-8 pb-16 max-w-md mx-auto text-center flex flex-col items-center justify-center animate-in fade-in duration-300 select-none">
-            <span className="text-5xl sm:text-6xl leading-none transition-transform hover:scale-110 duration-200 drop-shadow-md mb-3">
-              😔
-            </span>
-            <div className="space-y-1.5 mb-5">
-              <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                {activeTab === "watchlist"
-                  ? "Sua fila de espera está vazia"
-                  : "Nenhum filme assistido ainda"}
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm">
-                {activeTab === "watchlist"
-                  ? "Navegue pelo catálogo e adicione filmes para montar sua próxima maratona de cinema."
-                  : "Conforme for assistindo aos filmes, marque-os como assistidos para registrar sua jornada."}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white text-black font-bold text-xs sm:text-sm hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-[0_4px_16px_rgba(255,255,255,0.18)]"
-            >
+          <StatusMessage
+            emoji="😔"
+            title={
+              activeTab === "watchlist"
+                ? "Sua fila de espera está vazia"
+                : "Nenhum filme assistido ainda"
+            }
+            description={
+              activeTab === "watchlist"
+                ? "Navegue pelo catálogo e adicione filmes para montar sua próxima maratona de cinema."
+                : "Conforme for assistindo aos filmes, marque-os como assistidos para registrar sua jornada."
+            }
+          >
+            <button type="button" onClick={onClose} className={statusButtonClassName}>
               <Sparkles size={14} />
               <span>Explorar Catálogo</span>
             </button>
-          </div>
+          </StatusMessage>
         )}
 
         {/* Grid de Filmes */}

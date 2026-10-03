@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Loader2, ArrowUp } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
+import { StatusMessage } from "@/features/feedback/StatusMessage";
 import { getGenreProfile } from "./constants";
 import { useScrollTopButton } from "@/hooks/use-scroll-top-button";
 
@@ -71,11 +72,12 @@ export function GenreCatalogGrid({
       </div>
 
       {isError && (
-        <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-8 text-center backdrop-blur-sm">
-          <p className="text-zinc-400">
-            Ocorreu um erro ao carregar os filmes deste gênero. Tente novamente mais tarde.
-          </p>
-        </div>
+        <StatusMessage
+          emoji="🤯"
+          title="Não foi possível carregar este gênero"
+          description="Ocorreu um erro ao carregar os filmes deste gênero. Tente novamente mais tarde."
+          size="compact"
+        />
       )}
 
       {isLoading ? (
@@ -103,11 +105,12 @@ export function GenreCatalogGrid({
           </div>
 
           {movies.length === 0 && !isError && (
-            <div className="rounded-xl bg-zinc-900/30 border border-white/5 p-12 text-center">
-              <p className="text-zinc-400 text-base">
-                Nenhum filme qualificado encontrado para este gênero no momento.
-              </p>
-            </div>
+            <StatusMessage
+              emoji="😔"
+              title="Nenhum filme encontrado"
+              description="Nenhum filme qualificado para este gênero no momento."
+              size="compact"
+            />
           )}
 
           {hasMore && (

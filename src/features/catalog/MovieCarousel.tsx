@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
+import { StatusMessage } from "@/features/feedback/StatusMessage";
 import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
 
 interface MovieCarouselProps {
@@ -45,11 +46,12 @@ export function MovieCarousel({
             {title}
           </h3>
         </div>
-        <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-8 text-center backdrop-blur-sm mx-4 md:mx-0">
-          <p className="text-zinc-400">
-            Ocorreu um erro ao carregar os filmes desta seção. Tente novamente mais tarde.
-          </p>
-        </div>
+        <StatusMessage
+          emoji="🤯"
+          title="Não foi possível carregar esta seção"
+          description="Ocorreu um erro ao carregar os filmes desta seção. Tente novamente mais tarde."
+          size="compact"
+        />
       </section>
     );
   }

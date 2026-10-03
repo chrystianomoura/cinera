@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
-import { Search, X, Loader2, Film, ChevronRight, AlertCircle, RotateCcw } from "lucide-react";
+import { Search, X, Loader2, Film, ChevronRight, RotateCcw } from "lucide-react";
 import { useSearchStore } from "./use-search-store";
 import { useMovieSearch } from "./use-movie-search";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
@@ -7,6 +7,7 @@ import { SEARCH_CONFIG } from "@/infrastructure/search/search-service";
 import type { Movie } from "@/domain";
 import { GENRES } from "../catalog/constants";
 import { registerSearchInput } from "./open-search";
+import { StatusMessage, statusButtonClassName } from "@/features/feedback/StatusMessage";
 
 interface SearchModalProps {
   onSelectMovie: (movie: Movie) => void;
@@ -389,47 +390,28 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
 
           {/* ESTADO 4: Erro na Requisição (Tratamento explícito de isError) */}
           {isError && (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-1">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-
-              <h4 className="text-base sm:text-lg font-bold text-white">
-                Não foi possível buscar filmes no momento
-              </h4>
-
-              <p className="text-sm text-zinc-400 max-w-md">
-                Verifique sua conexão ou tente novamente em alguns instantes.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => refetch()}
-                className="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
+            <StatusMessage
+              emoji="🤯"
+              title="Não foi possível buscar filmes"
+              description="Verifique sua conexão ou tente novamente em alguns instantes."
+              size="compact"
+            >
+              <button type="button" onClick={() => refetch()} className={statusButtonClassName}>
+                <RotateCcw size={14} />
                 <span>Tentar novamente</span>
               </button>
-            </div>
+            </StatusMessage>
           )}
 
           {/* ESTADO 5: Zero Resultados (Busca sem sucesso, compacto e limpo) */}
           {!isError && hasSearched && results.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-4 sm:py-5 px-4 text-center gap-2 max-w-full overflow-hidden">
-              <span className="text-3xl select-none leading-none mb-0.5" role="img" aria-label="Alerta">
-                ⚠️
-              </span>
-
-              <h4 className="text-sm sm:text-base font-bold text-white max-w-full break-words [overflow-wrap:anywhere] px-2">
-                Nenhum filme encontrado para "{debouncedQuery.length > 35 ? `${debouncedQuery.slice(0, 35)}...` : debouncedQuery}"
-              </h4>
-
-              <p className="text-xs sm:text-sm text-zinc-400 max-w-md">
-                Verifique se o título foi digitado corretamente ou explore uma das categorias em destaque:
-              </p>
-
-              {/* Sugestões com todas as categorias presentes na página inicial */}
-              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-1.5 max-w-lg">
+            <StatusMessage
+              emoji="😔"
+              title={`Nenhum filme encontrado para "${debouncedQuery.length > 35 ? `${debouncedQuery.slice(0, 35)}...` : debouncedQuery}"`}
+              description="Verifique se o título foi digitado corretamente ou explore uma das categorias em destaque:"
+              size="compact"
+            >
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-lg">
                 {GENRES.map((genreName) => (
                   <button
                     key={genreName}
@@ -441,7 +423,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                   </button>
                 ))}
               </div>
-            </div>
+            </StatusMessage>
           )}
         </div>
 

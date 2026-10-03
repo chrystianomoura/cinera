@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { useTrailerStore } from "./use-trailer-store";
+import { StatusMessage, statusButtonClassName } from "@/features/feedback/StatusMessage";
 
 export function TrailerModal() {
   const isOpen = useTrailerStore((state) => state.isOpen);
@@ -61,21 +62,23 @@ export function TrailerModal() {
               className="w-full h-full border-0"
             />
           ) : !isLoading ? (
-            <div className="p-8 text-center text-zinc-400">
-              <p>
-                Nenhum trailer encontrado diretamente na API para este filme.
-              </p>
+            <StatusMessage
+              emoji="🤯"
+              title="Trailer indisponível"
+              description="Não encontramos um trailer para este filme. Você pode procurar direto no YouTube."
+              size="compact"
+            >
               <a
                 href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
                   `${movie?.title || ""} trailer oficial`,
                 )}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-block mt-4 px-5 py-2.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors"
+                className={statusButtonClassName}
               >
                 Buscar no YouTube
               </a>
-            </div>
+            </StatusMessage>
           ) : null}
         </div>
       </div>
