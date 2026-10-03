@@ -34,6 +34,9 @@
 
 @utility header-bar {
   height: var(--header-height);
+  /* Nunca encolhe, nem dentro de colunas flexíveis com conteúdo alto (ex.: biblioteca cheia) */
+  min-height: var(--header-height);
+  flex-shrink: 0;
 }
 
 /* Barras de rolagem escondidas em todo o app: a rolagem (roda, trackpad, teclado e toque) segue
