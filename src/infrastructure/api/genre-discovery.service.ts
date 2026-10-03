@@ -1,6 +1,5 @@
 import type { Movie, PaginatedResponse } from '@/domain';
 import { getGenreProfile, type GenreProfile } from '@/features/catalog/constants';
-import { moviesMock } from '../mock/movies.mock';
 import { fetchFromTMDB, isTmdbConfigured } from './tmdb-client';
 import { mapTMDBMovie } from './tmdb-mappers';
 import { filterQualifiedMovies } from './curation-filters';
@@ -107,7 +106,7 @@ export async function fetchGenreMoviesPage(
         // Se todas as requisições deste chunk falharem (queda de rede, timeout ou 429)
         if (pageResponses.length === 0) {
           if (collectedMovies.length === 0) {
-            // Sem nenhum dado no lote: dispara erro para ativar o catch e entregar o fallback de mock
+            // Sem nenhum dado no lote: dispara erro para a tela mostrar o estado de erro
             throw new Error(`Todas as requisições do lote para ${categoryOrQuery} falharam na rede`);
           }
           // Se já coletou filmes em iterações anteriores, interrompe o loop sem disparar novas chamadas
@@ -192,22 +191,9 @@ export async function fetchGenreMoviesPage(
     }
   } catch (error) {
     console.warn(`Falha ao obter filmes do gênero ${categoryOrQuery} do TMDB:`, error);
+    throw error;
   }
 
-  // Fallback Mock
-  const inputKey = String(categoryOrQuery).trim();
-  const profile = getGenreProfile(inputKey);
-  const withIds = profile ? profile.withGenres : inputKey;
-  const queryIds = new Set(String(withIds).split('|').map(Number));
-  const filtered = moviesMock.filter((m) =>
-    m.genres?.some((g) => queryIds.has(g.id))
-  );
-  const results = filterQualifiedMovies(filtered.length > 0 ? filtered : moviesMock, 6.0, 20);
-  return {
-    page,
-    results,
-    totalPages: 1,
-    totalResults: results.length,
-    nextPage: undefined,
-  };
+  // Sem chaves do TMDB: modo demonstração (carregado sob demanda)
+  return (await import("../demo/demo-service")).byGenre(categoryOrQuery, page);
 }

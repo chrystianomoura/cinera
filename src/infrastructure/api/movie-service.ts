@@ -4,7 +4,6 @@ import type {
   MovieWatchProviders,
   PaginatedResponse,
 } from "@/domain";
-import { moviesMock, creditsMock, providersMock } from "../mock/movies.mock";
 import {
   fetchFromTMDB,
   isTmdbConfigured,
@@ -44,6 +43,9 @@ export {
 };
 export { TMDB_GENRE_MAP } from "./tmdb-types";
 export type { MovieVideo } from "./tmdb-types";
+
+/** Dados de demonstração só são baixados no modo sem chaves do TMDB (veja infrastructure/demo). */
+const loadDemo = () => import("../demo/demo-service");
 
 /**
  * Serviço central de filmes (Fachada do Domínio de Catálogo).
@@ -97,26 +99,13 @@ class MovieService {
       }
     } catch (error) {
       console.warn(
-        "Falha ao obter filmes em tendência do TMDB, usando fallback mock:",
+        "Falha ao obter filmes em tendência do TMDB:",
         error,
       );
+      throw error;
     }
 
-    const itemsPerPage = 20;
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const results = filterQualifiedMovies(
-      moviesMock.slice(startIndex, endIndex),
-      5.5,
-      5,
-    );
-
-    return {
-      page,
-      results,
-      totalPages: Math.ceil(moviesMock.length / itemsPerPage),
-      totalResults: moviesMock.length,
-    };
+    return (await loadDemo()).trending(page);
   }
 
   /**
@@ -163,12 +152,12 @@ class MovieService {
       }
     } catch (error) {
       console.warn("Falha ao obter filmes em destaque para o Hero:", error);
+      throw error;
     }
 
-    // Fallback estrito no mock: apenas filmes com tagline válida
-    return moviesMock
-      .filter((m) => Boolean(m.tagline && m.tagline.trim().length > 0))
-      .slice(0, 5);
+    // Com chaves configuradas, uma resposta insuficiente da API não vira dados de demonstração
+    if (isTmdbConfigured()) return [];
+    return (await loadDemo()).hero();
   }
 
   /**
@@ -184,9 +173,10 @@ class MovieService {
       }
     } catch (error) {
       console.warn(`Falha ao obter filme ${id} do TMDB:`, error);
+      throw error;
     }
 
-    return moviesMock.find((m) => m.id === id) || null;
+    return (await loadDemo()).movieById(id);
   }
 
   /**
@@ -202,9 +192,10 @@ class MovieService {
       }
     } catch (error) {
       console.warn(`Falha ao obter créditos do filme ${id} do TMDB:`, error);
+      throw error;
     }
 
-    return creditsMock[id] || null;
+    return (await loadDemo()).credits(id);
   }
 
   /**
@@ -225,9 +216,10 @@ class MovieService {
         `Falha ao obter provedores de streaming do filme ${id} do TMDB:`,
         error,
       );
+      throw error;
     }
 
-    return providersMock[id] || null;
+    return (await loadDemo()).providers(id);
   }
 
   /**
@@ -252,27 +244,11 @@ class MovieService {
       }
     } catch (error) {
       console.warn(`Falha ao pesquisar filmes no TMDB para "${query}":`, error);
+      throw error;
     }
 
-    const normalizedQuery = query.toLowerCase();
-    const filteredMovies = moviesMock.filter(
-      (movie) =>
-        movie.title.toLowerCase().includes(normalizedQuery) ||
-        (movie.originalTitle &&
-          movie.originalTitle.toLowerCase().includes(normalizedQuery)),
-    );
-
-    const itemsPerPage = 20;
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const results = filteredMovies.slice(startIndex, endIndex);
-
-    return {
-      page,
-      results,
-      totalPages: Math.ceil(filteredMovies.length / itemsPerPage),
-      totalResults: filteredMovies.length,
-    };
+    if (isTmdbConfigured()) return { page, results: [], totalPages: 0, totalResults: 0 };
+    return (await loadDemo()).search(query, page);
   }
 
   /**
@@ -325,24 +301,10 @@ class MovieService {
       }
     } catch (error) {
       console.warn("Falha ao obter novidades do TMDB:", error);
+      throw error;
     }
 
-    const currentYear = new Date().getFullYear();
-    const newReleases = moviesMock.filter((m) => {
-      const year = new Date(m.releaseDate).getFullYear();
-      return year >= currentYear - 1;
-    });
-    const results = filterQualifiedMovies(
-      newReleases.length > 0 ? newReleases : moviesMock,
-      5.5,
-      5,
-    );
-    return {
-      page,
-      results,
-      totalPages: 1,
-      totalResults: results.length,
-    };
+    return (await loadDemo()).newReleases();
   }
 
   /**
@@ -403,30 +365,10 @@ class MovieService {
       }
     } catch (error) {
       console.warn("Falha ao obter filmes mais bem avaliados do TMDB:", error);
+      throw error;
     }
 
-    const contemporary = moviesMock
-      .filter((m) => {
-        const year = new Date(m.releaseDate).getFullYear();
-        const isNotAnimation = !m.genres?.some(
-          (g) => g.id === 16 || g.name === "Animação",
-        );
-        return year >= 2000 && isNotAnimation;
-      })
-      .sort((a, b) => b.voteAverage - a.voteAverage);
-    const results = dedupeFranchises(
-      filterQualifiedMovies(
-        contemporary.length > 0 ? contemporary : moviesMock,
-        6.0,
-        10,
-      ),
-    );
-    return {
-      page,
-      results,
-      totalPages: 1,
-      totalResults: results.length,
-    };
+    return (await loadDemo()).topRated();
   }
 
   /**
@@ -478,30 +420,10 @@ class MovieService {
       }
     } catch (error) {
       console.warn("Falha ao obter clássicos do cinema do TMDB:", error);
+      throw error;
     }
 
-    const classics = moviesMock
-      .filter((m) => {
-        const year = new Date(m.releaseDate).getFullYear();
-        const isNotAnimation = !m.genres?.some(
-          (g) => g.id === 16 || g.name === "Animação",
-        );
-        return year <= 1999 && isNotAnimation;
-      })
-      .sort((a, b) => b.voteAverage - a.voteAverage);
-    const results = dedupeFranchises(
-      filterQualifiedMovies(
-        classics.length > 0 ? classics : moviesMock,
-        6.0,
-        10,
-      ),
-    );
-    return {
-      page,
-      results,
-      totalPages: 1,
-      totalResults: results.length,
-    };
+    return (await loadDemo()).classics();
   }
 
   /**
@@ -551,16 +473,10 @@ class MovieService {
       }
     } catch (error) {
       console.warn("Falha ao obter filmes populares do TMDB:", error);
+      throw error;
     }
 
-    const popular = [...moviesMock].sort((a, b) => b.voteCount - a.voteCount);
-    const results = filterQualifiedMovies(popular, 6.0, 10);
-    return {
-      page,
-      results,
-      totalPages: 1,
-      totalResults: results.length,
-    };
+    return (await loadDemo()).popular();
   }
 
   /**

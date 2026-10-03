@@ -1,6 +1,7 @@
+// Dados de demonstração: só são carregados quando o app roda sem chaves do TMDB (veja demo-service.ts).
 import type { Movie, MovieCredits, MovieWatchProviders } from "@/domain";
 
-export const moviesMock: Movie[] = [
+export const demoMovies: Movie[] = [
   {
     id: 157336,
     title: "Interestelar",
@@ -240,7 +241,7 @@ export const moviesMock: Movie[] = [
   },
 ];
 
-export const creditsMock: Record<number, MovieCredits> = {
+export const demoCredits: Record<number, MovieCredits> = {
   157336: {
     id: 157336,
     directors: ["Christopher Nolan"],
@@ -434,7 +435,7 @@ const defaultProviderMax = {
   displayPriority: 3,
 };
 
-export const providersMock: Record<number, MovieWatchProviders> = {
+export const demoProviders: Record<number, MovieWatchProviders> = {
   157336: { flatrate: [defaultProviderPrime, defaultProviderMax] },
   872585: { flatrate: [defaultProviderPrime] },
   693134: { flatrate: [defaultProviderMax] },

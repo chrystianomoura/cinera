@@ -1,7 +1,6 @@
 import type { Movie } from "@/domain";
 import { fetchFromTMDB, isTmdbConfigured } from "../api/tmdb-client";
 import { mapTMDBMovie } from "../api/tmdb-mappers";
-import { moviesMock } from "../mock/movies.mock";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../api/tmdb-types";
 
 /**
@@ -651,9 +650,10 @@ export async function searchCineraMovies(
     }
   }
 
-  // 4. Fallback resiliente no catálogo mock local
+  // 4. Sem chaves do TMDB: modo demonstração, com filmes de exemplo carregados sob demanda
+  const { demoMovies } = await import("../demo/demo-data");
   const now = Date.now();
-  const localResults = moviesMock.filter((m) => {
+  const localResults = demoMovies.filter((m) => {
     const hasPoster = Boolean(m.posterPath);
     const isReleased = Boolean(m.releaseDate && new Date(m.releaseDate).getTime() <= now);
     const hasVotes = (m.voteCount || 0) > 0;
