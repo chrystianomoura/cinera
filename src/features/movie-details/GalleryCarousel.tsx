@@ -175,7 +175,8 @@ export function GalleryCarousel({
           ref={containerRef}
           role="region"
           aria-label="Carrossel da galeria"
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0 [overscroll-behavior-x:contain] [will-change:scroll-position]"
+          tabIndex={0}
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0 [overscroll-behavior-x:contain] [will-change:scroll-position] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded-xl"
         >
           {safeImages.map((path, idx) => (
             <GalleryItem

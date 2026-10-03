@@ -156,7 +156,7 @@ export function MovieDetailsView({
         </div>
       ) : null}
 
-      <header className="sticky top-0 inset-x-0 z-40 px-4 md:px-12 header-bar flex items-center justify-between border-b border-white/10 backdrop-blur-xl bg-black/60">
+      <div className="sticky top-0 inset-x-0 z-40 px-4 md:px-12 header-bar flex items-center justify-between border-b border-white/10 backdrop-blur-xl bg-black/60">
         <h1 className="tracking-widest font-black text-2xl sm:text-3xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
           Cinera
         </h1>
@@ -195,10 +195,10 @@ export function MovieDetailsView({
             </>
           )}
         </button>
-      </header>
+      </div>
 
       {/* 4. CONTEÚDO PRINCIPAL (HERO + METADADOS + FICHA) */}
-      <main className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-page-end flex flex-col gap-6 md:gap-8">
+      <div className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-page-end flex flex-col gap-6 md:gap-8">
         {/* Bloco Superior: Cartaz Flutuante + Informações de Capa perfeitamente alinhados no topo */}
         <section className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start px-4 md:px-0">
           {/* Cartaz com borda em vidro */}
@@ -492,7 +492,7 @@ export function MovieDetailsView({
             <span className="text-sm font-medium">Atualizando ficha técnica...</span>
           </div>
         )}
-      </main>
+      </div>
 
       {/* 7. MODAL DE FOTO AMPLIADA DA GALERIA EM ALTA RESOLUÇÃO */}
       <PhotoModal

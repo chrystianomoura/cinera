@@ -178,6 +178,7 @@ export function UserLibraryView({
         {!isLoading && currentCount === 0 && (
           <StatusMessage
             emoji="😔"
+            titleAs="h2"
             title={
               activeTab === "watchlist"
                 ? "Sua fila de espera está vazia"

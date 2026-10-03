@@ -71,9 +71,9 @@ export const MovieCard = memo(function MovieCard({
       </div>
 
       <div className="flex flex-col px-0.5 pt-1 pointer-events-none select-none">
-        <h4 className="truncate text-sm md:text-base font-bold text-white tracking-tight leading-snug">
+        <p className="truncate text-sm md:text-base font-bold text-white tracking-tight leading-snug">
           {movie.title}
-        </h4>
+        </p>
         <span className="text-xs md:text-[13px] font-medium text-zinc-400 mt-0.5 tracking-normal">
           {releaseYear}
         </span>

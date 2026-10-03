@@ -285,7 +285,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
         </div>
 
         {/* Área de Conteúdo */}
-        <div ref={listRef} className="flex-1 overflow-y-auto p-2 sm:p-3 scrollbar-hide">
+        <div ref={listRef} tabIndex={-1} className="flex-1 overflow-y-auto p-2 sm:p-3 scrollbar-hide focus-visible:outline-none">
           {/* ESTADO 1: Inicial / Vazio (Sem busca ativa) */}
           {debouncedQuery.length < SEARCH_CONFIG.MIN_QUERY_LENGTH && (
             <div className="flex flex-col gap-4 py-4 px-2">
