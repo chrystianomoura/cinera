@@ -1,0 +1,9 @@
+{
+  // Publicação no Cloudflare: o site é só arquivos estáticos (a pasta dist gerada pelo `npm run build`)
+  "name": "cinera",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
