@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import type { CastMember } from "@/domain";
 import { getProfileUrl } from "@/infrastructure/api/movie-service";
 import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
+import { warmImageDecode } from "@/lib/warm-image-decode";
 
 interface CastCarouselProps {
   cast?: CastMember[];
@@ -11,22 +12,6 @@ interface CastCarouselProps {
 
 interface CastItemProps {
   actor: CastMember;
-}
-
-/**
- * Aquece a decodificação da foto fora do momento da interação: na primeira rolagem do carrossel
- * as fotos novas já estão decodificadas e não competem com o movimento.
- */
-function warmImageDecode(img: HTMLImageElement | null) {
-  if (!img || typeof img.decode !== "function") return;
-  const decode = () => {
-    img.decode().catch(() => {});
-  };
-  if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(decode, { timeout: 1500 });
-  } else {
-    setTimeout(decode, 200);
-  }
 }
 
 const CastItem = memo(function CastItem({ actor }: CastItemProps) {

@@ -1,7 +1,8 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Image as ImageIcon, ZoomIn } from "lucide-react";
 import { getBackdropUrl } from "@/infrastructure/api/movie-service";
 import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
+import { warmImageDecode } from "@/lib/warm-image-decode";
 
 interface GalleryCarouselProps {
   images?: string[];
@@ -75,6 +76,7 @@ export function GalleryCarousel({
 
   const {
     containerRef,
+    containerElement,
     canScrollLeft,
     canScrollRight,
     scroll,
@@ -82,6 +84,28 @@ export function GalleryCarousel({
     defaultScrollFraction: 0.75,
     threshold: 12,
   });
+
+  // Quando a galeria se aproxima da tela, carrega e decodifica as cenas (grandes) antes de o
+  // usuário apertar a seta, em vez de decodificá-las no meio do movimento. Quem nunca chega
+  // perto da galeria não baixa as imagens.
+  useEffect(() => {
+    if (!containerElement || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        containerElement.querySelectorAll("img").forEach((img) => {
+          img.loading = "eager";
+          warmImageDecode(img);
+        });
+        observer.disconnect();
+      },
+      { rootMargin: "800px" }
+    );
+
+    observer.observe(containerElement);
+    return () => observer.disconnect();
+  }, [containerElement, images]);
 
   if (isLoading) {
     return (
