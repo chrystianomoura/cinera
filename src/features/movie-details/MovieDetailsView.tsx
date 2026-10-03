@@ -373,7 +373,6 @@ export function MovieDetailsView({
             <WatchProvidersRow
               providers={providers}
               isLoading={isLoadingProviders}
-              movieTitle={movie.title}
             />
 
             {/* Ficha de Produção & Finanças (com Direção no topo) */}
