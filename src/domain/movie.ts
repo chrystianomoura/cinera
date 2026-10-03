@@ -35,6 +35,8 @@ export interface Movie {
   revenue?: number;
   productionCompanies?: ProductionCompany[];
   imdbId?: string | null;
+  /** Categorias do Cinera já calculadas pelo catálogo (até 2); a ficha usa estas quando existem */
+  categories?: string[];
 }
 
 /**

@@ -20,6 +20,8 @@ export const catalogMovieSchema = z.object({
   releaseDate: z.string(),
   tagline: z.string().optional(),
   genres: z.array(genreSchema).optional(),
+  /** Categorias do Cinera (até 2), calculadas pelo build com a classificação única */
+  categories: z.array(z.string()).optional(),
 });
 
 /**

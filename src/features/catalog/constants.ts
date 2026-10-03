@@ -1,20 +1,25 @@
+import { CINERA_CATEGORIES } from "../../domain/classification";
+
 /**
  * Lista oficial de macrogêneros de streaming para o catálogo do Cinera.
  * Consolidação elegante baseada no padrão dos maiores serviços mundiais (Netflix, HBO Max, Disney+).
  */
-export const GENRES = [
-  "Ação & Aventura",
-  "Animação",
-  "Comédia",
-  "Documentário",
-  "Drama",
-  "Ficção & Fantasia",
-  "Romance",
-  "Suspense & Crime",
-  "Terror",
-] as const;
+export const GENRES = CINERA_CATEGORIES;
 
 export type GenreCategory = (typeof GENRES)[number];
+
+/** Nome do arquivo de cada categoria no catálogo curado (public/genres/<slug>.json). */
+export const GENRE_SLUGS: Record<GenreCategory, string> = {
+  "Ação & Aventura": "acao-aventura",
+  "Animação": "animacao",
+  "Comédia": "comedia",
+  "Documentário": "documentario",
+  "Drama": "drama",
+  "Ficção & Fantasia": "ficcao-fantasia",
+  "Romance": "romance",
+  "Suspense & Crime": "suspense-crime",
+  "Terror": "terror",
+};
 
 export interface GenreProfile {
   withGenres: string;
@@ -56,7 +61,7 @@ export const GENRE_PROFILES: Record<GenreCategory, GenreProfile> = {
   },
   "Comédia": {
     withGenres: "35",
-    withoutGenres: "28,12,27,16,53,80", // Sem Ação, Aventura, Terror, Animação, Suspense ou Crime: apenas COMÉDIA LEGÍTIMA
+    withoutGenres: "28,12,27,16,53,80,18,10402,36", // Sem Ação, Aventura, Terror, Animação, Suspense, Crime, Drama, Musical nem História: apenas COMÉDIA LEGÍTIMA (dramédias ficam em Drama)
     sortBy: "popularity.desc",
     minVoteAverage: 6.0,
     minVoteCount: 100,
@@ -100,7 +105,7 @@ export const GENRE_PROFILES: Record<GenreCategory, GenreProfile> = {
   },
   "Romance": {
     withGenres: "10749",
-    withoutGenres: "28,27,878,16,14,80", // Sem ação, terror, sci-fi, animação, fantasia de quadrinhos ou crime
+    withoutGenres: "28,27,878,16,14,80,53,9648", // Sem ação, terror, sci-fi, animação, fantasia, crime, suspense nem mistério: histórias de amor de verdade
     sortBy: "popularity.desc",
     minVoteAverage: 6.2,
     minVoteCount: 80,
