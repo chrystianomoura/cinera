@@ -67,7 +67,6 @@ function getBrandInfo(rawName: string): { brandKey: string; displayName: string 
   if (lower.includes("canal brasil")) return { brandKey: "canal_brasil", displayName: "Canal Brasil" };
   if (lower.includes("prime video") || lower.includes("amazon prime") || lower.includes("amazon video")) return { brandKey: "prime_video", displayName: "Prime Video" };
   if (lower.includes("apple tv") || lower.includes("itunes")) return { brandKey: "apple_tv", displayName: "Apple TV" };
-  if (lower.includes("lionsgate") || lower.includes("starz")) return { brandKey: "lionsgate", displayName: "Lionsgate+" };
   if (lower.includes("universal")) return { brandKey: "universal", displayName: "Universal+" };
   if (lower.includes("adrenalina pura")) return { brandKey: "adrenalina_pura", displayName: "Adrenalina Pura" };
   if (lower.includes("mubi")) return { brandKey: "mubi", displayName: "MUBI" };
@@ -162,7 +161,6 @@ const STREAMING_HOMEPAGES: Record<string, string> = {
   mercado_play: "https://play.mercadolivre.com.br/",
   youtube: "https://www.youtube.com/feed/storefront",
   google_play: "https://www.youtube.com/feed/storefront",
-  lionsgate: "https://www.lionsgate.com/",
   adrenalina_pura: "https://www.adrenalinapura.com/",
   netmovies: "https://www.netmovies.com.br/",
   libreflix: "https://libreflix.org/",
@@ -206,7 +204,6 @@ const LOCAL_LOGO_KEYS = new Set([
   "globoplay",
   "gospel_play",
   "libreflix",
-  "lionsgate",
   "looke",
   "mercado_play",
   "mubi",
@@ -259,7 +256,6 @@ const CHANNEL_HOSTS = [
 const KEEP_OWN_IDENTITY_KEYS = new Set([
   "diamond_films",
   "filmelier",
-  "lionsgate",
   "multishow",
   "sony",
   "universal",
@@ -275,6 +271,10 @@ const DIRECT_SUBSCRIPTION_KEYS = new Set(["universal"]);
 function getChannelInfo(
   rawName: string
 ): { hostKey: string; hostName: string; channelName: string } | null {
+  // No Brasil o Lionsgate+ (antigo Starz) só existe como canal da Amazon, mesmo quando o TMDB o lista como serviço próprio
+  if (/lionsgate|starz/i.test(rawName)) {
+    return { hostKey: "prime_video", hostName: "Prime Video", channelName: "Lionsgate+" };
+  }
   for (const host of CHANNEL_HOSTS) {
     if (host.pattern.test(rawName)) {
       return {
