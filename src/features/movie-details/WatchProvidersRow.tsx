@@ -21,7 +21,7 @@ function ProviderLogo({
 
   if (!logoUrl || hasError) {
     return (
-      <div className="w-7 h-7 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center text-[10px] font-bold text-zinc-300 flex-shrink-0 shadow-sm">
+      <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center text-xs font-bold text-zinc-300 flex-shrink-0 shadow-sm">
         {name.slice(0, 2).toUpperCase()}
       </div>
     );
@@ -31,7 +31,7 @@ function ProviderLogo({
     <img
       src={logoUrl}
       alt=""
-      className="w-7 h-7 rounded-xl object-cover shadow-sm flex-shrink-0"
+      className="w-10 h-10 rounded-xl object-cover shadow-sm flex-shrink-0"
       onError={() => setHasError(true)}
     />
   );
@@ -190,9 +190,40 @@ const STREAMING_HOMEPAGES: Record<string, string> = {
   runtime: "https://www.runtime.tv/",
 };
 
+/**
+ * Logos oficiais das marcas (ícones publicados pelos próprios serviços), servidos de /providers.
+ * Têm prioridade sobre o logo do TMDB, que varia de estilo e traz variantes de "canal".
+ */
+const LOCAL_LOGO_KEYS = new Set([
+  "apple_tv",
+  "belas_artes",
+  "claro",
+  "crunchyroll",
+  "diamond_films",
+  "disney",
+  "filmelier",
+  "filmicca",
+  "globoplay",
+  "gospel_play",
+  "libreflix",
+  "lionsgate",
+  "looke",
+  "mercado_play",
+  "mubi",
+  "multishow",
+  "oldflix",
+  "paramount",
+  "plex",
+  "pluto",
+  "prime_video",
+  "sony",
+  "univer_video",
+  "universal",
+  "vivo",
+]);
+
+/** Marcas sem arquivo local que precisam de um logo específico do TMDB. */
 const BRAND_LOGOS: Record<string, string> = {
-  lionsgate: "/providers/lionsgate.png",
-  disney: "https://image.tmdb.org/t/p/original/5eZ872CghnHFLB1j8grszbrx0dx.png",
   youtube: "https://image.tmdb.org/t/p/original/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
 };
 
@@ -204,55 +235,174 @@ function getStreamingHomeUrl(brandKey: string): string | null {
 }
 
 type ProcessedProvider = WatchProvider & {
+  brandKey: string;
   cleanName: string;
   homeUrl: string;
   logoUrl: string | null;
+  /** Só existe como canal vendido dentro do serviço (Amazon/Apple TV): exige assinatura extra */
+  requiresAddon: boolean;
+  /** Explicação do canal extra para o tooltip (ex.: "via canal Telecine"), ou null */
+  addonNote: string | null;
 };
 
+/** Serviços que vendem canais de terceiros dentro deles (ex.: "Telecine Amazon Channel"). */
+const CHANNEL_HOSTS = [
+  { pattern: /\s+amazon\s+channels?\s*$/i, hostKey: "prime_video", hostName: "Prime Video" },
+  { pattern: /\s+apple\s*tv\s+channels?\s*$/i, hostKey: "apple_tv", hostName: "Apple TV" },
+  { pattern: /\s+google\s*play\s+channels?\s*$/i, hostKey: "youtube", hostName: "YouTube" },
+];
+
 /**
- * Filtra e consolida uma lista bruta de provedores em marcas brasileiras com link ativo
+ * Marcas com logo oficial aprovado que, no Brasil, só chegam por canal da Amazon/Apple TV:
+ * mantêm o próprio nome e logo, com o aviso de canal extra (as demais viram o serviço que as vende).
+ */
+const KEEP_OWN_IDENTITY_KEYS = new Set([
+  "diamond_films",
+  "filmelier",
+  "lionsgate",
+  "multishow",
+  "sony",
+  "universal",
+]);
+
+/** Se o provedor é um canal dentro de outro serviço, devolve o serviço e o nome do canal. */
+function getChannelInfo(
+  rawName: string
+): { hostKey: string; hostName: string; channelName: string } | null {
+  for (const host of CHANNEL_HOSTS) {
+    if (host.pattern.test(rawName)) {
+      return {
+        hostKey: host.hostKey,
+        hostName: host.hostName,
+        channelName: rawName.replace(host.pattern, "").trim(),
+      };
+    }
+  }
+  return null;
+}
+
+/** Variantes de plano (ex.: "Netflix with Ads") perdem para a versão principal; canais perdem de todas. */
+function variantPenalty(rawName: string): number {
+  if (getChannelInfo(rawName)) return 2;
+  return /with\s+ads|standard|basic|premium/i.test(rawName) ? 1 : 0;
+}
+
+/**
+ * Filtra e consolida uma lista bruta de provedores em marcas brasileiras com link ativo.
+ * Quando há várias variantes da mesma marca, usa a principal (logo e nome corretos).
  */
 function filterValidProviders(list: WatchProvider[]): ProcessedProvider[] {
-  const result: ProcessedProvider[] = [];
-  const seenBrands = new Set<string>();
+  const byBrand = new Map<
+    string,
+    { provider: ProcessedProvider; penalty: number; ownIdentity: boolean; notes: Set<string> }
+  >();
 
   for (const p of list) {
-    const { brandKey, displayName } = getBrandInfo(p.providerName);
+    const channel = getChannelInfo(p.providerName);
+    const own = getBrandInfo(p.providerName);
+
+    // Canal: vira o serviço que o vende (Prime Video/Apple TV), exceto as marcas que mantêm a
+    // própria identidade. Em ambos os casos exige um canal extra.
+    const ownIdentity = Boolean(channel) && KEEP_OWN_IDENTITY_KEYS.has(own.brandKey);
+    const { brandKey, displayName } =
+      channel && !ownIdentity
+        ? { brandKey: channel.hostKey, displayName: channel.hostName }
+        : own;
     const homeUrl = getStreamingHomeUrl(brandKey);
 
     // Se a plataforma não tem assinatura/operação direta no Brasil, não exibe o badge
-    if (!homeUrl || seenBrands.has(brandKey)) {
-      continue;
-    }
+    if (!homeUrl) continue;
 
-    seenBrands.add(brandKey);
-    const logoUrl =
-      BRAND_LOGOS[brandKey] ||
-      (p.logoPath ? `https://image.tmdb.org/t/p/original${p.logoPath}` : null);
+    const penalty = variantPenalty(p.providerName);
+    const existing = byBrand.get(brandKey);
+    const notes = existing?.notes ?? new Set<string>();
+    if (channel) notes.add(ownIdentity ? channel.hostName : channel.channelName);
+    if (existing && existing.penalty <= penalty) continue;
 
-    result.push({
-      ...p,
-      cleanName: displayName,
-      homeUrl,
-      logoUrl,
+    const logoUrl = LOCAL_LOGO_KEYS.has(brandKey)
+      ? `/providers/${brandKey}.png`
+      : BRAND_LOGOS[brandKey] ||
+        (p.logoPath ? `https://image.tmdb.org/t/p/original${p.logoPath}` : null);
+
+    byBrand.set(brandKey, {
+      penalty,
+      ownIdentity,
+      notes,
+      provider: {
+        ...p,
+        brandKey,
+        cleanName: displayName,
+        homeUrl,
+        logoUrl,
+        requiresAddon: Boolean(channel),
+        addonNote: null,
+      },
     });
   }
 
-  return result;
+  // Ordem alfabética (A-Z), ignorando acentos e maiúsculas
+  return [...byBrand.values()]
+    .map((entry) => {
+      const names = [...entry.notes].sort().join(", ");
+      const addonNote = entry.provider.requiresAddon
+        ? entry.ownIdentity
+          ? `via canal no ${names}`
+          : `via canal ${names}`
+        : null;
+      return { ...entry.provider, addonNote };
+    })
+    .sort((a, b) => a.cleanName.localeCompare(b.cleanName, "pt-BR", { sensitivity: "base" }));
+}
+
+/** Cartão de uma plataforma: logo, nome e tipo (Assinatura/Aluguel), com link para a página inicial. */
+function ProviderCard({
+  provider,
+  type,
+}: {
+  provider: ProcessedProvider;
+  type: string;
+}) {
+  return (
+    <a
+      href={provider.homeUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={
+        provider.addonNote
+          ? `Acessar home do ${provider.cleanName} — ${provider.addonNote} (Abre em nova aba)`
+          : `Acessar home do ${provider.cleanName} (Abre em nova aba)`
+      }
+      className="group/provider flex items-center gap-3 w-fit max-w-[15rem] px-3 py-2 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-colors duration-200 shadow-md backdrop-blur-md cursor-pointer active:scale-[0.99]"
+    >
+      <ProviderLogo logoUrl={provider.logoUrl} name={provider.cleanName} />
+      <span className="flex flex-col min-w-0 leading-tight text-left">
+        <span className="text-sm font-semibold text-zinc-100 group-hover/provider:text-white tracking-wide truncate">
+          {provider.cleanName}
+        </span>
+        <span className="text-xs text-zinc-400 mt-0.5">
+          {provider.requiresAddon ? `${type} + canal extra` : type}
+        </span>
+      </span>
+    </a>
+  );
 }
 
 export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowProps) {
+  const title = (
+    <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
+      Onde Assistir
+    </h3>
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
-        <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
-          Onde Assistir
-        </h3>
-        <div className="flex justify-center md:justify-start gap-2.5 w-full">
-          {Array.from({ length: 3 }).map((_, i) => (
+        {title}
+        <div className="flex gap-2.5">
+          {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className="w-12 h-10 rounded-2xl bg-zinc-900 border border-white/5 animate-pulse"
+              className="h-14 w-36 rounded-2xl bg-zinc-900 border border-white/5 animate-pulse"
             />
           ))}
         </div>
@@ -260,45 +410,42 @@ export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowPro
     );
   }
 
-  // 1. Tenta plataformas de assinatura (flatrate)
-  const flatrateList = filterValidProviders(providers?.flatrate || []);
+  // Se a plataforma existe em assinatura e em aluguel, mostra só a assinatura (a opção mais barata).
+  // Compra não é exibida.
+  const subscription = filterValidProviders(providers?.flatrate || []);
+  const subscriptionBrands = new Set(subscription.map((provider) => provider.brandKey));
+  const rental = filterValidProviders(providers?.rent || []).filter(
+    (provider) => !subscriptionBrands.has(provider.brandKey)
+  );
 
-  // 2. Se nenhuma plataforma de assinatura tiver URL mapeada válida, faz fallback para aluguel e compra
-  const uniqueProviders =
-    flatrateList.length > 0
-      ? flatrateList
-      : filterValidProviders([
-          ...(providers?.rent || []),
-          ...(providers?.buy || []),
-        ]);
-
-  if (uniqueProviders.length === 0) {
-    return null;
-  }
+  // Cada tipo na sua linha, com os cartões seguindo para a direita
+  const lines = [
+    { type: "Assinatura", list: subscription },
+    { type: "Aluguel", list: rental },
+  ].filter((line) => line.list.length > 0);
 
   return (
     <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
-      <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
-        Onde Assistir
-      </h3>
+      {title}
 
-      <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full">
-        {uniqueProviders.map((provider) => (
-          <a
-            key={provider.providerId}
-            href={provider.homeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={`Acessar home do ${provider.cleanName} (Abre em nova aba)`}
-            className="group/provider relative flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-all duration-200 shadow-md backdrop-blur-md cursor-pointer hover:scale-105 active:scale-95"
-          >
-            <ProviderLogo logoUrl={provider.logoUrl} name={provider.cleanName} />
-            <span className="text-xs font-semibold text-zinc-200 group-hover/provider:text-white tracking-wide transition-colors">
-              {provider.cleanName}
-            </span>
-          </a>
-        ))}
-      </div>
+      {lines.length === 0 ? (
+        <p className="text-zinc-100 font-medium text-xs sm:text-sm text-center md:text-left">
+          Atualmente indisponível para assinatura ou aluguel no Brasil.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2.5 w-full">
+          {lines.map((line) => (
+            <div
+              key={line.type}
+              className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full"
+            >
+              {line.list.map((provider) => (
+                <ProviderCard key={provider.providerId} provider={provider} type={line.type} />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
