@@ -84,8 +84,8 @@ export function HeroFeatured({
   const heroMovie =
     heroList.length > 0 ? heroList[heroIndex % heroList.length] : null;
 
-  // Rotação limpa a cada 6s: congela em modais, fora da tela ou com a aba oculta.
-  // Ao retomar, o intervalo recomeça e o usuário vê a foto atual por 6s completos.
+  // Rotação a cada 7s: congela em modais, fora da tela ou com a aba oculta.
+  // Ao retomar, o intervalo recomeça e o usuário vê a foto atual por 7s completos.
   useEffect(() => {
     if (
       heroList.length <= 1 ||
@@ -110,7 +110,7 @@ export function HeroFeatured({
         setHeroIndex((prev) => (prev + 1) % heroList.length);
         setIsFading(false);
       }, 650);
-    }, 6000);
+    }, 7000);
 
     return () => {
       clearInterval(interval);
