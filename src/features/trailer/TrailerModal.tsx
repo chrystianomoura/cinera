@@ -6,7 +6,9 @@ import { StatusMessage, statusButtonClassName } from "@/features/feedback/Status
 export function TrailerModal() {
   const isOpen = useTrailerStore((state) => state.isOpen);
   const movie = useTrailerStore((state) => state.movie);
-  const trailerKey = useTrailerStore((state) => state.trailerKey);
+  const storedTrailerKey = useTrailerStore((state) => state.trailerKey);
+  // A chave vem de uma API externa e entra na URL do vídeo: só aceita o formato de ID do YouTube
+  const trailerKey = storedTrailerKey && /^[\w-]{6,20}$/.test(storedTrailerKey) ? storedTrailerKey : null;
   const isLoading = useTrailerStore((state) => state.isLoading);
   const onClose = useTrailerStore((state) => state.closeTrailer);
 
@@ -59,6 +61,7 @@ export function TrailerModal() {
               title={`${movie?.title} Trailer`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
               className="w-full h-full border-0"
             />
           ) : !isLoading ? (

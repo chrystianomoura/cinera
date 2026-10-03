@@ -1,0 +1,35 @@
+# Cabeçalhos do Cloudflare Pages (https://developers.cloudflare.com/pages/configuration/headers/)
+
+# --- Segurança, em todas as respostas ---
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://image.tmdb.org; font-src 'self' data:; connect-src 'self' https://api.themoviedb.org https://www.omdbapi.com; frame-src https://www.youtube-nocookie.com; media-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000
+
+# --- Cache ---
+# A página inicial nunca fica guardada, para um novo deploy chegar na hora.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+
+# Arquivos do app têm o hash no nome: podem ficar guardados para sempre.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# O catálogo muda uma vez por dia: o navegador revalida a cada 5 minutos.
+/catalog.json
+  Cache-Control: public, max-age=300, must-revalidate
+/categories.json
+  Cache-Control: public, max-age=300, must-revalidate
+/genres/*
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Logos e ícone quase nunca mudam.
+/providers/*
+  Cache-Control: public, max-age=604800
+/favicon.svg
+  Cache-Control: public, max-age=604800
