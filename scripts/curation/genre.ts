@@ -10,6 +10,7 @@ import { loadCandidates, fmt } from "./modern.js";
 import type { TMDBDetail } from "./pipeline.js";
 import { GENRE_SLUGS, type GenreCategory } from "../../src/features/catalog/constants.js";
 import { classifyMovie } from "../../src/domain/classification.js";
+import { FRANCHISE_UNIQUE_START } from "./validate.js";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../../src/infrastructure/api/tmdb-types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -53,9 +54,11 @@ const CONFIG: RowConfig = {
   maxDivergence: MAX_DIVERGENCE,
   minConsensus: MIN_CONSENSUS,
   requirePrestige: false,
-  strictFranchiseBlock: 0,
+  // Categoria é uma lista longa de um gênero: só o começo (15 primeiros) tem 1 filme por franquia, para abrir variada.
+  // Depois as sagas voltam sem limite, espalhadas com pelo menos 10 posições entre filmes da mesma franquia.
+  strictFranchiseBlock: FRANCHISE_UNIQUE_START,
   franchiseSpacing: 10,
-  maxPerFranchise: 1,
+  maxPerFranchise: Number.POSITIVE_INFINITY,
 };
 
 export interface GenreResult {
@@ -117,14 +120,16 @@ export async function curateGenre(name: GenreCategory, write: boolean): Promise<
   eligible.sort((a, b) => score(b) - score(a));
 
 
-  const ranked = buildRanking(eligible, { ...CONFIG, minImdbVotes: minVotes }, LIST_SIZE).picked;
+  const ranking = buildRanking(eligible, { ...CONFIG, minImdbVotes: minVotes }, LIST_SIZE);
+  const ranked = ranking.picked;
 
-  // Giro diário que preserva o nível: os 10 primeiros alternam em blocos de 5; depois blocos maiores
+  // Giro diário que preserva o nível: os 15 primeiros alternam em blocos de 5 (sem cruzar o limite onde as sagas
+  // voltam a poder repetir); depois blocos maiores
   const day = dayIndex();
   const picked = [
-    ...rotateBlocks(ranked.slice(0, 10), 5, day),
-    ...rotateBlocks(ranked.slice(10, 40), 6, day),
-    ...rotateBlocks(ranked.slice(40), 10, day),
+    ...rotateBlocks(ranked.slice(0, FRANCHISE_UNIQUE_START), 5, day),
+    ...rotateBlocks(ranked.slice(FRANCHISE_UNIQUE_START, 45), 6, day),
+    ...rotateBlocks(ranked.slice(45), 10, day),
   ];
 
   console.log(`3) ${picked.length} filmes (elegíveis ${eligible.length} de ${candidates.length})`);

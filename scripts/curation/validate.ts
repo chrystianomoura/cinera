@@ -90,6 +90,9 @@ export function validateCatalog(
   return { errors, catalog };
 }
 
+/** Nas categorias, as primeiras posições não repetem franquia; depois as sagas voltam, espalhadas */
+export const FRANCHISE_UNIQUE_START = 15;
+
 /** Tamanho mínimo de cada categoria (documentário tem menos filmes com público suficiente) */
 const MIN_GENRE_SIZE: Partial<Record<GenreCategory, number>> = { "Documentário": 40 };
 const DEFAULT_MIN_GENRE_SIZE = 80;
@@ -113,12 +116,12 @@ export function validateGenre(name: GenreCategory, raw: unknown): string[] {
   for (const m of movies) {
     if (!m.categories?.includes(name)) errors.push(`${name}: "${m.title}" não tem a categoria "${name}" na classificação (${(m.categories ?? []).join(" / ") || "sem categorias"})`);
   }
-  const keys = new Map<string, number>();
-  for (const m of movies) {
+  const seenStart = new Set<string>();
+  for (const m of movies.slice(0, FRANCHISE_UNIQUE_START)) {
     const key = getFranchiseKey(m.title, m.originalTitle);
-    keys.set(key, (keys.get(key) ?? 0) + 1);
+    if (seenStart.has(key)) errors.push(`${name}: franquia "${key}" repetida entre as ${FRANCHISE_UNIQUE_START} primeiras`);
+    seenStart.add(key);
   }
-  for (const [key, n] of keys) if (n > 1) errors.push(`${name}: ${n} filmes da franquia "${key}" (máximo 1)`);
   return errors;
 }
 
