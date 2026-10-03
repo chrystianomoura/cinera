@@ -1,4 +1,4 @@
-import { useState, useId, useEffect, useRef } from "react";
+import { useState, useId, useEffect, useMemo, useRef } from "react";
 import {
   X,
   Bookmark,
@@ -33,12 +33,24 @@ export function UserLibraryView({
   const watchedIds = useUserLibrary((state) => state.watched);
   const toggleWatchlist = useUserLibrary((state) => state.toggleWatchlist);
   const toggleWatched = useUserLibrary((state) => state.toggleWatched);
+  const savedMovies = useUserLibrary((state) => state.movies);
+  const rememberMovies = useUserLibrary((state) => state.rememberMovies);
 
-  // Carrega os dados dos filmes salvos enquanto a biblioteca estiver ativa no fluxo
-  const { movies: watchlistMovies, isLoading: isLoadingWatchlist } =
-    useLibraryMovies(watchlistIds, isLibraryActive);
-  const { movies: watchedMovies, isLoading: isLoadingWatched } =
-    useLibraryMovies(watchedIds, isLibraryActive);
+  // Só busca na rede os filmes salvos sem resumo (salvos antes desta versão): os demais aparecem na hora
+  const watchlistMissing = useMemo(() => watchlistIds.filter((id) => !savedMovies[id]), [watchlistIds, savedMovies]);
+  const watchedMissing = useMemo(() => watchedIds.filter((id) => !savedMovies[id]), [watchedIds, savedMovies]);
+  const { movies: fetchedWatchlist, isLoading: isLoadingWatchlist } =
+    useLibraryMovies(watchlistMissing, isLibraryActive);
+  const { movies: fetchedWatched, isLoading: isLoadingWatched } =
+    useLibraryMovies(watchedMissing, isLibraryActive);
+
+  // Completa o resumo dos filmes recém-buscados para as próximas aberturas
+  useEffect(() => {
+    if (fetchedWatchlist.length > 0) rememberMovies(fetchedWatchlist);
+  }, [fetchedWatchlist, rememberMovies]);
+  useEffect(() => {
+    if (fetchedWatched.length > 0) rememberMovies(fetchedWatched);
+  }, [fetchedWatched, rememberMovies]);
 
   const titleId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -74,9 +86,18 @@ export function UserLibraryView({
 
   if (!isOpen) return null;
 
-  const currentMovies = activeTab === "watchlist" ? watchlistMovies : watchedMovies;
-  const currentCount = activeTab === "watchlist" ? watchlistIds.length : watchedIds.length;
+  const currentIds = activeTab === "watchlist" ? watchlistIds : watchedIds;
+  const fetchedMovies = activeTab === "watchlist" ? fetchedWatchlist : fetchedWatched;
+  const currentCount = currentIds.length;
   const isLoading = activeTab === "watchlist" ? isLoadingWatchlist : isLoadingWatched;
+
+  // Cada ID ocupa o seu lugar na ordem salva: resumo guardado, senão o que chegou da rede, senão um
+  // espaço reservado (a grade nunca se reorganiza enquanto os filmes chegam)
+  const slots = currentIds.flatMap((id): { id: number; movie: Movie | undefined }[] => {
+    const movie: Movie | undefined = savedMovies[id] ?? fetchedMovies.find((m) => m.id === id);
+    if (movie) return [{ id, movie }];
+    return isLoading ? [{ id, movie: undefined }] : [];
+  });
 
   return (
     <div
@@ -153,14 +174,6 @@ export function UserLibraryView({
           </button>
         </div>
 
-        {/* Estado Carregando */}
-        {isLoading && currentMovies.length === 0 && currentCount > 0 && (
-          <div className="py-24 flex flex-col items-center justify-center gap-3 text-zinc-400 animate-pulse">
-            <Film size={36} className="text-zinc-600 animate-spin" />
-            <p className="text-sm font-medium">Carregando seus títulos salvos...</p>
-          </div>
-        )}
-
         {/* Empty State Estratégico: exibido quando não há itens */}
         {!isLoading && currentCount === 0 && (
           <StatusMessage
@@ -184,11 +197,12 @@ export function UserLibraryView({
         )}
 
         {/* Grid de Filmes */}
-        {currentMovies.length > 0 && (
-          <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5 animate-in fade-in duration-300">
-            {currentMovies.map((movie) => (
+        {slots.length > 0 && (
+          <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5">
+            {slots.map(({ id, movie }) =>
+              movie ? (
               <LibraryMovieCard
-                key={movie.id}
+                key={id}
                 movie={movie}
                 activeTab={activeTab}
                 onSelectMovie={onSelectMovie}
@@ -200,9 +214,28 @@ export function UserLibraryView({
                   }
                 }}
               />
-            ))}
+              ) : (
+                <LibraryPlaceholderCard key={id} />
+              ),
+            )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** Espaço reservado com as mesmas proporções do card, para o filme que ainda não chegou. */
+function LibraryPlaceholderCard() {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex flex-col rounded-xl overflow-hidden bg-zinc-900/60 border border-white/5 animate-pulse"
+    >
+      <div className="aspect-[2/3] w-full bg-zinc-900" />
+      <div className="p-2.5 flex flex-col justify-center gap-1.5 h-[58.5px]">
+        <div className="h-4 w-3/4 rounded bg-zinc-800" />
+        <div className="h-3 w-1/4 rounded bg-zinc-800" />
       </div>
     </div>
   );

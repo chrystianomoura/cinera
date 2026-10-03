@@ -327,7 +327,7 @@ export function MovieDetailsView({
                 {/* 2. Quero Assistir (Watchlist com toggle exclusivo e paleta Cinera) */}
                 <button
                   type="button"
-                  onClick={() => toggleWatchlist(movie.id)}
+                  onClick={() => toggleWatchlist(movie.id, movie)}
                   aria-pressed={isWatchlist}
                   className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
                     isWatchlist
@@ -346,7 +346,7 @@ export function MovieDetailsView({
                 {/* 3. Já Assisti (Watched History com toggle exclusivo e paleta Cinera) */}
                 <button
                   type="button"
-                  onClick={() => toggleWatched(movie.id)}
+                  onClick={() => toggleWatched(movie.id, movie)}
                   aria-pressed={isWatched}
                   className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
                     isWatched
