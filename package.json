@@ -8,7 +8,13 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:search": "tsx scripts/audit-search.ts"
+    "test:search": "tsx scripts/audit-search.ts",
+    "curate:aclamados": "tsx scripts/curate-aclamados.ts",
+    "curate:classicos": "tsx scripts/curate-classicos.ts",
+    "curate:em-alta": "tsx scripts/curate-em-alta.ts",
+    "curate:novidades": "tsx scripts/curate-novidades.ts",
+    "curate:populares": "tsx scripts/curate-populares.ts",
+    "curate:hero": "tsx scripts/build-hero.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

@@ -1,0 +1,32 @@
+{
+  "em-alta": [
+    {
+      "id": 1339713,
+      "title": "Obsessão"
+    }
+  ],
+  "novidades": [
+    {
+      "id": 1439930,
+      "title": "O Justiceiro: Uma Última Morte"
+    }
+  ],
+  "aclamados": [
+    {
+      "id": 872585,
+      "title": "Oppenheimer"
+    }
+  ],
+  "classicos": [
+    {
+      "id": 857,
+      "title": "O Resgate do Soldado Ryan"
+    }
+  ],
+  "populares": [
+    {
+      "id": 299534,
+      "title": "Vingadores: Ultimato"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+// Curadoria da fileira "Populares no Brasil": o que o público brasileiro mais procura, com qualidade comprovada.
+// Uso: npm run curate:populares            (só mostra o relatório)
+//      npm run curate:populares -- --write  (grava a fileira em public/catalog.json)
+// Ordem = 65% popularidade no Brasil (posição na lista do TMDB com region=BR) + 35% qualidade.
+import { loadEnv, tmdb, mapLimit } from "./curation/sources.js";
+import { type Candidate, buildRanking, franchiseOf } from "./curation/scoring.js";
+import { writeCatalogRow } from "./curation/pipeline.js";
+import { MODERN_CONFIG, fmt, quality, qualityNorm, modernExclusion, showcaseOrder, loadCandidates } from "./curation/modern.js";
+import { mapTMDBMovie } from "../src/infrastructure/api/tmdb-mappers.js";
+import { filterQualifiedMovies, dedupeFranchises } from "../src/infrastructure/api/curation-filters.js";
+import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../src/infrastructure/api/tmdb-types.js";
+
+loadEnv();
+
+const LIST_SIZE = 40;
+const POPULAR_PAGES = 15;
+
+async function main() {
+  const today = new Date().toISOString().slice(0, 10);
+
+  console.log("1) Reunindo os filmes populares no Brasil (TMDB, region=BR)...");
+  const lists = await mapLimit(Array.from({ length: POPULAR_PAGES }, (_, i) => i + 1), 5, (p) =>
+    tmdb<TMDBPaginatedResponse<TMDBMovieRaw>>(`/movie/popular?language=pt-BR&region=BR&page=${p}`),
+  );
+  const popular = lists.flatMap((r) => r.results);
+  const popularity = new Map<number, number>();
+  popular.forEach((m, i) => {
+    if (!popularity.has(m.id)) popularity.set(m.id, 1 - i / popular.length);
+  });
+  console.log(`   ${popularity.size} filmes populares`);
+
+  console.log("2) Detalhes e notas...");
+  const { details, candidates } = await loadCandidates([...popularity.keys()]);
+  const detailById = new Map(details.map((d) => [d.id, d]));
+
+  const reasons = new Map<number, string>();
+  const eligible: Candidate[] = [];
+  for (const c of candidates) {
+    const reason = modernExclusion(c, detailById.get(c.id)!, today);
+    if (reason) reasons.set(c.id, reason);
+    else eligible.push(c);
+  }
+  const score = (c: Candidate) => 0.65 * (popularity.get(c.id) ?? 0) + 0.35 * qualityNorm(c);
+  eligible.sort((a, b) => score(b) - score(a));
+
+  const { picked, skipped } = buildRanking(showcaseOrder(eligible), MODERN_CONFIG, LIST_SIZE);
+  for (const s of skipped) reasons.set(s.candidate.id, s.reason);
+  const rank = new Map(picked.map((c, i) => [c.id, i + 1]));
+
+  console.log(`\n=== NOVA LISTA (${picked.length} filmes) — populares ${candidates.length}, elegíveis ${eligible.length}`);
+  picked.forEach((c, i) =>
+    console.log(
+      `${String(i + 1).padStart(2)}. ${c.title.slice(0, 38).padEnd(38)} ${c.year}  pop ${fmt(popularity.get(c.id) ?? 0, 2)} qual ${fmt(quality(c), 2)} | TMDB ${fmt(c.tmdbRating)} IMDb ${fmt(c.imdbRating)} (${c.imdbVotes ?? "—"} votos)`,
+    ),
+  );
+
+  const todayPages = await mapLimit([1, 2, 3, 4, 5], 5, (p) => tmdb<TMDBPaginatedResponse<TMDBMovieRaw>>(`/movie/popular?language=pt-BR&page=${p}`));
+  const current = dedupeFranchises(filterQualifiedMovies(todayPages.flatMap((p) => p.results).map(mapTMDBMovie), 6.0, 30));
+  console.log(`\n=== LISTA ATUAL DO APP (${current.length} filmes) e o que aconteceria com cada filme`);
+  current.slice(0, 25).forEach((m, i) => {
+    const c = candidates.find((x) => x.id === m.id);
+    const status = rank.has(m.id) ? `fica na posição ${rank.get(m.id)}` : `SAI: ${reasons.get(m.id) ?? "fora do corte"}`;
+    console.log(`${String(i + 1).padStart(2)}. ${m.title.slice(0, 38).padEnd(38)} TMDB ${fmt(c?.tmdbRating ?? null)} IMDb ${fmt(c?.imdbRating ?? null)} → ${status}`);
+  });
+
+  const groups = new Map<string, number[]>();
+  picked.forEach((c, i) => groups.set(franchiseOf(c), [...(groups.get(franchiseOf(c)) ?? []), i + 1]));
+  const multi = [...groups.entries()].filter(([, l]) => l.length > 1);
+  console.log(`\n=== Franquias repetidas: ${multi.length === 0 ? "nenhuma" : multi.map(([k, l]) => `${k} (#${l.join(", #")})`).join("; ")}`);
+
+  if (process.argv.includes("--write")) writeCatalogRow({ id: "populares" }, picked, details);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
