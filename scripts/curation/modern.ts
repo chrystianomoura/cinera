@@ -111,6 +111,7 @@ export async function loadCandidates(ids: number[]): Promise<{ details: TMDBDeta
     collectionName: d.belongs_to_collection?.name ?? null,
     genres: d.genres.map((g) => g.name),
     awards: omdb[i]?.awards ?? null,
+    imdbGenres: omdb[i]?.genres ?? null,
   }));
   return { details, candidates };
 }

@@ -17,6 +17,8 @@ export interface Candidate {
   collectionName: string | null;
   genres: string[];
   awards: AwardsInfo | null;
+  /** Gêneros do IMDb (em inglês), quando o OMDb os trouxe */
+  imdbGenres: string[] | null;
 }
 
 export interface RowConfig {
@@ -116,6 +118,16 @@ export function franchiseOf(c: Candidate): string {
   return `titulo:${getFranchiseKey(c.title, c.originalTitle)}`;
 }
 
+/**
+ * Todas as chaves pelas quais o filme pode ser reconhecido como parte de uma franquia: universo,
+ * coleção do TMDB e título. Reboots e refilmagens costumam estar em coleções diferentes do original
+ * (Alien e Aliens, Star Trek de 1979 e de 2009), mas têm o mesmo nome: a chave de título os junta.
+ */
+export function franchiseKeysOf(c: Candidate): string[] {
+  const keys = new Set<string>([franchiseOf(c), `titulo:${getFranchiseKey(c.title, c.originalTitle)}`]);
+  return [...keys];
+}
+
 export interface Skipped {
   candidate: Candidate;
   reason: string;
@@ -135,19 +147,22 @@ export function buildRanking(sorted: Candidate[], cfg: RowConfig, limit: number)
   let waiting: Candidate[] = [];
 
   const accept = (c: Candidate) => {
-    const key = franchiseOf(c);
     picked.push(c);
-    lastPosition.set(key, picked.length - 1);
-    count.set(key, (count.get(key) ?? 0) + 1);
+    for (const key of franchiseKeysOf(c)) {
+      lastPosition.set(key, picked.length - 1);
+      count.set(key, (count.get(key) ?? 0) + 1);
+    }
   };
 
+  // Vale a pior das chaves: basta uma delas já estar na lista para a regra de franquia valer
   const canAccept = (c: Candidate) => {
-    const key = franchiseOf(c);
-    const n = count.get(key) ?? 0;
+    const keys = franchiseKeysOf(c);
+    const n = Math.max(...keys.map((key) => count.get(key) ?? 0));
     if (n === 0) return true;
     if (picked.length < cfg.strictFranchiseBlock) return false;
     if (n >= cfg.maxPerFranchise) return false;
-    return picked.length - (lastPosition.get(key) ?? 0) >= cfg.franchiseSpacing;
+    const last = Math.max(...keys.map((key) => lastPosition.get(key) ?? 0));
+    return picked.length - last >= cfg.franchiseSpacing;
   };
 
   for (const c of sorted) {

@@ -81,6 +81,8 @@ export interface OmdbRecord {
   metascore: number | null;
   rottenTomatoes: number | null;
   awards: AwardsInfo;
+  /** Gêneros do IMDb (em inglês), na ordem do IMDb */
+  genres: string[];
 }
 
 export class OmdbLimitError extends Error {}
@@ -128,8 +130,8 @@ function parseAwards(text: unknown): AwardsInfo {
 
 /** Notas do OMDb por IMDb ID, com cache em disco (inclui "sem dados") para respeitar a cota diária. */
 export async function omdbByImdbId(imdbId: string): Promise<OmdbRecord | null> {
-  // Registros antigos (sem prêmios) são buscados de novo
-  if (imdbId in omdbCache && (omdbCache[imdbId] === null || omdbCache[imdbId]?.awards !== undefined)) {
+  // Registros antigos (sem prêmios ou sem gêneros) são buscados de novo
+  if (imdbId in omdbCache && (omdbCache[imdbId] === null || (omdbCache[imdbId]?.awards !== undefined && omdbCache[imdbId]?.genres !== undefined))) {
     return omdbCache[imdbId];
   }
 
@@ -156,6 +158,7 @@ export async function omdbByImdbId(imdbId: string): Promise<OmdbRecord | null> {
     metascore: toNumber(json.Metascore),
     rottenTomatoes: toNumber(rt),
     awards: parseAwards(json.Awards),
+    genres: typeof json.Genre === "string" && json.Genre !== "N/A" ? json.Genre.split(",").map((g) => g.trim()).filter(Boolean) : [],
   };
   omdbCache[imdbId] = record;
   return record;

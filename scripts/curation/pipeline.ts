@@ -16,6 +16,7 @@ import {
   franchiseOf,
 } from "./scoring.js";
 import { dayIndex, rotateLanes, rotateBlocks } from "./rotation.js";
+import { classifyMovie } from "../../src/domain/classification.js";
 import { mapTMDBMovie } from "../../src/infrastructure/api/tmdb-mappers.js";
 import { filterQualifiedMovies, dedupeFranchises } from "../../src/infrastructure/api/curation-filters.js";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../../src/infrastructure/api/tmdb-types.js";
@@ -108,6 +109,7 @@ export function writeCatalogRow(def: { id: CatalogRowId }, picked: Candidate[], 
       releaseDate: d.release_date,
       tagline: d.tagline || undefined,
       genres: d.genres,
+      categories: classifyMovie({ tmdbGenres: d.genres.map((g) => g.name), imdbGenres: c.imdbGenres }),
     };
   });
 
@@ -172,6 +174,7 @@ export async function runRow(def: RowDefinition) {
     collectionName: d.belongs_to_collection?.name ?? null,
     genres: d.genres.map((g) => g.name),
     awards: omdb[i]?.awards ?? null,
+    imdbGenres: omdb[i]?.genres ?? null,
   }));
   const detailById = new Map(details.map((d) => [d.id, d]));
 
