@@ -16,6 +16,7 @@ export type LibraryMovie = Pick<
   | "popularity"
   | "releaseDate"
   | "genres"
+  | "categories"
 >;
 
 export function toLibraryMovie(movie: Movie): LibraryMovie {
@@ -31,6 +32,7 @@ export function toLibraryMovie(movie: Movie): LibraryMovie {
     popularity: movie.popularity,
     releaseDate: movie.releaseDate,
     genres: movie.genres,
+    categories: movie.categories,
   };
 }
 

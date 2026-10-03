@@ -4,7 +4,9 @@ import { useSearchStore } from "./use-search-store";
 import { useMovieSearch } from "./use-movie-search";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import { SEARCH_CONFIG } from "@/infrastructure/search/search-service";
-import type { Movie } from "@/domain";
+import { formatCategories, type Movie } from "@/domain";
+import { useCategoryIndex } from "@/hooks/use-category-index";
+import { resolveCategories } from "@/infrastructure/catalog/category-index";
 import { GENRES } from "../catalog/constants";
 import { registerSearchInput } from "./open-search";
 import { StatusMessage, statusButtonClassName } from "@/features/feedback/StatusMessage";
@@ -15,6 +17,7 @@ interface SearchModalProps {
 }
 
 export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) {
+  const { data: categoryIndex } = useCategoryIndex();
   const {
     isOpen,
     query,
@@ -325,6 +328,8 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                 const releaseYear = movie.releaseDate
                   ? movie.releaseDate.slice(0, 4)
                   : null;
+                // Só categorias que existem no Cinera (as mesmas da ficha), nunca gêneros soltos do TMDB
+                const categoryLabel = formatCategories(resolveCategories(movie, categoryIndex));
 
                 return (
                   <div
@@ -368,13 +373,11 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                           <span className="text-zinc-300 font-semibold">{releaseYear}</span>
                         )}
 
-                        {movie.genres && movie.genres.length > 0 && (
+                        {categoryLabel && (
                           <>
                             {/* Ponto Divisor com Contraste Marcante */}
                             <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 inline-block flex-shrink-0" />
-                            <span className="truncate text-zinc-300">
-                              {movie.genres.slice(0, 2).map((g) => g.name).join(" / ")}
-                            </span>
+                            <span className="truncate text-zinc-300">{categoryLabel}</span>
                           </>
                         )}
                       </div>

@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import { X, Play, Bookmark, Check, Film, Loader2, ArrowLeft } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getPosterUrl, getBackdropUrl } from "@/infrastructure/api/movie-service";
-import { formatRuntime, formatCurrencyUSD, formatCuratedGenres } from "@/lib/formatters";
+import { formatRuntime, formatCurrencyUSD } from "@/lib/formatters";
+import { formatCategories } from "@/domain";
+import { useCategoryIndex } from "@/hooks/use-category-index";
+import { resolveCategories } from "@/infrastructure/catalog/category-index";
 import { extractDominantColor } from "@/lib/color-extractor";
 import { useMovieFullDetails } from "@/hooks/use-movie-full-details";
 import { useUserLibrary } from "@/stores/use-user-library";
@@ -45,6 +48,7 @@ export function MovieDetailsView({
   } = useMovieFullDetails(movieId);
 
   const movie = detailedMovie || initialMovie;
+  const { data: categoryIndex } = useCategoryIndex();
 
   const { watchlist, watched, toggleWatchlist, toggleWatched } = useUserLibrary();
   const isWatchlist = movieId ? watchlist.includes(movieId) : false;
@@ -100,7 +104,8 @@ export function MovieDetailsView({
   const backdropUrl = movie.backdropPath ? getBackdropUrl(movie.backdropPath, "w1280") : null;
   const releaseYear = movie.releaseDate ? movie.releaseDate.slice(0, 4) : null;
   const duration = formatRuntime(movie.runtime);
-  const curatedGenres = formatCuratedGenres(movie.genres);
+  // Categorias do Cinera: as mesmas da pesquisa e das listas (catálogo, ou classificação por tags do TMDB)
+  const curatedGenres = formatCategories(resolveCategories({ ...movie, categories: initialMovie?.categories ?? movie.categories }, categoryIndex));
 
   const originalTitle = movie.originalTitle;
   const formattedBudget = formatCurrencyUSD(movie.budget);
