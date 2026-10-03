@@ -6,6 +6,7 @@ import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import { SEARCH_CONFIG } from "@/infrastructure/search/search-service";
 import type { Movie } from "@/domain";
 import { GENRES } from "../catalog/constants";
+import { registerSearchInput } from "./open-search";
 
 interface SearchModalProps {
   onSelectMovie: (movie: Movie) => void;
@@ -37,6 +38,9 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
   useEffect(() => {
     if (isOpen && !isPausedForDetails) {
       previouslyFocusedRef.current ??= document.activeElement as HTMLElement | null;
+      // Em dispositivos de toque o foco vem do próprio toque (openSearchAndFocus); forçar o foco aqui
+      // faria o teclado cobrir os resultados ao voltar dos detalhes.
+      if (window.matchMedia("(pointer: coarse)").matches) return;
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
@@ -193,8 +197,12 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
           <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
 
           <input
-            ref={inputRef}
+            ref={(node) => {
+              inputRef.current = node;
+              registerSearchInput(node);
+            }}
             type="text"
+            enterKeyHint="search"
             role="combobox"
             aria-autocomplete="list"
             aria-haspopup="listbox"

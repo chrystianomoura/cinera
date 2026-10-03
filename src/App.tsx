@@ -16,6 +16,7 @@ import { TrailerModal } from "@/features/trailer/TrailerModal";
 import { SearchModal } from "@/features/search/SearchModal";
 import { UserLibraryView } from "@/features/library/UserLibraryView";
 import { useSearchStore } from "@/features/search/use-search-store";
+import { openSearchAndFocus } from "@/features/search/open-search";
 import { smoothScrollToTop } from "@/lib/smooth-scroll";
 
 export default function App() {
@@ -147,7 +148,7 @@ export default function App() {
         if (store.isOpen) {
           store.closeSearch();
         } else {
-          store.openSearch();
+          openSearchAndFocus();
         }
       }
     };
@@ -223,7 +224,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-page-end relative flex flex-col">
       <Header
-        onSearchClick={useSearchStore.getState().openSearch}
+        onSearchClick={openSearchAndFocus}
         onLibraryClick={() => setIsLibraryOpen(true)}
         onLogoClick={handleLogoClick}
       />
