@@ -61,7 +61,12 @@ async function main() {
   const reasons = new Map<number, string>();
   const eligible: Candidate[] = [];
   for (const c of candidates) {
-    const reason = modernExclusion(c, detailById.get(c.id)!, today) ?? unknownReason(c, ageDays(c));
+    // A busca com region=BR usa a data de lançamento no Brasil, então reexibições de filmes antigos (como a de um
+    // filme de terror perto do Halloween) entram no conjunto: novidade é pela data de lançamento original
+    const reason =
+      modernExclusion(c, detailById.get(c.id)!, today) ??
+      (ageDays(c) > LOOKBACK_DAYS ? "reexibição de filme antigo, lançado há mais de 12 meses" : null) ??
+      unknownReason(c, ageDays(c));
     if (reason) reasons.set(c.id, reason);
     else eligible.push(c);
   }
