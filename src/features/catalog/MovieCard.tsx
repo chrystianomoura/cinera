@@ -54,9 +54,9 @@ export const MovieCard = memo(function MovieCard({
               onError={() => setHasError(true)}
             />
           ) : (
-            <div className="flex flex-col h-full w-full items-center justify-center bg-zinc-900 text-zinc-500 text-center p-4 pointer-events-none">
+            <div className="flex flex-col h-full w-full items-center justify-center bg-zinc-900 text-zinc-400 text-center p-4 pointer-events-none">
               <Film className="w-8 h-8 mb-2 text-zinc-600" />
-              <span className="text-[10px] uppercase tracking-widest mb-1 font-mono text-zinc-500">
+              <span className="text-[10px] uppercase tracking-widest mb-1 font-mono text-zinc-400">
                 Sem Imagem
               </span>
               <span className="font-semibold text-xs leading-tight text-zinc-400 line-clamp-2">
