@@ -17,7 +17,8 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"], ...browser } },
   ],
   webServer: {
-    command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
+    // A chave de mentira só liga o modo "com TMDB" do app; as respostas vêm das simulações em e2e/fixtures.ts
+    command: `VITE_TMDB_API_KEY=e2e npm run build && npm run preview -- --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !isCI,
     timeout: 120_000,
