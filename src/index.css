@@ -15,6 +15,27 @@
   padding-bottom: var(--page-end-space);
 }
 
+/* Altura única do cabeçalho em todas as telas (Home, ficha e biblioteca) */
+:root {
+  --header-height: 61px;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --header-height: 65px;
+  }
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --header-height: 69px;
+  }
+}
+
+@utility header-bar {
+  height: var(--header-height);
+}
+
 /* Barras de rolagem escondidas em todo o app: a rolagem (roda, trackpad, teclado e toque) segue
    funcionando normalmente, só o desenho da barra some. */
 * {

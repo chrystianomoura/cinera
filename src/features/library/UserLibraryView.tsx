@@ -87,7 +87,7 @@ export function UserLibraryView({
       className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-2xl flex flex-col animate-in fade-in duration-300 overflow-y-auto"
     >
       {/* Topo / Header da Biblioteca (Identidade Consistente Cinera) */}
-      <div className="sticky top-0 z-20 bg-black/90 backdrop-blur-xl border-b border-white/10 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-20 bg-black/60 backdrop-blur-xl border-b border-white/10 px-4 md:px-12 header-bar flex items-center justify-between">
         <BrandLogo onClick={scrollLibraryToTop} titleId={titleId} />
 
         <button
@@ -95,7 +95,7 @@ export function UserLibraryView({
           onClick={onClose}
           aria-label="Fechar biblioteca"
           title="Fechar (Esc)"
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group active:scale-95"
+          className="flex items-center gap-2 px-4 h-10 sm:h-11 rounded-full bg-zinc-800/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group active:scale-95"
         >
           <span className="text-xs font-semibold uppercase tracking-wider hidden sm:inline">
             Voltar

@@ -151,7 +151,7 @@ export function MovieDetailsView({
         </div>
       ) : null}
 
-      <header className="sticky top-0 inset-x-0 z-40 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between border-b border-white/10 backdrop-blur-xl bg-black/60">
+      <header className="sticky top-0 inset-x-0 z-40 px-4 md:px-12 header-bar flex items-center justify-between border-b border-white/10 backdrop-blur-xl bg-black/60">
         <h1 className="tracking-widest font-black text-2xl sm:text-3xl md:text-[2.65rem] leading-none text-white uppercase font-serif flex-shrink-0 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
           Cinera
         </h1>
@@ -172,7 +172,7 @@ export function MovieDetailsView({
               ? "Voltar para a biblioteca (Esc)"
               : "Fechar (Esc)"
           }
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group"
+          className="flex items-center gap-2 px-4 h-10 sm:h-11 rounded-full bg-zinc-800/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group"
         >
           {isFromSearch ? (
             <>

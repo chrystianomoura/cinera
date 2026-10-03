@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export function Header({ onSearchClick, onLibraryClick, onLogoClick }: HeaderProps) {
   return (
-    <header className="sticky top-0 inset-x-0 z-50 px-4 md:px-12 py-2.5 md:py-3 flex items-center justify-between gap-4 border-b border-white/10 backdrop-blur-xl bg-black/60">
+    <header className="sticky top-0 inset-x-0 z-50 px-4 md:px-12 header-bar flex items-center justify-between gap-4 border-b border-white/10 backdrop-blur-xl bg-black/60">
       <BrandLogo onClick={onLogoClick} />
 
       <div className="flex items-center gap-2.5 sm:gap-3">
