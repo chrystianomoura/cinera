@@ -3,6 +3,7 @@ import type { Movie } from "@/domain";
 import { MovieCarousel } from "./MovieCarousel";
 import { useCatalog } from "@/hooks/use-catalog";
 import type { CatalogRowId } from "@/infrastructure/catalog/catalog-schema";
+import { createDeduper } from "@/infrastructure/catalog/home-assembly";
 import {
   useTrendingMovies,
   useNewReleasesMovies,
@@ -45,19 +46,7 @@ export function HomeFeed({ excludeIds, isFadingOut = false, onSelectMovie }: Hom
       catalog?.rows.find((row) => row.id === id)?.movies;
 
     // Garante unicidade de filmes entre as seções (e em relação ao destaque)
-    const seenIds = new Set<number>(excludedKey ? excludedKey.split(",").map(Number) : []);
-    const dedupe = (list?: Movie[], limit: number = 20) => {
-      if (!list) return [];
-      const result: Movie[] = [];
-      for (const m of list) {
-        if (!seenIds.has(m.id)) {
-          seenIds.add(m.id);
-          result.push(m);
-          if (result.length >= limit) break;
-        }
-      }
-      return result;
-    };
+    const dedupe = createDeduper<Movie>(excludedKey ? excludedKey.split(",").map(Number) : []);
 
     const define = (
       id: CatalogRowId,
@@ -77,8 +66,9 @@ export function HomeFeed({ excludeIds, isFadingOut = false, onSelectMovie }: Hom
     };
 
     return [
-      define("em-alta", "Em Alta", "🔥", { results: trendingData?.results, isLoading: isLoadingTrending, isError: isErrorTrending }),
+      // Novidades vem antes: fica com os grandes lançamentos do ano e Em Alta com o que sobra em tendência
       define("novidades", "Novidades", "✨", { results: newData?.results, isLoading: isLoadingNew, isError: isErrorNew }),
+      define("em-alta", "Em Alta", "🔥", { results: trendingData?.results, isLoading: isLoadingTrending, isError: isErrorTrending }),
       define("aclamados", "Aclamados pela Crítica", "⭐", { results: topData?.results, isLoading: isLoadingTop, isError: isErrorTop }),
       define("classicos", "Clássicos Indispensáveis", "🏆", { results: classicsData?.results, isLoading: isLoadingClassics, isError: isErrorClassics }),
       define("populares", "Populares no Brasil", "🇧🇷", { results: popularData?.results, isLoading: isLoadingPopular, isError: isErrorPopular }),
