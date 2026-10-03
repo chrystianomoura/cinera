@@ -59,12 +59,18 @@ export function saveTmdbCache() {
   fs.writeFileSync(TMDB_CACHE_FILE, JSON.stringify(tmdbCache));
 }
 
+/** A cada tantas consultas novas o cache é gravado em disco, para uma queda no meio de um build longo não perder tudo. */
+const SAVE_EVERY = 200;
+let tmdbUnsaved = 0;
+let omdbUnsaved = 0;
+
 /** Chamada ao TMDB com cache em disco (padrão: 3 dias), para não refazer centenas de consultas. */
 export async function tmdbCached<T>(pathWithQuery: string, ttlMs = 3 * 24 * 3600 * 1000): Promise<T> {
   const hit = tmdbCache[pathWithQuery];
   if (hit && Date.now() - hit.at < ttlMs) return hit.data as T;
   const data = await tmdb<T>(pathWithQuery);
   tmdbCache[pathWithQuery] = { at: Date.now(), data };
+  if (++tmdbUnsaved % SAVE_EVERY === 0) saveTmdbCache();
   return data;
 }
 
@@ -148,6 +154,7 @@ export async function omdbByImdbId(imdbId: string): Promise<OmdbRecord | null> {
   if (json.Response === "False") {
     if (/limit/i.test(String(json.Error))) throw new OmdbLimitError(String(json.Error));
     omdbCache[imdbId] = null;
+    if (++omdbUnsaved % SAVE_EVERY === 0) saveOmdbCache();
     return null;
   }
 
@@ -161,6 +168,7 @@ export async function omdbByImdbId(imdbId: string): Promise<OmdbRecord | null> {
     genres: typeof json.Genre === "string" && json.Genre !== "N/A" ? json.Genre.split(",").map((g) => g.trim()).filter(Boolean) : [],
   };
   omdbCache[imdbId] = record;
+  if (++omdbUnsaved % SAVE_EVERY === 0) saveOmdbCache();
   return record;
 }
 
