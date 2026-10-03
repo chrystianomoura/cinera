@@ -57,14 +57,6 @@ export function useInfiniteGenreMovies(genreQuery: string | number | null) {
   });
 }
 
-export function useMovieDetails(id?: number) {
-  return useQuery<Movie | null>({
-    queryKey: ['movies', 'detail', id],
-    queryFn: () => (id ? movieService.getMovieById(id) : null),
-    enabled: Boolean(id),
-  });
-}
-
 export function useHeroFeaturedMovies(enabled: boolean = true) {
   return useQuery<Movie[]>({
     queryKey: ['movies', 'hero-featured'],

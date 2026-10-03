@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import type { Movie } from "@/domain";
 
 /** Resumo do filme guardado com a biblioteca: basta para desenhar o card e abrir a ficha sem rede. */
-export type LibraryMovie = Pick<
+type LibraryMovie = Pick<
   Movie,
   | "id"
   | "title"

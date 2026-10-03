@@ -33,13 +33,13 @@ export interface GenreProfile {
 }
 
 /**
- * Perfis editoriais com curadoria para streaming de alta fidelidade:
- * - Exclusão cruzada (withoutGenres) para impedir que filmes de explosão/herói tomem conta de comédias, romances e dramas
- * - Keywords nativas (withoutKeywords) para isolar filmes de super-herói (9715, 9717) na categoria de Ficção & Fantasia
- * - Critérios de ordenação sob medida (sortBy) para valorizar clássicos do suspense e épicos da ficção
- * - Calibração de nota mínima e contagem de votos para manter um piso de qualidade impecável
+ * Perfis da busca ao vivo por categoria (reserva usada quando a lista curada não existe):
+ * - withoutGenres: exclusão cruzada, para filmes de ação ou de herói não ocuparem comédia, romance e drama
+ * - withoutKeywords: tira filmes de super-herói (9715, 9717) de Ação & Aventura
+ * - sortBy: ordenação por categoria (popularidade, votos ou nota)
+ * - minVoteAverage e minVoteCount: nota e número de votos mínimos
  */
-export const GENRE_PROFILES: Record<GenreCategory, GenreProfile> = {
+const GENRE_PROFILES: Record<GenreCategory, GenreProfile> = {
   "Ação & Aventura": {
     withGenres: "28|12",
     withoutGenres: "16,14,10751", // Sem animações, sem fantasia mística e sem filmes infantis/família (Sonic) - mantendo Ficção para resgatar Matrix, Mad Max, etc.
@@ -132,18 +132,3 @@ export function getGenreProfile(nameOrQuery: string): GenreProfile | undefined {
   }
   return Object.values(GENRE_PROFILES).find((p) => p.withGenres === nameOrQuery);
 }
-
-/**
- * Mapeamento das categorias consolidadas para as strings de filtro do TMDB.
- */
-export const GENRE_NAME_TO_QUERY: Record<GenreCategory, string> = Object.fromEntries(
-  GENRES.map((name) => [name, GENRE_PROFILES[name].withGenres])
-) as Record<GenreCategory, string>;
-
-/**
- * Mapeamento das categorias consolidadas para os IDs numéricos primários do TMDB.
- */
-export const GENRE_NAME_TO_ID: Record<GenreCategory, number> = Object.fromEntries(
-  GENRES.map((name) => [name, GENRE_PROFILES[name].primaryGenreId])
-) as Record<GenreCategory, number>;
-

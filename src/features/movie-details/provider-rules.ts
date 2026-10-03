@@ -8,7 +8,7 @@ import type { WatchProvider } from "@/domain";
  * e falsas identificações (ex: elimina clones como "MGM+ Apple TV Channel",
  * "Paramount+ Amazon Channel", "with Ads", unificando na marca principal real).
  */
-export function getBrandInfo(rawName: string): { brandKey: string; displayName: string } {
+function getBrandInfo(rawName: string): { brandKey: string; displayName: string } {
   // 1. Remove sufixos de canais de distribuição e planos secundários ANTES de identificar a marca principal
   const cleanName = rawName
     .replace(/\s+(amazon|apple\s*tv|google\s*play)\s+channels?/i, "")
@@ -19,7 +19,7 @@ export function getBrandInfo(rawName: string): { brandKey: string; displayName: 
 
   const lower = cleanName.toLowerCase();
 
-  // 2. Mapeamento exaustivo das marcas do catálogo brasileiro (TMDB) com limites de palavra em termos curtos
+  // 2. Mapeamento das marcas do catálogo brasileiro (TMDB); termos curtos usam limite de palavra
   if (lower.includes("netflix")) return { brandKey: "netflix", displayName: "Netflix" };
   if (/\bmgm\b/.test(lower)) return { brandKey: "mgm", displayName: "MGM+" };
   if (lower.includes("diamond")) return { brandKey: "diamond_films", displayName: "Diamond Films" };

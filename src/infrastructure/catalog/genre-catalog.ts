@@ -11,8 +11,6 @@ export const genreCatalogSchema = z.object({
   movies: z.array(catalogMovieSchema),
 });
 
-export type GenreCatalog = z.infer<typeof genreCatalogSchema>;
-
 const FETCH_TIMEOUT_MS = 6000;
 const cache = new Map<string, Promise<Movie[] | null>>();
 
