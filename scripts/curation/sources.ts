@@ -96,8 +96,8 @@ function readCache(): OmdbCache {
 }
 
 const omdbCache = readCache();
-/** Teto de chamadas por execução, abaixo da cota diária de 1.000 para sobrar folga. */
-const OMDB_RUN_BUDGET = Number(process.env.OMDB_RUN_BUDGET) || 700;
+/** Teto de chamadas por execução: uma fração da cota diária do plano (100 mil) para sobrar folga. */
+const OMDB_RUN_BUDGET = Number(process.env.OMDB_RUN_BUDGET) || 20_000;
 let omdbCalls = 0;
 
 export function saveOmdbCache() {

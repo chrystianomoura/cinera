@@ -13,12 +13,18 @@ const definition: RowDefinition = {
     requirePrestige: true,
     strictFranchiseBlock: 20,
     franchiseSpacing: 10,
-    maxPerFranchise: 2,
+    maxPerFranchise: 1,
   },
   listSize: 40,
-  discoverBase: "primary_release_date.gte=2000-01-01&without_genres=16&vote_count.gte=1000&language=pt-BR",
-  pagesByRating: 40,
-  pagesByVotes: 10,
+  // 10 fixos no começo; o resto gira em faixas entre a fila principal (piso 8,0) e a reserva (piso 7,6 com prestígio forte)
+  rotation: { coreSize: 10, periodDays: 4 },
+  reserve: { minConsensus: 7.6 },
+  // Animação entra: obras como A Viagem de Chihiro disputam em pé de igualdade
+  discoverBase: "primary_release_date.gte=2000-01-01&vote_count.gte=1000&language=pt-BR",
+  pagesByRating: 80,
+  pagesByVotes: 100,
+  // Premiados com nota TMDB mais baixa (Moonlight, Nomadland, Birdman) só entram se o OMDb for consultado
+  omdbMinTmdbRating: 7.0,
   currentQuery:
     "/discover/movie?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=2000&primary_release_date.gte=2000-01-01&without_genres=16",
   currentFilters: { minRating: 7.5, minVotes: 500 },

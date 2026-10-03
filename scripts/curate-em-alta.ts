@@ -2,21 +2,26 @@
 // Uso: npm run curate:em-alta            (só mostra o relatório)
 //      npm run curate:em-alta -- --write  (grava a fileira em public/catalog.json)
 // Ordem = 60% momento (posição nas tendências do dia e da semana) + 40% qualidade (consenso entre fontes).
+// Só entra filme que o público conhece: piso de votos no IMDb (com exceção para lançamentos muito recentes).
 import { loadEnv, tmdb, mapLimit } from "./curation/sources.js";
 import { type Candidate, buildRanking, franchiseOf } from "./curation/scoring.js";
 import { writeCatalogRow } from "./curation/pipeline.js";
-import { MODERN_CONFIG, fmt, quality, qualityNorm, modernExclusion, showcaseOrder, loadCandidates } from "./curation/modern.js";
+import { MODERN_CONFIG, fmt, quality, qualityNorm, modernExclusion, unknownReason, showcaseOrder, loadCandidates } from "./curation/modern.js";
 import { mapTMDBMovie } from "../src/infrastructure/api/tmdb-mappers.js";
 import { filterQualifiedMovies, dedupeFranchises } from "../src/infrastructure/api/curation-filters.js";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../src/infrastructure/api/tmdb-types.js";
 
 loadEnv();
 
-const LIST_SIZE = 30;
-const TRENDING_PAGES = 10;
+const LIST_SIZE = 60;
+const TRENDING_PAGES = 20;
+const DAY_MS = 86_400_000;
+/** Piso de tendência: abaixo disto o filme não está em alta, só aparece no fim das listas do TMDB */
+const MIN_MOMENTUM = 0.08;
 
 async function main() {
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
 
   console.log("1) Reunindo as tendências do TMDB (dia e semana)...");
   const fetchList = async (kind: "day" | "week") =>
@@ -40,7 +45,12 @@ async function main() {
   const reasons = new Map<number, string>();
   const eligible: Candidate[] = [];
   for (const c of candidates) {
-    const reason = modernExclusion(c, detailById.get(c.id)!, today);
+    const ageDays = (now.getTime() - new Date(detailById.get(c.id)!.release_date).getTime()) / DAY_MS;
+    const trend = momentum.get(c.id) ?? 0;
+    const reason =
+      modernExclusion(c, detailById.get(c.id)!, today) ??
+      unknownReason(c, ageDays) ??
+      (trend < MIN_MOMENTUM ? `sem tendência (momento ${trend.toFixed(2)})` : null);
     if (reason) reasons.set(c.id, reason);
     else eligible.push(c);
   }

@@ -14,10 +14,13 @@ const definition: RowDefinition = {
     requirePrestige: false,
     strictFranchiseBlock: 20,
     franchiseSpacing: 10,
-    maxPerFranchise: 2,
+    maxPerFranchise: 1,
   },
   listSize: 40,
-  discoverBase: "primary_release_date.lte=1999-12-31&without_genres=16&vote_count.gte=1500&language=pt-BR",
+  // 10 fixos no começo; o resto gira em faixas entre os demais clássicos aprovados
+  rotation: { coreSize: 10, periodDays: 6 },
+  // Animação entra: O Rei Leão, A Princesa Mononoke e outros clássicos do gênero
+  discoverBase: "primary_release_date.lte=1999-12-31&vote_count.gte=1500&language=pt-BR",
   pagesByRating: 25,
   pagesByVotes: 10,
   // Só gasta consulta do OMDb com quem tem chance real de chegar ao consenso mínimo

@@ -15,6 +15,7 @@ import {
   exclusionReason,
   franchiseOf,
 } from "./scoring.js";
+import { dayIndex, rotateLanes, rotateBlocks } from "./rotation.js";
 import { mapTMDBMovie } from "../../src/infrastructure/api/tmdb-mappers.js";
 import { filterQualifiedMovies, dedupeFranchises } from "../../src/infrastructure/api/curation-filters.js";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../../src/infrastructure/api/tmdb-types.js";
@@ -40,6 +41,10 @@ export interface RowDefinition {
   currentFilters: { minRating: number; minVotes: number };
   /** Exclusão editorial extra (devolve o motivo) */
   editorialExclusion?: (detail: TMDBDetail) => string | null;
+  /** Rotação diária: `coreSize` primeiros ficam fixos; o resto gira em faixas, trocando de filme a cada `periodDays` dias */
+  rotation?: { coreSize: number; periodDays: number };
+  /** Reserva com piso de consenso menor, só para filmes de prestígio forte (Oscar ganho ou crítica ≥ 9) */
+  reserve?: { minConsensus: number };
 }
 
 export interface TMDBDetail {
@@ -60,6 +65,8 @@ export interface TMDBDetail {
   tagline: string;
 }
 
+/** Tamanho dos blocos do núcleo que giram entre si */
+const CORE_BLOCK = 5;
 const CATALOG_FILE = "public/catalog.json";
 const CATALOG_ORDER = ["em-alta", "novidades", "aclamados", "classicos", "populares"];
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -179,7 +186,40 @@ export async function runRow(def: RowDefinition) {
   const rankScore = (c: Candidate) => consensusScore(c) + prestigeBonus(c);
   eligible.sort((a, b) => rankScore(b) - rankScore(a));
 
-  const { picked, skipped } = buildRanking(eligible, def.config, def.listSize);
+  // Reserva: consenso um pouco abaixo do piso, mas só com prestígio forte. Fica depois de toda a fila principal
+  const strongPrestige = (c: Candidate) => (c.awards?.oscarWins ?? 0) >= 1 || (criticsScore(c) ?? 0) >= 9.0;
+  const eligibleIds = new Set(eligible.map((c) => c.id));
+  const reserve = def.reserve
+    ? candidates
+        .filter(
+          (c) =>
+            !eligibleIds.has(c.id) &&
+            !def.editorialExclusion?.(detailById.get(c.id)!) &&
+            strongPrestige(c) &&
+            exclusionReason(c, { ...def.config, minConsensus: def.reserve!.minConsensus, requirePrestige: false }) === null,
+        )
+        .sort((a, b) => rankScore(b) - rankScore(a))
+    : [];
+  const queue = [...eligible, ...reserve];
+
+  let picked: Candidate[];
+  let skipped: ReturnType<typeof buildRanking>["skipped"];
+  if (def.rotation) {
+    const { coreSize, periodDays } = def.rotation;
+    const ranked = buildRanking(queue, def.config, queue.length).picked;
+    const core = ranked.slice(0, coreSize);
+    const rest = ranked.slice(coreSize);
+    const window = rotateLanes(rest, def.listSize - coreSize, periodDays, dayIndex(), (c) => c.id);
+    const inWindow = new Set(window.map((c) => c.id));
+    // Ordem de entrada: núcleo, janela do dia e, só como reposição de franquia repetida, o resto da fila
+    const result = buildRanking([...core, ...window, ...rest.filter((c) => !inWindow.has(c.id))], def.config, def.listSize);
+    // O núcleo troca de posição todo dia, em blocos do mesmo nível (os 5 melhores entre si, depois os 5 seguintes)
+    picked = [...rotateBlocks(result.picked.slice(0, coreSize), CORE_BLOCK, dayIndex()), ...result.picked.slice(coreSize)];
+    skipped = result.skipped;
+    console.log(`   Rotação: núcleo de ${core.length}, ${window.length} faixas rodando entre ${rest.length} filmes da fila (dia ${dayIndex()})`);
+  } else {
+    ({ picked, skipped } = buildRanking(queue, def.config, def.listSize));
+  }
   for (const s of skipped) reasons.set(s.candidate.id, s.reason);
   const rank = new Map(picked.map((c, i) => [c.id, i + 1]));
 
@@ -220,6 +260,6 @@ export async function runRow(def: RowDefinition) {
   fs.mkdirSync(path.join(root, "scripts", ".cache"), { recursive: true });
   fs.writeFileSync(
     path.join(root, "scripts", ".cache", `${def.id}-prototype.json`),
-    JSON.stringify({ config: def.config, picked, queue: eligible.filter((c) => !rank.has(c.id)), reasons: Object.fromEntries(reasons) }, null, 1),
+    JSON.stringify({ config: def.config, picked, queue: queue.filter((c) => !rank.has(c.id)), reasons: Object.fromEntries(reasons) }, null, 1),
   );
 }

@@ -2,21 +2,24 @@
 // Uso: npm run curate:populares            (só mostra o relatório)
 //      npm run curate:populares -- --write  (grava a fileira em public/catalog.json)
 // Ordem = 65% popularidade no Brasil (posição na lista do TMDB com region=BR) + 35% qualidade.
+// Só entra filme que o público conhece: piso de votos no IMDb (com exceção para lançamentos muito recentes).
 import { loadEnv, tmdb, mapLimit } from "./curation/sources.js";
 import { type Candidate, buildRanking, franchiseOf } from "./curation/scoring.js";
 import { writeCatalogRow } from "./curation/pipeline.js";
-import { MODERN_CONFIG, fmt, quality, qualityNorm, modernExclusion, showcaseOrder, loadCandidates } from "./curation/modern.js";
+import { MODERN_CONFIG, fmt, quality, qualityNorm, modernExclusion, unknownReason, showcaseOrder, loadCandidates } from "./curation/modern.js";
 import { mapTMDBMovie } from "../src/infrastructure/api/tmdb-mappers.js";
 import { filterQualifiedMovies, dedupeFranchises } from "../src/infrastructure/api/curation-filters.js";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../src/infrastructure/api/tmdb-types.js";
 
 loadEnv();
 
-const LIST_SIZE = 40;
-const POPULAR_PAGES = 15;
+const LIST_SIZE = 60;
+const POPULAR_PAGES = 30;
+const DAY_MS = 86_400_000;
 
 async function main() {
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
 
   console.log("1) Reunindo os filmes populares no Brasil (TMDB, region=BR)...");
   const lists = await mapLimit(Array.from({ length: POPULAR_PAGES }, (_, i) => i + 1), 5, (p) =>
@@ -36,7 +39,8 @@ async function main() {
   const reasons = new Map<number, string>();
   const eligible: Candidate[] = [];
   for (const c of candidates) {
-    const reason = modernExclusion(c, detailById.get(c.id)!, today);
+    const ageDays = (now.getTime() - new Date(detailById.get(c.id)!.release_date).getTime()) / DAY_MS;
+    const reason = modernExclusion(c, detailById.get(c.id)!, today) ?? unknownReason(c, ageDays);
     if (reason) reasons.set(c.id, reason);
     else eligible.push(c);
   }

@@ -11,7 +11,7 @@ export const MODERN_CONFIG: RowConfig = {
   requirePrestige: false,
   strictFranchiseBlock: 20,
   franchiseSpacing: 10,
-  maxPerFranchise: 2,
+  maxPerFranchise: 1,
 };
 export const MIN_TMDB_VOTES = 200;
 /** Com público pequeno (lançamento recente) o IMDb ainda oscila: só vale a partir daqui */
@@ -19,6 +19,12 @@ export const MIN_IMDB_VOTES = 5_000;
 /** A divergência TMDB × IMDb já vale com público menor: é o sinal mais barato de nota inflada */
 const MIN_IMDB_VOTES_FOR_DIVERGENCE = 300;
 export const QUALITY_BEST = 8.5;
+
+/** Público mínimo no IMDb para um filme ser considerado conhecido */
+export const MIN_IMDB_VOTES_KNOWN = 20_000;
+/** Lançamento até esta idade ainda não teve tempo de juntar votos no IMDb: vale o público do TMDB */
+export const FRESH_DAYS = 30;
+export const FRESH_MIN_TMDB_VOTES = 500;
 /** Quantas posições iniciais exigem nota do IMDb */
 export const SHOWCASE_SIZE = 10;
 
@@ -51,6 +57,13 @@ export function modernExclusion(c: Candidate, d: TMDBDetail, today: string): str
   const q = quality(c);
   if (q < MODERN_CONFIG.minConsensus) return `qualidade baixa (${q.toFixed(2)})`;
   return null;
+}
+
+/** Motivo de o filme ser pouco conhecido do público, ou null se é conhecido. */
+export function unknownReason(c: Candidate, ageDays: number): string | null {
+  if ((c.imdbVotes ?? 0) >= MIN_IMDB_VOTES_KNOWN) return null;
+  if (ageDays <= FRESH_DAYS && c.tmdbVotes >= FRESH_MIN_TMDB_VOTES) return null;
+  return c.imdbVotes === null ? "sem nota do IMDb e pouco conhecido" : `pouco conhecido (${c.imdbVotes.toLocaleString("pt-BR")} votos no IMDb)`;
 }
 
 /** Vitrine: as primeiras posições só aceitam filme com nota do IMDb confiável; o resto segue por pontuação. */

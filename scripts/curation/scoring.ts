@@ -101,6 +101,7 @@ export function exclusionReason(c: Candidate, cfg: RowConfig): string | null {
 const UNIVERSES: [RegExp, string][] = [
   [/senhor dos an[eé]is|lord of the rings|hobbit/i, "universo:tolkien"],
   [/batman|dark knight|cavaleiro das trevas/i, "universo:batman"],
+  [/homem-aranha|spider-man|aranhaverso/i, "universo:spider-man"],
   [/vingadores|avengers|iron man|homem de ferro|thor|capit[aã]o am[eé]rica|captain america|guardi[aã]es da gal[aá]xia|guardians of the galaxy/i, "universo:marvel"],
   [/harry potter|animais fant[aá]sticos|fantastic beasts/i, "universo:wizarding"],
   [/star wars|guerra nas estrelas/i, "universo:star-wars"],
