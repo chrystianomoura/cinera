@@ -82,7 +82,8 @@ export function mapTMDBCredits(data: TMDBCreditsRaw): MovieCredits {
 export function mapTMDBWatchProviders(
   data: TMDBProvidersResponse
 ): MovieWatchProviders | null {
-  const region = data.results?.BR || data.results?.US;
+  // Somente Brasil: o produto é para o público brasileiro, sem fallback para outras regiões
+  const region = data.results?.BR;
   if (!region) return null;
 
   const mapProviderList = (list?: TMDBProviderRaw[]) =>
