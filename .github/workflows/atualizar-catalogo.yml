@@ -1,0 +1,59 @@
+name: Atualizar catálogo
+
+# Roda todos os dias às 00h30 de Brasília (03h30 UTC) e monta o catálogo do dia: fileiras, destaque e categorias.
+# Fica DESLIGADO até existir a variável de repositório CATALOGO_AUTOMATICO com o valor "true"
+# (Settings → Secrets and variables → Actions → Variables). Segredos necessários: TMDB_TOKEN e OMDB_SCRIPT_KEY.
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-catalogo
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    name: Montar e publicar o catálogo
+    if: github.event_name == 'workflow_dispatch' || vars.CATALOGO_AUTOMATICO == 'true'
+    runs-on: ubuntu-latest
+    # A primeira execução, com o cache vazio, consulta milhares de filmes e pode levar bastante tempo
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Restaura o cache de consultas (TMDB e OMDb)
+        uses: actions/cache@v4
+        with:
+          path: scripts/.cache
+          key: catalogo-cache-${{ github.run_id }}
+          restore-keys: catalogo-cache-
+
+      - name: Monta o catálogo (só publica se todas as verificações passarem)
+        env:
+          VITE_TMDB_API_TOKEN: ${{ secrets.TMDB_TOKEN }}
+          OMDB_SCRIPT_KEY: ${{ secrets.OMDB_SCRIPT_KEY }}
+        run: npm run build:catalog
+
+      - name: Confere o catálogo publicado
+        run: npm run test:catalog
+
+      - name: Publica na main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/catalog.json public/categories.json public/genres
+          if git diff --cached --quiet; then
+            echo "Nada mudou."
+          else
+            git commit -m "chore(catalogo): catálogo do dia $(TZ=America/Sao_Paulo date +%d/%m/%Y)"
+            git push origin HEAD:main
+          fi
