@@ -116,7 +116,7 @@ export function UserLibraryView({
           onClick={onClose}
           aria-label="Fechar biblioteca"
           title="Fechar (Esc)"
-          className="flex items-center gap-2 px-4 h-10 sm:h-11 rounded-full bg-zinc-800/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group active:scale-95"
+          className="flex items-center gap-2 px-4 h-9 sm:h-10 rounded-full bg-zinc-800/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group active:scale-95"
         >
           <span className="text-xs font-semibold uppercase tracking-wider hidden sm:inline">
             Voltar

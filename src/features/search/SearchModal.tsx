@@ -46,7 +46,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       // faria o teclado cobrir os resultados ao voltar dos detalhes.
       if (window.matchMedia("(pointer: coarse)").matches) return;
       const timer = setTimeout(() => {
-        inputRef.current?.focus();
+        inputRef.current?.focus({ preventScroll: true });
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -96,12 +96,29 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       }
     };
 
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // No celular, a página de trás é congelada no lugar (body fixo) enquanto a pesquisa está aberta: o navegador
+    // não consegue rolá-la nem deslocá-la para revelar o campo, então a pesquisa abre sempre no mesmo lugar,
+    // sem movimento, de onde quer que o usuário tenha tocado na lupa. No desktop só se esconde a rolagem.
+    const body = document.body;
+    const saved = { overflow: body.style.overflow, position: body.style.position, top: body.style.top, width: body.style.width };
+    const scrollY = window.scrollY;
+    const freezeBody = window.matchMedia("(pointer: coarse)").matches;
+    body.style.overflow = "hidden";
+    if (freezeBody) {
+      body.style.position = "fixed";
+      body.style.top = `-${scrollY}px`;
+      body.style.width = "100%";
+    }
     window.addEventListener("keydown", handleGlobalKeyDown);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
+      body.style.overflow = saved.overflow;
+      if (freezeBody) {
+        body.style.position = saved.position;
+        body.style.top = saved.top;
+        body.style.width = saved.width;
+        window.scrollTo(0, scrollY);
+      }
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };
   }, [isOpen, isPausedForDetails, closeSearch]);

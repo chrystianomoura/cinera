@@ -416,13 +416,10 @@ export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowPro
     );
   }
 
-  // Se a plataforma existe em assinatura e em aluguel, mostra só a assinatura (a opção mais barata).
-  // Compra não é exibida.
+  // O aluguel só aparece quando não há nenhuma assinatura possível (inclui canais extras): assinar é sempre a
+  // opção mais barata. Compra não é exibida.
   const subscription = filterValidProviders(providers?.flatrate || []);
-  const subscriptionBrands = new Set(subscription.map((provider) => provider.brandKey));
-  const rental = filterValidProviders(providers?.rent || []).filter(
-    (provider) => !subscriptionBrands.has(provider.brandKey)
-  );
+  const rental = subscription.length > 0 ? [] : filterValidProviders(providers?.rent || []);
 
   // Cada tipo na sua linha, com os cartões seguindo para a direita
   const lines = [

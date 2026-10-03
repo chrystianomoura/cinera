@@ -39,7 +39,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
               data-genre-name={genre}
               aria-pressed={isSelected}
               onClick={() => onSelectGenre(genre)}
-              className={`flex-shrink-0 md:flex-1 md:min-w-fit px-4 sm:px-5 py-2 min-h-[40px] md:min-h-0 rounded-full text-xs sm:text-sm tracking-wide transition-colors duration-150 cursor-pointer select-none text-center whitespace-nowrap active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${
+              className={`flex-shrink-0 md:flex-1 md:min-w-fit px-4 sm:px-5 py-2.5 min-h-[46px] md:min-h-[44px] rounded-full text-xs sm:text-sm tracking-wide transition-colors duration-150 cursor-pointer select-none text-center whitespace-nowrap active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/50 ${
                 isSelected
                   ? "bg-white/20 text-white font-bold border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.5)]"
                   : "bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white font-medium border border-white/15 hover:border-white/30 shadow-sm"
