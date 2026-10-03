@@ -1,12 +1,11 @@
 /**
- * Serviço OMDb para obtenção de notas oficiais do IMDb.
- * Arquitetura de alta resiliência e blindagem total de cota:
- * 1. Safe Storage Guards (SSR-safe, isolamento de window e localStorage)
- * 2. Validação estrita de IMDb ID via RegExp (/^tt\d+$/)
- * 3. Deduplicação em voo (In-flight request map contra race conditions)
- * 4. Cache positivo (7 dias) com auto-cleanup de chaves expiradas
- * 5. Cache negativo (24 horas para resultados 'N/A' ou filmes sem nota)
- * 6. Rate Limit Circuit Breaker (Backoff de 15 minutos em caso de 429)
+ * Serviço OMDb para obter a nota do IMDb, com proteções para poupar a cota diária:
+ * 1. Acesso ao localStorage com guarda (funciona sem window)
+ * 2. Validação do formato do IMDb ID (/^tt\d+$/) antes de qualquer chamada
+ * 3. Deduplicação de chamadas em andamento para o mesmo ID
+ * 4. Cache positivo (7 dias), com limpeza das entradas expiradas
+ * 5. Cache negativo (24 horas) para filmes sem nota
+ * 6. Pausa de 15 minutos após 429 ou 401 (chave inválida ou cota diária esgotada)
  */
 
 export interface ImdbRatingData {
@@ -53,7 +52,7 @@ export class OmdbService {
   }
 
   /**
-   * Busca a nota do IMDb pelo IMDb ID oficial com blindagem total.
+   * Busca a nota do IMDb pelo IMDb ID, usando os caches e a pausa descritos acima.
    */
   public static async getImdbRating(imdbId?: string | null): Promise<ImdbRatingData | null> {
     if (!imdbId || !this.isConfigured()) {

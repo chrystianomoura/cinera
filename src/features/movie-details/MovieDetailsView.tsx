@@ -199,7 +199,7 @@ export function MovieDetailsView({
 
       {/* 4. CONTEÚDO PRINCIPAL (HERO + METADADOS + FICHA) */}
       <div className="relative z-10 max-w-6xl mx-auto px-0 md:px-12 pt-6 md:pt-8 pb-page-end flex flex-col gap-6 md:gap-8">
-        {/* Bloco Superior: Cartaz Flutuante + Informações de Capa perfeitamente alinhados no topo */}
+        {/* Bloco superior: cartaz e informações de capa */}
         <section className="flex flex-col md:flex-row gap-8 lg:gap-12 items-center md:items-start px-4 md:px-0">
           {/* Cartaz com borda em vidro */}
           <div className="relative w-52 sm:w-64 md:w-72 lg:w-80 flex-shrink-0 aspect-[2/3] rounded-2xl overflow-hidden bg-zinc-900 border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.9)] [transform:translateZ(0)]">
@@ -221,7 +221,7 @@ export function MovieDetailsView({
           <div className="flex flex-col gap-4 flex-1 text-center md:text-left md:-mt-1.5">
             {/* Bloco de Cabeçalho: Título e Tagline com espaçamento íntimo */}
             <div className="flex flex-col gap-1.5 sm:gap-2">
-              {/* Título Principal com regra de quebra cinematográfica nos dois pontos (:) */}
+              {/* Título principal, com quebra de linha nos dois pontos (:) */}
               {(() => {
                 const colonIndex = movie.title.indexOf(":");
                 if (colonIndex !== -1) {

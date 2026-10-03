@@ -85,7 +85,7 @@ export function HeroFeatured({
     heroList.length > 0 ? heroList[heroIndex % heroList.length] : null;
 
   // Rotação limpa a cada 6s: congela em modais, fora da tela ou com a aba oculta.
-  // Ao retomar, o intervalo recomeça do zero e o usuário vê a foto atual por 6s completos.
+  // Ao retomar, o intervalo recomeça e o usuário vê a foto atual por 6s completos.
   useEffect(() => {
     if (
       heroList.length <= 1 ||
@@ -130,7 +130,7 @@ export function HeroFeatured({
 
       {!isLoading && heroMovie && (
         <>
-          {/* Pôster em destaque: imagem nítida, 100% estável ao mudar de aba, com transição sincronizada */}
+          {/* Pôster em destaque, que não troca ao mudar de aba e tem transição sincronizada */}
           <div
             className={`absolute inset-0 overflow-hidden transform-gpu will-change-[opacity] transition-opacity duration-700 ease-in-out ${
               isFading ? "opacity-0" : "opacity-100"
@@ -158,7 +158,7 @@ export function HeroFeatured({
               }`}
             />
 
-            {/* Gradiente cinematográfico inferior com reforço vertical para mobile */}
+            {/* Gradiente inferior, com reforço vertical no celular */}
             <div
               className="absolute inset-x-0 bottom-0 h-[60%] md:h-[45%] pointer-events-none"
               style={{

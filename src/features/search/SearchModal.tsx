@@ -52,7 +52,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     }
 
     if (!isOpen && !isPausedForDetails) {
-      // Padrão Linear/Apple: remove o foco forçado para manter a interface limpa e cinematográfica
+      // Em telas de toque o foco vem do próprio toque; forçá-lo faria o teclado cobrir os resultados
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
@@ -137,7 +137,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       // Restaura exatamente a coordenada de scroll onde o usuário estava ao pausar para ver o filme
       listRef.current.scrollTop = scrollPosition;
     } else {
-      // Nova busca ou início: começa sempre no topo absoluto
+      // Nova busca ou início: começa no topo
       listRef.current.scrollTop = 0;
     }
   }, [isOpen, results.length, scrollPosition, debouncedQuery]);
@@ -423,7 +423,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             </StatusMessage>
           )}
 
-          {/* ESTADO 5: Zero Resultados (Busca sem sucesso, compacto e limpo) */}
+          {/* Estado 5: nenhum resultado */}
           {!isError && hasSearched && results.length === 0 && (
             <StatusMessage
               emoji="😔"

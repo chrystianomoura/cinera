@@ -65,7 +65,7 @@ export const MovieCard = memo(function MovieCard({
             </div>
           )}
 
-          {/* Borda de seleção nítida de alto contraste sobreposta ao pôster (zero vazamento para fora) */}
+          {/* Borda de seleção sobre o pôster, contida dentro dele */}
           <div className="absolute inset-0 rounded-xl border-[2.5px] border-white pointer-events-none transition-opacity duration-150 opacity-0 group-hover/poster:opacity-100 group-focus-visible/poster:opacity-100 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.8)]" />
         </div>
       </div>

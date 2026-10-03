@@ -8,10 +8,10 @@ interface UseHorizontalScrollOptions {
 }
 
 /**
- * Hook de alto desempenho para controle de rolagem horizontal:
- * - Rolagem suave delegada 100% à thread do compositor nativo da GPU do navegador
- * - Silenciamento total de recálculos de estado e DOM durante o deslize (Zero Layout Thrashing)
- * - Leituras amortecidas de limites (canScrollLeft / canScrollRight) apenas ao iniciar/terminar
+ * Controle da rolagem horizontal de um carrossel:
+ * - A rolagem suave fica a cargo do navegador (compositor), sem animação em JavaScript
+ * - Durante o deslize não há leituras de DOM nem atualizações de estado
+ * - Os limites (canScrollLeft / canScrollRight) só são relidos ao iniciar e ao terminar
  */
 export function useHorizontalScroll({
   defaultScrollFraction = 0.75,
@@ -62,8 +62,7 @@ export function useHorizontalScroll({
     let resizeTimer: number | null = null;
 
     const onScroll = () => {
-      // Durante o percurso suave acionado por seta, silencia completamente
-      // leituras de DOM e setStates para garantir 120 FPS cravados sem engasgo!
+      // Durante o percurso suave acionado por seta, não lê o DOM nem atualiza estado, para a rolagem não engasgar
       if (isProgrammaticScrollRef.current) return;
       scheduleSync();
     };
@@ -138,7 +137,7 @@ export function useHorizontalScroll({
       const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
       if (maxScroll <= 0) return;
 
-      // 1. Tenta quantização por cards inteiros para alinhamento e física perfeitos
+      // 1. Tenta alinhar a rolagem a cards inteiros
       const children = Array.from(el.children) as HTMLElement[];
       const firstChild = children[0];
       const secondChild = children[1];
@@ -158,7 +157,7 @@ export function useHorizontalScroll({
       let target: number;
 
       if (cardStride > 0 && !fraction) {
-        // Alinhamento milimétrico na grade de cards inteiros (Padrão Apple TV / Netflix)
+        // Alinhamento à grade de cards inteiros
         // Lê o scroll-padding-left do CSS (igual à largura do fade esquerdo por breakpoint — 0 em mobile).
         // Deve ser lido ANTES do visibleCards para reduzir o espaço útil e evitar overflow no lado direito.
         const scrollPaddingLeft = parseFloat(getComputedStyle(el).scrollPaddingLeft) || 0;
@@ -207,7 +206,7 @@ export function useHorizontalScroll({
       targetScrollLeftRef.current = target;
       isProgrammaticScrollRef.current = true;
 
-      // Desativa ponteiro nos cards durante o percurso para eliminar hover thrashing (120 FPS cravados)
+      // Desativa o ponteiro nos cards durante o percurso, para o hover não disparar repinturas
       el.style.pointerEvents = "none";
 
       const handleScrollEnd = () => {

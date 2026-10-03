@@ -36,7 +36,7 @@ const STOP_WORDS = new Set([
 ]);
 
 /**
- * Mapeamento de termos cinematográficos bilíngues (inglês/português)
+ * Mapeamento de termos de cinema bilíngues (inglês/português)
  * para sincronizar buscas populares como "predator", "spider-man" ou "avengers"
  * com o catálogo brasileiro do TMDB.
  */
@@ -68,7 +68,7 @@ function getCognateSynonym(entity: string | null): string | null {
   return null;
 }
 
-export function escapeRegex(str: string): string {
+function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
@@ -138,9 +138,9 @@ export function matchFranchise(colName: string, colOrigName: string | undefined,
 /**
  * Extrai palavras-chave essenciais eliminando ruídos gramaticais para a consulta no TMDB.
  * Permite que "velozes e furiosos", "velozes & furiosos" e "+ velozes + furiosos"
- * consultem o TMDB como "velozes furiosos", resgatando 100% dos filmes da franquia.
+ * consultem o TMDB como "velozes furiosos", trazendo os filmes da franquia.
  */
-export function extractSearchKeywords(text: string): string {
+function extractSearchKeywords(text: string): string {
   const norm = normalizeSearchString(text);
   const tokens = norm.split(/\s+/).filter(Boolean);
   const meaningful = tokens.filter((t) => !STOP_WORDS.has(t));
@@ -352,7 +352,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
     // 2. Se um é exato e o outro é parcial:
     // O exato tem grande vantagem (+400 de relevância base).
     // No entanto, se o filme parcial for um fenômeno de autoridade colossal (ex: O Cavaleiro das Trevas com 35k votos)
-    // contra uma obra homônima obscura de 20 votos (ex: serial de 1943), a pontuação bayesiana total decide organicamente.
+    // contra uma obra homônima obscura de 20 votos (ex: serial de 1943), a pontuação bayesiana total é que decide.
     return b.score - a.score;
   });
 
@@ -362,7 +362,7 @@ function rankSearchResults(movies: Movie[], normalizedQuery: string): Movie[] {
 
 /**
  * Serviço de Busca Global do Cinera.
- * Integra busca textual inteligente, reconciliação estrita de Coleções Canônicas oficiais do TMDB
+ * Integra busca textual, reconciliação com as Coleções oficiais do TMDB
  * e ranking bayesiano universal de relevância.
  */
 export async function searchCineraMovies(
@@ -458,9 +458,9 @@ export async function searchCineraMovies(
           const origCandidate = candidateCol.original_name ? cleanFranchiseName(candidateCol.original_name) : "";
           const stripOrigCandidate = stripLeadingArticles(origCandidate);
 
-          // Regra Preditiva de Convergência de Saga:
+          // Prefixo de saga:
           // Se o usuário já digitou >= 75% da raiz da franquia (ex: "dun" para "duna" / "dune" = 75% de cobertura),
-          // o motor reconhece o prefixo contíguo da saga de forma inteligente e contínua.
+          // o motor reconhece o prefixo contíguo do nome da saga.
           const isPredictivePrefix =
             (stripCandidate.length > 0 && stripCandidate.startsWith(normQ)) ||
             (stripOrigCandidate.length > 0 && stripOrigCandidate.startsWith(normQ)) ||

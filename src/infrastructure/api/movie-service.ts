@@ -33,7 +33,7 @@ import type {
   MovieVideo,
 } from "./tmdb-types";
 
-// Re-exporta utilitários e tipos para 100% de compatibilidade retroativa
+// Re-exporta utilitários e tipos para manter os imports existentes
 export {
   getPosterUrl,
   getBackdropUrl,

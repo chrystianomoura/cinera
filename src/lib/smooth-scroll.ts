@@ -45,7 +45,7 @@ function scrollToTopNative(start: number, onComplete?: () => void) {
  * Otimizações de alta performance:
  * 1. Desativa temporariamente `pointer-events` no `body` durante a rolagem para
  *    evitar que dezenas de cards disparem cálculos de hover, sombras e repaints
- *    à medida que passam sob o cursor do mouse (elimina 100% dos engasgos).
+ *    à medida que passam sob o cursor do mouse.
  * 2. Duração calculada de forma orgânica via raiz quadrada da distância (entre 700ms e 950ms),
  *    evitando o salto bruto/rápido de ~300ms do navegador padrão.
  * 3. Curva de desaceleração cúbica `easeInOutCubic` para partida e aterrissagem macias.

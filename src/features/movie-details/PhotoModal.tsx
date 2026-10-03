@@ -38,7 +38,7 @@ export function PhotoModal({
     }
   }, [isOpen, currentIndex, images.length, onClose]);
 
-  // Foco inicial no botão de fechar ao abrir e restauração perfeita para a foto na galeria ao fechar
+  // Ao abrir, o foco vai para o botão de fechar; ao fechar, volta para a foto da galeria
   useEffect(() => {
     if (!isOpen) return;
 

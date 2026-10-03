@@ -5,7 +5,7 @@ import type { Movie, MovieCredits, MovieWatchProviders } from "@/domain";
 import type { MovieVideo } from "@/infrastructure/api/movie-service";
 
 /**
- * Hook composto para carregar a ficha completa do filme em paralelo com cache inteligente.
+ * Hook composto para carregar a ficha completa do filme em paralelo com cache.
  */
 export function useMovieFullDetails(movieId: number | null) {
   const isEnabled = Boolean(movieId && movieId > 0);
