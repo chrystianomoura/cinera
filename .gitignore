@@ -26,3 +26,7 @@ scripts/.cache
 *.njsproj
 *.sln
 *.sw?
+
+# Testes ponta a ponta
+test-results
+playwright-report
