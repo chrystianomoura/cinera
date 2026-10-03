@@ -40,6 +40,7 @@ export function MovieDetailsView({
     isLoadingCredits,
     providers,
     isLoadingProviders,
+    isErrorProviders,
     certification,
     imdbRating,
     isLoadingImdbRating,
@@ -373,6 +374,7 @@ export function MovieDetailsView({
             <WatchProvidersRow
               providers={providers}
               isLoading={isLoadingProviders}
+              isError={isErrorProviders}
             />
 
             {/* Ficha de Produção & Finanças (com Direção no topo) */}

@@ -81,6 +81,7 @@ export function useMovieFullDetails(movieId: number | null) {
 
     providers: providersQuery.data,
     isLoadingProviders: providersQuery.isLoading,
+    isErrorProviders: providersQuery.isError,
 
     certification: certificationQuery.data,
 

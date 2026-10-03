@@ -118,17 +118,21 @@ export default function App() {
       const id = Number(filmParam);
       if (id) {
         const currentId = id;
-        movieService.getMovieById(id).then((movie) => {
-          if (cancelled) return;
-          // Ignora resposta desatualizada se a URL mudou enquanto o fetch estava em trânsito
-          const currentParam = new URL(window.location.href).searchParams.get("filme");
-          if (Number(currentParam) !== currentId) return;
+        movieService
+          .getMovieById(id)
+          .then((movie) => {
+            if (cancelled) return;
+            // Ignora resposta desatualizada se a URL mudou enquanto o fetch estava em trânsito
+            const currentParam = new URL(window.location.href).searchParams.get("filme");
+            if (Number(currentParam) !== currentId) return;
 
-          if (movie) {
-            setSelectedMovie(movie);
-            setIsDetailsOpen(true);
-          }
-        });
+            if (movie) {
+              setSelectedMovie(movie);
+              setIsDetailsOpen(true);
+            }
+          })
+          // Com a API fora do ar o link direto não abre a ficha e a Home continua normal
+          .catch(() => undefined);
       }
     };
 

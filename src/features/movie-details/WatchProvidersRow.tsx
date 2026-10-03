@@ -5,6 +5,7 @@ import { filterValidProviders, type ProcessedProvider } from "./provider-rules";
 interface WatchProvidersRowProps {
   providers?: MovieWatchProviders | null;
   isLoading?: boolean;
+  isError?: boolean;
 }
 
 /**
@@ -70,7 +71,7 @@ function ProviderCard({
   );
 }
 
-export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowProps) {
+export function WatchProvidersRow({ providers, isLoading, isError = false }: WatchProvidersRowProps) {
   const title = (
     <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
       Onde Assistir
@@ -89,6 +90,17 @@ export function WatchProvidersRow({ providers, isLoading }: WatchProvidersRowPro
             />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
+        {title}
+        <p className="text-zinc-100 font-medium text-xs sm:text-sm text-center md:text-left">
+          Não foi possível carregar onde assistir agora. Tente novamente em instantes.
+        </p>
       </div>
     );
   }
