@@ -180,6 +180,8 @@ export async function extractDominantColor(imageUrl?: string | null): Promise<Ex
       resolve(DEFAULT_COLOR);
     };
 
-    img.src = imageUrl;
+    // O mesmo endereço já pode estar em uso por uma <img> comum (sem CORS) na tela: o navegador reaproveitaria essa
+    // resposta e bloquearia a leitura dos pixels. Um parâmetro à parte faz esta requisição ser independente.
+    img.src = `${imageUrl}${imageUrl.includes("?") ? "&" : "?"}cors=1`;
   });
 }
