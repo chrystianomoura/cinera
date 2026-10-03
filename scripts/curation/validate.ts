@@ -3,6 +3,8 @@ import { catalogSchema, CATALOG_ROW_IDS, type Catalog, type CatalogRowId } from 
 import { getFranchiseKey } from "../../src/infrastructure/api/curation-filters.js";
 import { dayIndex } from "./rotation.js";
 import { HOME_ROW_ORDER, HOME_ROW_LIMIT, createDeduper } from "../../src/infrastructure/catalog/home-assembly.js";
+import { genreCatalogSchema } from "../../src/infrastructure/catalog/genre-catalog.js";
+import { GENRES, type GenreCategory } from "../../src/features/catalog/constants.js";
 
 /** Tamanho mínimo de cada fileira (antes de o app tirar o destaque e os repetidos) */
 const MIN_SIZE: Record<CatalogRowId, number> = { "em-alta": 25, novidades: 15, aclamados: 30, classicos: 30, populares: 25 };
@@ -86,4 +88,44 @@ export function validateCatalog(
   }
 
   return { errors, catalog };
+}
+
+/** Tamanho mínimo de cada categoria (documentário tem menos filmes com público suficiente) */
+const MIN_GENRE_SIZE: Partial<Record<GenreCategory, number>> = { "Documentário": 40 };
+const DEFAULT_MIN_GENRE_SIZE = 80;
+
+/** Verifica o arquivo de uma categoria curada (public/genres/<slug>.json). */
+export function validateGenre(name: GenreCategory, raw: unknown): string[] {
+  const parsed = genreCatalogSchema.safeParse(raw);
+  if (!parsed.success) return [`${name}: schema inválido (${parsed.error.issues[0]?.message ?? "erro"})`];
+  const movies = parsed.data.movies;
+  const errors: string[] = [];
+  const today = new Date(dayIndex() * 86_400_000).toISOString().slice(0, 10);
+
+  const min = MIN_GENRE_SIZE[name] ?? DEFAULT_MIN_GENRE_SIZE;
+  if (movies.length < min) errors.push(`${name}: só ${movies.length} filmes (mínimo ${min})`);
+  if (new Set(movies.map((m) => m.id)).size !== movies.length) errors.push(`${name}: filme repetido`);
+  for (const m of movies) {
+    if (!m.posterPath) errors.push(`${name}: "${m.title}" sem pôster`);
+    if (m.releaseDate > today) errors.push(`${name}: "${m.title}" ainda não foi lançado`);
+  }
+  // A garantia central: todo filme de uma categoria mostra essa categoria na ficha
+  for (const m of movies) {
+    if (!m.categories?.includes(name)) errors.push(`${name}: "${m.title}" não tem a categoria "${name}" na classificação (${(m.categories ?? []).join(" / ") || "sem categorias"})`);
+  }
+  const keys = new Map<string, number>();
+  for (const m of movies) {
+    const key = getFranchiseKey(m.title, m.originalTitle);
+    keys.set(key, (keys.get(key) ?? 0) + 1);
+  }
+  for (const [key, n] of keys) if (n > 1) errors.push(`${name}: ${n} filmes da franquia "${key}" (máximo 1)`);
+  return errors;
+}
+
+/** Todas as categorias; um arquivo ausente é erro. `read` devolve o JSON do arquivo ou null. */
+export function validateGenres(read: (name: GenreCategory) => unknown | null): string[] {
+  return GENRES.flatMap((name) => {
+    const raw = read(name);
+    return raw === null ? [`${name}: arquivo ausente`] : validateGenre(name, raw);
+  });
 }

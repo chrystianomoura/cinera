@@ -3,8 +3,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateCatalog } from "./curation/validate.js";
+import { validateCatalog, validateGenres } from "./curation/validate.js";
+import { GENRE_SLUGS } from "../src/features/catalog/constants.js";
 import { rotateLanes, rotateBlocks } from "./curation/rotation.js";
+import { runFixtures } from "./curation/classification-fixtures.js";
 
 let failed = 0;
 const check = (name: string, ok: boolean, detail = "") => {
@@ -48,6 +50,12 @@ for (let day = 20_000; day < 20_030; day++) {
 check(`rotação: tirar um filme da fila altera no máximo 18 de ${SIZE} posições (medido ${worst})`, worst <= 18);
 check("rotação: lista menor que a janela volta inteira", rotateLanes([1, 2, 3], SIZE, PERIOD, 5, (v) => v).length === 3);
 
+// --- Classificação única (painel de filmes de referência)
+for (const r of runFixtures()) {
+  if (r.known) console.log(`NOTA  classificação: ${r.title} é uma limitação conhecida (${r.categories.join(", ")}${r.ok ? "" : `; ${r.problem}`})`);
+  else check(`classificação: ${r.title} → ${r.categories.join(" / ")}`, r.ok, r.problem);
+}
+
 // --- Giro do núcleo em blocos
 const core = Array.from({ length: 10 }, (_, i) => i);
 const blockOk = Array.from({ length: 30 }, (_, day) => rotateBlocks(core, 5, 20_000 + day)).every(
@@ -69,6 +77,31 @@ const file = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "p
 const { errors } = validateCatalog(JSON.parse(fs.readFileSync(file, "utf8")));
 check(`catálogo publicado: ${errors.length === 0 ? "todas as verificações passam" : `${errors.length} problema(s)`}`, errors.length === 0);
 for (const e of errors) console.log(`        - ${e}`);
+
+const genreErrors = validateGenres((name) => {
+  const genreFile = path.resolve(path.dirname(file), "genres", `${GENRE_SLUGS[name]}.json`);
+  return fs.existsSync(genreFile) ? JSON.parse(fs.readFileSync(genreFile, "utf8")) : null;
+});
+check(`categorias publicadas: ${genreErrors.length === 0 ? "todas as verificações passam" : `${genreErrors.length} problema(s)`}`, genreErrors.length === 0);
+for (const e of genreErrors) console.log(`        - ${e}`);
+
+// --- Índice de categorias (usado pela pesquisa e pela ficha)
+const indexFile = path.resolve(path.dirname(file), "categories.json");
+const index = fs.existsSync(indexFile) ? (JSON.parse(fs.readFileSync(indexFile, "utf8")) as { categories: Record<string, string[]> }).categories : null;
+check("índice de categorias existe", index !== null);
+if (index) {
+  let mismatch = 0;
+  let total = 0;
+  for (const name of Object.keys(GENRE_SLUGS)) {
+    const genreFile = path.resolve(path.dirname(file), "genres", `${GENRE_SLUGS[name as keyof typeof GENRE_SLUGS]}.json`);
+    if (!fs.existsSync(genreFile)) continue;
+    for (const m of (JSON.parse(fs.readFileSync(genreFile, "utf8")) as { movies: { id: number; categories: string[] }[] }).movies) {
+      total++;
+      if ((index[String(m.id)] ?? []).join() !== m.categories.join()) mismatch++;
+    }
+  }
+  check(`índice de categorias bate com as listas (${total} filmes conferidos)`, mismatch === 0, `${mismatch} divergências`);
+}
 
 if (failed > 0) {
   console.log(`\n${failed} verificação(ões) falharam.`);
