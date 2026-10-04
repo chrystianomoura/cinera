@@ -1,5 +1,6 @@
 /**
  * Serviço OMDb para obter a nota do IMDb, com proteções para poupar a cota diária:
+ * 0. Filmes do catálogo usam a nota publicada (public/imdb.json): zero consultas ao OMDb
  * 1. Acesso ao localStorage com guarda (funciona sem window)
  * 2. Validação do formato do IMDb ID (/^tt\d+$/) antes de qualquer chamada
  * 3. Deduplicação de chamadas em andamento para o mesmo ID
@@ -7,6 +8,8 @@
  * 5. Cache negativo (24 horas) para filmes sem nota
  * 6. Pausa de 15 minutos após 429 ou 401 (chave inválida ou cota diária esgotada)
  */
+
+import { staticImdbRating } from "../catalog/imdb-ratings";
 
 export interface ImdbRatingData {
   rating: string; // Ex: "7.6"
@@ -55,7 +58,7 @@ export class OmdbService {
    * Busca a nota do IMDb pelo IMDb ID, usando os caches e a pausa descritos acima.
    */
   public static async getImdbRating(imdbId?: string | null): Promise<ImdbRatingData | null> {
-    if (!imdbId || !this.isConfigured()) {
+    if (!imdbId) {
       return null;
     }
 
@@ -63,6 +66,16 @@ export class OmdbService {
 
     // Validação estrita de formato de ID (evita chamadas inúteis)
     if (!IMDB_ID_PATTERN.test(cleanId)) {
+      return null;
+    }
+
+    // Filmes do catálogo: a nota já vem publicada pelo robô, sem consulta ao OMDb
+    const published = await staticImdbRating(cleanId);
+    if (published) {
+      return published;
+    }
+
+    if (!this.isConfigured()) {
       return null;
     }
 

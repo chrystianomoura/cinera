@@ -103,6 +103,17 @@ if (index) {
   check(`índice de categorias bate com as listas (${total} filmes conferidos)`, mismatch === 0, `${mismatch} divergências`);
 }
 
+// --- Notas do IMDb publicadas (a ficha lê daqui, sem consultar o OMDb ao vivo)
+const imdbFile = path.resolve(path.dirname(file), "imdb.json");
+const imdb = fs.existsSync(imdbFile) ? (JSON.parse(fs.readFileSync(imdbFile, "utf8")) as { ratings: Record<string, [number, number | null]> }).ratings : null;
+check("notas do IMDb existem", imdb !== null);
+if (imdb && index) {
+  const entries = Object.entries(imdb);
+  const valid = entries.every(([id, [rating, votes]]) => /^tt\d+$/.test(id) && rating >= 1 && rating <= 10 && (votes === null || votes >= 0));
+  check(`notas do IMDb: formato válido (${entries.length} filmes)`, valid);
+  check("notas do IMDb: cobrem quase todo o catálogo", entries.length >= Object.keys(index).length * 0.98, `${entries.length} notas para ${Object.keys(index).length} filmes`);
+}
+
 if (failed > 0) {
   console.log(`\n${failed} verificação(ões) falharam.`);
   process.exit(1);

@@ -26,6 +26,8 @@
   Cache-Control: public, max-age=300, must-revalidate
 /categories.json
   Cache-Control: public, max-age=300, must-revalidate
+/imdb.json
+  Cache-Control: public, max-age=300, must-revalidate
 /genres/*
   Cache-Control: public, max-age=300, must-revalidate
 

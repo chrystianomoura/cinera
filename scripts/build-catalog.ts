@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { buildImdbRatings } from "./curation/imdb-ratings.js";
 import { validateCatalog, validateGenres } from "./curation/validate.js";
 import { GENRE_SLUGS, GENRES } from "../src/features/catalog/constants.js";
 import { CATALOG_ROW_IDS, type Catalog } from "../src/infrastructure/catalog/catalog-schema.js";
@@ -58,6 +59,16 @@ if (genreErrors.length > 0) {
   for (const e of genreErrors) console.error(`  - ${e}`);
   restore(`${genreErrors.length} verificação(ões) das categorias falharam`);
 }
+
+// Notas do IMDb de todos os filmes do catálogo, para a ficha mostrar sem consultar o OMDb ao vivo
+const allIds = new Set<number>();
+for (const row of catalog!.rows) for (const m of row.movies) allIds.add(m.id);
+for (const m of catalog!.hero ?? []) allIds.add(m.id);
+for (const name of GENRES) for (const m of (JSON.parse(fs.readFileSync(genreFile(name), "utf8")) as { movies: { id: number }[] }).movies) allIds.add(m.id);
+const { ratings, missing } = await buildImdbRatings([...allIds]);
+if (missing.length > allIds.size * 0.02) restore(`${missing.length} de ${allIds.size} filmes ficaram sem nota do IMDb`);
+fs.writeFileSync(path.join(root, "public", "imdb.json"), JSON.stringify({ version: 1, ratings }));
+console.log(`\nNotas do IMDb gravadas: ${Object.keys(ratings).length} filmes (${missing.length} sem nota).`);
 
 // Índice id → categorias de todos os filmes do catálogo: a pesquisa e a ficha usam o mesmo resultado das listas
 const indexed: Record<string, string[]> = {};
