@@ -1,14 +1,13 @@
 import { useEffect, useRef, useCallback } from "react";
-import { Search, X, Loader2, Film, ChevronRight, RotateCcw } from "lucide-react";
+import { Search, X, Loader2, RotateCcw } from "lucide-react";
 import { useSearchStore } from "./use-search-store";
 import { useMovieSearch } from "./use-movie-search";
-import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import { SEARCH_CONFIG } from "@/infrastructure/search/search-service";
-import { formatCategories, type Movie } from "@/domain";
+import type { Movie } from "@/domain";
 import { useCategoryIndex } from "@/hooks/use-category-index";
-import { resolveCategories } from "@/infrastructure/catalog/category-index";
 import { GENRES } from "../catalog/constants";
 import { registerSearchInput } from "./open-search";
+import { SearchResultRow } from "./SearchResultRow";
 import { StatusMessage, statusButtonClassName } from "@/features/feedback/StatusMessage";
 
 interface SearchModalProps {
@@ -18,18 +17,16 @@ interface SearchModalProps {
 
 export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) {
   const { data: categoryIndex } = useCategoryIndex();
-  const {
-    isOpen,
-    query,
-    selectedIndex,
-    scrollPosition,
-    isPausedForDetails,
-    closeSearch,
-    pauseSearchForDetails,
-    setQuery,
-    setSelectedIndex,
-    moveSelection,
-  } = useSearchStore();
+  const isOpen = useSearchStore((state) => state.isOpen);
+  const query = useSearchStore((state) => state.query);
+  const selectedIndex = useSearchStore((state) => state.selectedIndex);
+  const scrollPosition = useSearchStore((state) => state.scrollPosition);
+  const isPausedForDetails = useSearchStore((state) => state.isPausedForDetails);
+  const closeSearch = useSearchStore((state) => state.closeSearch);
+  const pauseSearchForDetails = useSearchStore((state) => state.pauseSearchForDetails);
+  const setQuery = useSearchStore((state) => state.setQuery);
+  const setSelectedIndex = useSearchStore((state) => state.setSelectedIndex);
+  const moveSelection = useSearchStore((state) => state.moveSelection);
   const { results, isLoading, isFetching, isError, hasSearched, debouncedQuery, isSettled, refetch } =
     useMovieSearch(query, !isPausedForDetails);
 
@@ -255,7 +252,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
                 setQuery("");
                 inputRef.current?.focus();
               }}
-              className="p-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer flex-shrink-0 rounded-full hover:bg-white/5 active:bg-white/10"
+              className="flex items-center justify-center w-10 h-10 flex-shrink-0 rounded-full bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               title="Limpar texto"
               aria-label="Limpar texto pesquisado"
             >
@@ -278,7 +275,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             type="button"
             onClick={closeSearch}
             aria-label="Fechar janela de busca"
-            className="md:hidden text-sm font-semibold text-zinc-400 hover:text-white px-2 py-1 rounded-lg active:bg-white/10 transition-colors"
+            className="md:hidden flex-shrink-0 whitespace-nowrap flex items-center h-10 px-4 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer bg-zinc-800/80 border border-white/20 text-zinc-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:bg-zinc-700/80 active:border-white/35 active:text-white active:scale-95"
           >
             Fechar
           </button>
@@ -337,74 +334,17 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
               onMouseLeave={() => setSelectedIndex(-1)}
               className="flex flex-col gap-1"
             >
-              {results.map((movie, index) => {
-                const isSelected = selectedIndex === index;
-                const posterUrl = movie.posterPath
-                  ? getPosterUrl(movie.posterPath, "w342")
-                  : "";
-                const releaseYear = movie.releaseDate
-                  ? movie.releaseDate.slice(0, 4)
-                  : null;
-                // Só categorias que existem no Cinera (as mesmas da ficha), nunca gêneros soltos do TMDB
-                const categoryLabel = formatCategories(resolveCategories(movie, categoryIndex));
-
-                return (
-                  <div
-                    key={movie.id}
-                    id={`search-item-${index}`}
-                    role="option"
-                    aria-selected={isSelected}
-                    data-search-index={index}
-                    onClick={() => handleSelect(movie)}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    className={`group flex items-center gap-4 px-3 py-3 rounded-2xl cursor-pointer transition-all duration-150 select-none active:bg-white/10 border-b border-white/[0.06] last:border-b-0 ${
-                      isSelected
-                        ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-white/15"
-                        : "hover:bg-white/[0.04] text-zinc-200"
-                    }`}
-                  >
-                    {/* Pôster Imponente e Cinematográfico (w-16 h-24 / 64px x 96px) */}
-                    <div className="w-16 h-24 sm:w-16 sm:h-24 rounded-xl overflow-hidden bg-zinc-900 ring-1 ring-white/15 flex-shrink-0 relative shadow-[0_8px_20px_rgba(0,0,0,0.7)]">
-                      {posterUrl ? (
-                        <img
-                          src={posterUrl}
-                          alt={movie.title}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-zinc-900">
-                          <Film className="w-6 h-6" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Dados do Filme: Título Grande e Forte com Categorias Separadas por '/' */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5 py-0.5">
-                      <h4 className="text-base sm:text-lg font-bold text-white truncate leading-tight tracking-tight">
-                        {movie.title}
-                      </h4>
-
-                      <div className="flex items-center gap-2.5 text-xs sm:text-[13px] text-zinc-400 font-normal">
-                        {releaseYear && (
-                          <span className="text-zinc-300 font-semibold">{releaseYear}</span>
-                        )}
-
-                        {categoryLabel && (
-                          <>
-                            {/* Ponto Divisor com Contraste Marcante */}
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 inline-block flex-shrink-0" />
-                            <span className="truncate text-zinc-300">{categoryLabel}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Chevron Convidativo e Evidente no Mobile e Desktop */}
-                    <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-white group-active:text-white transition-colors flex-shrink-0 ml-1 stroke-[2.25]" />
-                  </div>
-                );
-              })}
+              {results.map((movie, index) => (
+                <SearchResultRow
+                  key={movie.id}
+                  movie={movie}
+                  index={index}
+                  isSelected={selectedIndex === index}
+                  categoryIndex={categoryIndex}
+                  onSelect={handleSelect}
+                  onHover={setSelectedIndex}
+                />
+              ))}
             </div>
           )}
 
