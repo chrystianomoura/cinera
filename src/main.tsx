@@ -8,6 +8,11 @@ import './index.css'
 import App from './App'
 import { lockViewportHeight } from './lib/stable-viewport'
 
+// Medidor de FPS (só no npm run dev, com ?fps=1 na URL); some do build publicado
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('fps')) {
+  void import('./dev/fps-meter').then((m) => m.startFpsMeter())
+}
+
 interface ErrorBoundaryProps {
   children: ReactNode
 }
