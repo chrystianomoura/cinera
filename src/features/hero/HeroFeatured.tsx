@@ -143,9 +143,9 @@ export function HeroFeatured({
               srcSet={`
                 ${getBackdropUrl(heroMovie.backdropPath, "w780")} 780w,
                 ${getBackdropUrl(heroMovie.backdropPath, "w1280")} 1280w,
-                ${getBackdropUrl(heroMovie.backdropPath, "original")} 1920w
+                ${getBackdropUrl(heroMovie.backdropPath, "original")} 2560w
               `}
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 1920px"
+              sizes="min(100vw, 1280px)"
               alt={heroMovie.title}
               loading="eager"
               fetchPriority="high"
