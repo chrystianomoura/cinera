@@ -1,15 +1,21 @@
 name: Atualizar catálogo
 
 # Roda todos os dias às 00h30 de Brasília (03h30 UTC) e monta o catálogo do dia: fileiras, destaque e categorias.
+# Mais três horários (06h30, 12h30 e 18h30 de Brasília) servem de reserva: se o catálogo do dia já foi publicado,
+# eles encerram na hora; se a rodada da madrugada falhou, eles tentam de novo. Se tudo falhar, abre uma issue.
 # Fica DESLIGADO até existir a variável de repositório CATALOGO_AUTOMATICO com o valor "true"
 # (Settings → Secrets and variables → Actions → Variables). Segredos necessários: TMDB_TOKEN e OMDB_SCRIPT_KEY.
 on:
   schedule:
     - cron: "30 3 * * *"
+    - cron: "30 9 * * *"
+    - cron: "30 15 * * *"
+    - cron: "30 21 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: atualizar-catalogo
@@ -24,13 +30,28 @@ jobs:
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Confere se o catálogo de hoje já foi publicado
+        id: fresco
+        run: |
+          hoje=$(TZ=America/Sao_Paulo date +%Y-%m-%d)
+          gerado=$(node -e 'const d=new Date(require("./public/catalog.json").generatedAt);console.log(new Intl.DateTimeFormat("sv-SE",{timeZone:"America/Sao_Paulo"}).format(d))')
+          echo "Hoje: $hoje | catálogo gerado em: $gerado"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$hoje" = "$gerado" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "O catálogo de hoje já está publicado. Nada a fazer."
+          fi
+
+      - if: steps.fresco.outputs.skip != 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - if: steps.fresco.outputs.skip != 'true'
+        run: npm ci
 
       - name: Restaura o cache de consultas (TMDB e OMDb)
+        if: steps.fresco.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
           path: scripts/.cache
@@ -38,15 +59,18 @@ jobs:
           restore-keys: catalogo-cache-
 
       - name: Monta o catálogo (só publica se todas as verificações passarem)
+        if: steps.fresco.outputs.skip != 'true'
         env:
           VITE_TMDB_API_TOKEN: ${{ secrets.TMDB_TOKEN }}
           OMDB_SCRIPT_KEY: ${{ secrets.OMDB_SCRIPT_KEY }}
         run: npm run build:catalog
 
       - name: Confere o catálogo publicado
+        if: steps.fresco.outputs.skip != 'true'
         run: npm run test:catalog
 
       - name: Publica na main
+        if: steps.fresco.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -56,4 +80,20 @@ jobs:
           else
             git commit -m "chore(catalogo): catálogo do dia $(TZ=America/Sao_Paulo date +%d/%m/%Y)"
             git push origin HEAD:main
+          fi
+
+      # Rodada agendada que falhou: abre (ou comenta em) uma issue. As rodadas de reserva tentam de novo nas horas seguintes;
+      # a issue fica aberta até você fechar
+      - name: Avisa se o catálogo não foi atualizado
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          titulo="Catálogo sem atualizar: a rotina diária falhou"
+          url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          existente=$(gh issue list --state open --search "$titulo in:title" --json number -q '.[0].number')
+          if [ -n "$existente" ]; then
+            gh issue comment "$existente" --body "Falhou de novo em $(date -u +%d/%m/%Y' '%H:%M) UTC: $url"
+          else
+            gh issue create --title "$titulo" --body "A rotina que monta o catálogo falhou. O site segue com a versão anterior. Veja o registro: $url"
           fi

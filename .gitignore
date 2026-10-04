@@ -30,3 +30,6 @@ scripts/.cache
 # Testes ponta a ponta
 test-results
 playwright-report
+
+# Configurações locais do Claude Code
+.claude/
