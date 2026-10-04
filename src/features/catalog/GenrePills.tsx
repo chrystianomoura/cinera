@@ -28,7 +28,7 @@ export function GenrePills({ selectedGenre, onSelectGenre }: GenrePillsProps) {
     <section className="relative w-full" role="group" aria-label="Filtrar catálogo por gênero">
       <div
         ref={containerRef}
-        className="flex md:flex-wrap items-center gap-2 sm:gap-2.5 overflow-x-auto md:overflow-visible scrollbar-hide px-4 md:px-0 py-1.5 w-full [contain:layout_style]"
+        className="flex md:flex-wrap items-center gap-2 sm:gap-2.5 overflow-x-auto overflow-y-hidden md:overflow-visible scrollbar-hide px-4 md:px-0 py-1.5 w-full [contain:layout_style]"
       >
         {["Todos", ...GENRES].map((genre) => {
           const isSelected = selectedGenre === genre;

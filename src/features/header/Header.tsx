@@ -9,7 +9,9 @@ interface HeaderProps {
 
 export function Header({ onSearchClick, onLibraryClick, onLogoClick }: HeaderProps) {
   return (
-    <header className="sticky top-0 inset-x-0 z-50 px-4 md:px-12 header-bar flex items-center justify-between gap-4 border-b border-white/10 backdrop-blur-xl bg-black/60">
+    <>
+    {/* fixed + espaçador, e não sticky: no iPhone o sticky do cabeçalho fazia o WebKit perder a rolagem horizontal das pílulas */}
+    <header className="fixed top-0 inset-x-0 z-50 px-4 md:px-12 header-bar flex items-center justify-between gap-4 border-b border-white/10 backdrop-blur-xl bg-black/60">
       <BrandLogo onClick={onLogoClick} />
 
       <div className="flex items-center gap-2.5 sm:gap-3">
@@ -43,5 +45,7 @@ export function Header({ onSearchClick, onLibraryClick, onLogoClick }: HeaderPro
         </button>
       </div>
     </header>
+    <div aria-hidden="true" className="header-bar" />
+    </>
   );
 }

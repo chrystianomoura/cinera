@@ -253,14 +253,18 @@ export default function App() {
             : "max-h-0 opacity-0 pointer-events-none"
         }`}
       >
-        <HeroFeatured
-          candidates={heroMovies || []}
-          isLoading={isLoadingHero}
-          isPaused={isAnyOverlayActive}
-          isVisible={isHomeView && !isFadingOutHome}
-          onOpenTrailer={openTrailer}
-          onOpenDetails={handleOpenDetails}
-        />
+        {/* Só existe na Home: colapsado (max-h-0) mas montado, no iPhone ele quebrava a rolagem horizontal das pílulas
+            (WebKit); fora da Home também poupa a imagem grande e as animações */}
+        {isHomeView && (
+          <HeroFeatured
+            candidates={heroMovies || []}
+            isLoading={isLoadingHero}
+            isPaused={isAnyOverlayActive}
+            isVisible={!isFadingOutHome}
+            onOpenTrailer={openTrailer}
+            onOpenDetails={handleOpenDetails}
+          />
+        )}
       </div>
 
       <main
