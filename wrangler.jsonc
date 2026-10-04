@@ -1,9 +1,13 @@
 {
-  // Publicação no Cloudflare: o site é só arquivos estáticos (a pasta dist gerada pelo `npm run build`)
+  // Publicação no Cloudflare: o site é a pasta dist (gerada pelo `npm run build`) e um Worker pequeno
+  // atende só /api/* (ponte para TMDB e OMDb, com as chaves guardadas como secrets do Cloudflare)
   "name": "cinera",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
   }
 }

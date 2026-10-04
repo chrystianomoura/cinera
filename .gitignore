@@ -33,3 +33,5 @@ playwright-report
 
 # Configurações locais do Claude Code
 .claude/
+.dev.vars
+.wrangler
