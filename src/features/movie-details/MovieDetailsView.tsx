@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Play, Bookmark, Check, Film, Loader2, ArrowLeft } from "lucide-react";
+import { X, Play, Bookmark, Film, Loader2, ArrowLeft } from "lucide-react";
 import type { Movie } from "@/domain";
 import { getPosterUrl, getBackdropUrl } from "@/infrastructure/api/movie-service";
 import { formatRuntime, formatCurrencyUSD } from "@/lib/formatters";
@@ -13,6 +13,7 @@ import { WatchProvidersRow } from "./WatchProvidersRow";
 import { CastCarousel } from "./CastCarousel";
 import { GalleryCarousel } from "./GalleryCarousel";
 import { PhotoModal } from "./PhotoModal";
+import { WatchedStatusIcon } from "./WatchedStatusIcon";
 
 interface MovieDetailsViewProps {
   movie: Movie | null;
@@ -237,7 +238,7 @@ export function MovieDetailsView({
             </div>
 
             {/* Linha de Metadados: Emoldurada no mobile, limpa sem linha no desktop */}
-            <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 text-sm sm:text-base md:text-base py-3 sm:py-3.5 md:py-0 border-y md:border-y-0 border-white/10 w-full">
+            <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 text-sm sm:text-base md:text-base pt-3 pb-[18px] sm:pt-3.5 sm:pb-5 md:py-0 border-y md:border-y-0 border-white/25 md:border-white/10 w-full">
               {/* Linha 1 no mobile: Ano e Duração */}
               {(releaseYear || duration) && (
                 <div className="flex items-center gap-2.5">
@@ -338,15 +339,11 @@ export function MovieDetailsView({
                   aria-pressed={isWatched}
                   className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
                     isWatched
-                      ? "bg-white text-black border border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
-                      : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
+                      ? "bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-400 border border-emerald-400/60 hover:border-emerald-400 backdrop-blur-md"
+                      : "bg-rose-400/10 hover:bg-rose-400/20 text-rose-400 border border-rose-400/60 hover:border-rose-400 backdrop-blur-md"
                   }`}
                 >
-                  <Check
-                    className={`w-4 h-4 flex-shrink-0 ${
-                      isWatched ? "stroke-[3]" : "stroke-[2.2]"
-                    }`}
-                  />
+                  <WatchedStatusIcon watched={isWatched} />
                   <span className="truncate">Já Assisti</span>
                 </button>
               </div>
@@ -361,14 +358,14 @@ export function MovieDetailsView({
 
             {/* Ficha de Produção & Finanças (com Direção no topo) */}
             {hasProductionDetails && (
-              <div className="flex flex-col gap-2 md:gap-2.5 pt-3 border-t border-white/10 text-center md:text-left w-full">
+              <div className="flex flex-col gap-2 md:gap-2.5 pt-3 border-t border-white/25 md:border-white/10 text-center md:text-left w-full">
                 {/* Linha 1: Direção */}
                 {hasDirectors && (
                   <div className="text-center md:text-left">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
+                    <span className="text-zinc-400 font-bold uppercase text-[13px] sm:text-sm md:text-xs tracking-wider mr-1.5">
                       Direção:
                     </span>
-                    <span className="font-medium text-zinc-100 text-xs sm:text-sm">
+                    <span className="font-medium text-zinc-100 text-base sm:text-lg md:text-sm">
                       {credits!.directors!.join(", ")}
                     </span>
                   </div>
@@ -376,14 +373,14 @@ export function MovieDetailsView({
 
                 {/* Linha 2: Orçamento e Bilheteria SEMPRE juntos e primeiro, com cores semânticas apenas quando ambos existem */}
                 {(formattedBudget || formattedRevenue) && (
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3.5 sm:gap-x-6 gap-y-1">
+                  <div className="flex flex-col md:flex-row md:flex-wrap items-center md:justify-start gap-y-1 md:gap-x-6">
                     {formattedBudget && (
                       <div className="flex items-center whitespace-nowrap">
-                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
+                        <span className="text-zinc-400 font-bold uppercase text-[13px] sm:text-sm md:text-xs tracking-wider mr-1.5">
                           Orçamento:
                         </span>
                         <span
-                          className={`font-medium text-xs sm:text-sm ${
+                          className={`font-medium text-base sm:text-lg md:text-sm ${
                             hasFinancialContrast ? "text-rose-400" : "text-zinc-100"
                           }`}
                         >
@@ -394,11 +391,11 @@ export function MovieDetailsView({
 
                     {formattedRevenue && (
                       <div className="flex items-center whitespace-nowrap">
-                        <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
+                        <span className="text-zinc-400 font-bold uppercase text-[13px] sm:text-sm md:text-xs tracking-wider mr-1.5">
                           Bilheteria:
                         </span>
                         <span
-                          className={`font-medium text-xs sm:text-sm ${
+                          className={`font-medium text-base sm:text-lg md:text-sm ${
                             hasFinancialContrast ? "text-emerald-400" : "text-zinc-100"
                           }`}
                         >
@@ -412,10 +409,10 @@ export function MovieDetailsView({
                 {/* Linha 3: Título Original */}
                 {originalTitle && (
                   <div className="text-center md:text-left">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
+                    <span className="text-zinc-400 font-bold uppercase text-[13px] sm:text-sm md:text-xs tracking-wider mr-1.5">
                       Título Original:
                     </span>
-                    <span className="font-medium text-zinc-100 text-xs sm:text-sm">
+                    <span className="font-medium text-zinc-100 text-base sm:text-lg md:text-sm">
                       {originalTitle}
                     </span>
                   </div>
@@ -424,10 +421,10 @@ export function MovieDetailsView({
                 {/* Linha 4: Produtoras com fluxo contínuo e quebra natural */}
                 {companiesList && (
                   <div className="text-center md:text-left">
-                    <span className="text-zinc-400 font-bold uppercase text-xs tracking-wider mr-1.5">
+                    <span className="text-zinc-400 font-bold uppercase text-[13px] sm:text-sm md:text-xs tracking-wider mr-1.5">
                       Produtoras:
                     </span>
-                    <span className="font-medium text-zinc-100 text-xs sm:text-sm">
+                    <span className="font-medium text-zinc-100 text-base sm:text-lg md:text-sm">
                       {companiesList}
                     </span>
                   </div>
@@ -439,9 +436,9 @@ export function MovieDetailsView({
 
         {/* Sinopse com linha divisória e espaçamento unificado */}
         {movie.overview ? (
-          <section className="w-full border-t border-white/10 pt-6 md:pt-8">
+          <section className="w-full border-t border-white/25 md:border-white/10 pt-6 md:pt-8">
             <div className="max-w-2xl sm:max-w-3xl mx-auto px-4 sm:px-6 flex flex-col gap-3">
-              <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center w-full">
+              <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center w-full">
                 Sinopse
               </h3>
               <p className="text-base sm:text-lg md:text-xl text-white leading-relaxed font-normal text-left">
@@ -453,14 +450,14 @@ export function MovieDetailsView({
 
         {/* Elenco Principal com linha divisória e espaçamento unificado */}
         {(isLoadingCredits || (credits?.cast && credits.cast.length > 0)) ? (
-          <section className="w-full border-t border-white/10 pt-6 md:pt-8">
+          <section className="w-full border-t border-white/25 md:border-white/10 pt-6 md:pt-8">
             <CastCarousel cast={credits?.cast} isLoading={isLoadingCredits} />
           </section>
         ) : null}
 
         {/* Galeria de Fotos com linha divisória e espaçamento unificado */}
         {(isLoadingGallery || (gallery && gallery.length > 0)) ? (
-          <section className="w-full border-t border-white/10 pt-6 md:pt-8">
+          <section className="w-full border-t border-white/25 md:border-white/10 pt-6 md:pt-8">
             <GalleryCarousel
               images={gallery}
               isLoading={isLoadingGallery}

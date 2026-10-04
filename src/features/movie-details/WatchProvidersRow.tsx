@@ -73,14 +73,14 @@ function ProviderCard({
 
 export function WatchProvidersRow({ providers, isLoading, isError = false }: WatchProvidersRowProps) {
   const title = (
-    <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
+    <h3 className="text-sm sm:text-[15px] md:text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
       Onde Assistir
     </h3>
   );
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
+      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/25 md:border-white/10 w-full">
         {title}
         <div className="flex gap-2.5">
           {Array.from({ length: 2 }).map((_, i) => (
@@ -96,9 +96,9 @@ export function WatchProvidersRow({ providers, isLoading, isError = false }: Wat
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
+      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/25 md:border-white/10 w-full">
         {title}
-        <p className="text-zinc-100 font-medium text-xs sm:text-sm text-center md:text-left">
+        <p className="text-zinc-100 font-medium text-base sm:text-lg md:text-sm text-center md:text-left">
           Não foi possível carregar onde assistir agora. Tente novamente em instantes.
         </p>
       </div>
@@ -116,28 +116,25 @@ export function WatchProvidersRow({ providers, isLoading, isError = false }: Wat
     { type: "Aluguel", list: rental },
   ].filter((line) => line.list.length > 0);
 
+  // Sem nenhuma plataforma, a seção inteira (título e frase) não aparece
+  if (lines.length === 0) return null;
+
   return (
-    <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/10 w-full">
+    <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/25 md:border-white/10 w-full">
       {title}
 
-      {lines.length === 0 ? (
-        <p className="text-zinc-100 font-medium text-xs sm:text-sm text-center md:text-left">
-          Não encontramos este filme em assinatura ou aluguel no Brasil.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2.5 w-full">
-          {lines.map((line) => (
-            <div
-              key={line.type}
-              className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full"
-            >
-              {line.list.map((provider) => (
-                <ProviderCard key={provider.providerId} provider={provider} type={line.type} />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-2.5 w-full">
+        {lines.map((line) => (
+          <div
+            key={line.type}
+            className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full"
+          >
+            {line.list.map((provider) => (
+              <ProviderCard key={provider.providerId} provider={provider} type={line.type} />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

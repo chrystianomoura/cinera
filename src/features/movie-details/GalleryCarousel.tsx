@@ -110,7 +110,7 @@ export function GalleryCarousel({
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
-        <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Galeria
         </h3>
         <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-0">
@@ -135,7 +135,7 @@ export function GalleryCarousel({
     <div className="relative flex flex-col gap-4">
       {/* Título Centralizado com controles na lateral */}
       <div className="relative flex items-center justify-center">
-        <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Galeria
         </h3>
 

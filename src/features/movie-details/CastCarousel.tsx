@@ -38,8 +38,8 @@ const CastItem = memo(function CastItem({ actor }: CastItemProps) {
         )}
       </div>
 
-      <div className="h-8 sm:h-9 flex items-start justify-center w-full px-0.5">
-        <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-tight break-words tracking-tight text-center line-clamp-2">
+      <div className="h-10 md:h-9 flex items-start justify-center w-full px-0.5">
+        <h4 className="text-sm sm:text-[15px] md:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-tight break-words tracking-tight text-center line-clamp-2">
           {actor.name}
         </h4>
       </div>
@@ -69,7 +69,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
-        <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Elenco Principal
         </h3>
         <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-0">
@@ -94,7 +94,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
   return (
     <div className="relative flex flex-col gap-4 group/cast">
       <div className="relative flex items-center justify-center">
-        <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Elenco Principal
         </h3>
 

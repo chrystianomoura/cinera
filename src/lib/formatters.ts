@@ -22,7 +22,7 @@ export function formatCurrencyUSD(amount?: number): string | null {
       minimumFractionDigits: 1,
       maximumFractionDigits: 2,
     });
-    return `$ ${formatted} ${billions >= 2 ? "bilhões" : "bilhão"}`;
+    return `US$ ${formatted} ${billions >= 2 ? "bilhões" : "bilhão"}`;
   }
 
   if (amount >= 1_000_000) {
@@ -31,7 +31,7 @@ export function formatCurrencyUSD(amount?: number): string | null {
       minimumFractionDigits: 0,
       maximumFractionDigits: 1,
     });
-    return `$ ${formatted} ${millions >= 2 ? "milhões" : "milhão"}`;
+    return `US$ ${formatted} ${millions >= 2 ? "milhões" : "milhão"}`;
   }
 
   if (amount >= 1_000) {
@@ -40,8 +40,8 @@ export function formatCurrencyUSD(amount?: number): string | null {
       minimumFractionDigits: 0,
       maximumFractionDigits: 1,
     });
-    return `$ ${formatted} mil`;
+    return `US$ ${formatted} mil`;
   }
 
-  return `$ ${amount.toLocaleString("pt-BR")}`;
+  return `US$ ${amount.toLocaleString("pt-BR")}`;
 }
