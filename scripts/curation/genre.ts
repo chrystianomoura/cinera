@@ -14,8 +14,11 @@ import { FRANCHISE_UNIQUE_START } from "./validate.js";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../../src/infrastructure/api/tmdb-types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const LIST_SIZE = 200;
-const PAGES_BY_VOTES = 50;
+/** Topo da lista: o mesmo cálculo de sempre, com o piso de público cheio */
+const HEAD_SIZE = 200;
+/** Cauda da lista: mais filmes, com um piso de público menor, sempre abaixo do topo */
+const TAIL_SIZE = 200;
+const PAGES_BY_VOTES = 120;
 const PAGES_BY_RATING = 30;
 /** Piso geral de qualidade (consenso) para qualquer categoria */
 const MIN_CONSENSUS = 6.8;
@@ -45,6 +48,9 @@ const POOL_GENRES: Record<GenreCategory, string> = {
 /** Público mínimo no IMDb por categoria (documentário tem menos votos) */
 const MIN_IMDB_VOTES: Partial<Record<GenreCategory, number>> = { "Documentário": 8_000 };
 const DEFAULT_MIN_IMDB_VOTES = 25_000;
+/** Público mínimo no IMDb para entrar na cauda */
+const TAIL_MIN_IMDB_VOTES: Partial<Record<GenreCategory, number>> = { "Documentário": 3_000 };
+const DEFAULT_TAIL_MIN_IMDB_VOTES = 10_000;
 /** Votos mínimos no TMDB para entrar no conjunto de candidatos (documentário tem menos votantes) */
 const POOL_MIN_TMDB_VOTES: Partial<Record<GenreCategory, number>> = { "Documentário": 100 };
 const DEFAULT_POOL_MIN_TMDB_VOTES = 500;
@@ -93,19 +99,23 @@ export async function curateGenre(name: GenreCategory, write: boolean): Promise<
   const { details, candidates } = await loadCandidates(ids);
   const detailById = new Map<number, TMDBDetail>(details.map((d) => [d.id, d]));
   const minVotes = MIN_IMDB_VOTES[name] ?? DEFAULT_MIN_IMDB_VOTES;
+  const tailMinVotes = TAIL_MIN_IMDB_VOTES[name] ?? DEFAULT_TAIL_MIN_IMDB_VOTES;
 
   // Pertencimento: a categoria precisa estar entre as do filme na classificação única (a mesma da ficha)
   const categoriesOf = (c: Candidate) =>
     classifyMovie({ tmdbGenres: detailById.get(c.id)!.genres.map((g) => g.name), imdbGenres: c.imdbGenres });
 
-  const eligible = candidates.filter((c) => {
-    const d = detailById.get(c.id)!;
-    if (!d.poster_path || !d.release_date || d.release_date > today) return false;
-    if (c.imdbRating === null || (c.imdbVotes ?? 0) < minVotes) return false;
-    if (Math.abs(c.tmdbRating - c.imdbRating) > MAX_DIVERGENCE) return false;
-    if (consensusScore(c) < MIN_CONSENSUS) return false;
-    return categoriesOf(c).includes(name);
-  });
+  const eligibleWith = (floor: number) =>
+    candidates.filter((c) => {
+      const d = detailById.get(c.id)!;
+      if (!d.poster_path || !d.release_date || d.release_date > today) return false;
+      if (c.imdbRating === null || (c.imdbVotes ?? 0) < floor) return false;
+      if (Math.abs(c.tmdbRating - c.imdbRating) > MAX_DIVERGENCE) return false;
+      if (consensusScore(c) < MIN_CONSENSUS) return false;
+      return categoriesOf(c).includes(name);
+    });
+  const eligible = eligibleWith(minVotes);
+  const eligibleTail = eligibleWith(tailMinVotes);
 
   // O prestígio pesa metade do que pesa em Aclamados: terror e comédia raramente ganham Oscar
   // Quem tem a categoria como PRIMEIRA etiqueta ("Comédia / Romance") ganha um bônus fixo sobre quem a tem como
@@ -119,9 +129,13 @@ export async function curateGenre(name: GenreCategory, write: boolean): Promise<
   const score = (c: Candidate) => consensusScore(c) + 0.5 * prestigeBonus(c) + firstLabelBonus(c) + POPULARITY_WEIGHT * popularity(c);
   eligible.sort((a, b) => score(b) - score(a));
 
-
-  const ranking = buildRanking(eligible, { ...CONFIG, minImdbVotes: minVotes }, LIST_SIZE);
+  const ranking = buildRanking(eligible, { ...CONFIG, minImdbVotes: minVotes }, HEAD_SIZE);
   const ranked = ranking.picked;
+
+  // Cauda: quem passa só com o piso menor de público, nunca repetindo um filme do topo
+  const inHead = new Set(ranked.map((c) => c.id));
+  const tailPool = eligibleTail.filter((c) => !inHead.has(c.id)).sort((a, b) => score(b) - score(a));
+  const tail = buildRanking(tailPool, { ...CONFIG, minImdbVotes: tailMinVotes, strictFranchiseBlock: 0 }, TAIL_SIZE).picked;
 
   // Giro diário que preserva o nível: os 15 primeiros alternam em blocos de 5 (sem cruzar o limite onde as sagas
   // voltam a poder repetir); depois blocos maiores
@@ -130,14 +144,17 @@ export async function curateGenre(name: GenreCategory, write: boolean): Promise<
     ...rotateBlocks(ranked.slice(0, FRANCHISE_UNIQUE_START), 5, day),
     ...rotateBlocks(ranked.slice(FRANCHISE_UNIQUE_START, 45), 6, day),
     ...rotateBlocks(ranked.slice(45), 10, day),
+    ...rotateBlocks(tail, 10, day),
   ];
 
-  console.log(`3) ${picked.length} filmes (elegíveis ${eligible.length} de ${candidates.length})`);
+  console.log(`3) ${picked.length} filmes: topo ${ranked.length} (elegíveis ${eligible.length}) + cauda ${tail.length} (elegíveis com piso menor ${eligibleTail.length}) de ${candidates.length} candidatos`);
   picked.slice(0, 15).forEach((c, i) =>
     console.log(`   ${String(i + 1).padStart(2)}. ${c.title.slice(0, 38).padEnd(38)} ${c.year}  consenso ${fmt(consensusScore(c), 2)} | IMDb ${fmt(c.imdbRating)} (${c.imdbVotes ?? "—"} votos)`),
   );
   const at = (i: number) => (picked[i] ? `${fmt(consensusScore(picked[i]), 2)}` : "—");
-  console.log(`   Consenso nas posições 1, 10, 25, 50, 100, 150, 200: ${[0, 9, 24, 49, 99, 149, 199].map(at).join(" / ")}`);
+  console.log(`   Consenso nas posições 1, 10, 50, 100, 200 | 201, 250, 300, 400: ${[0, 9, 49, 99, 199].map(at).join(" / ")} | ${[200, 249, 299, 399].map(at).join(" / ")}`);
+  const tailVotes = tail.map((c) => c.imdbVotes ?? 0);
+  if (tailVotes.length > 0) console.log(`   Cauda: votos no IMDb de ${Math.min(...tailVotes).toLocaleString("pt-BR")} a ${Math.max(...tailVotes).toLocaleString("pt-BR")}; nota TMDB média ${(tail.reduce((s, c) => s + c.tmdbRating, 0) / tail.length).toFixed(2)}`);
 
   if (write) {
     const movies = picked.map((c) => {
