@@ -17,7 +17,7 @@ test("abrir uma categoria mostra uma lista pronta e a rolagem carrega mais filme
   await expect.poll(() => cards.count(), { timeout: 8000 }).toBeGreaterThan(first);
 
   expect(requests.some((u) => u.endsWith("/genres/drama.json"))).toBe(true);
-  expect(requests.filter((u) => u.includes("api.themoviedb.org") && u.includes("discover"))).toEqual([]);
+  expect(requests.filter((u) => u.includes("/api/tmdb/") && u.includes("discover"))).toEqual([]);
 });
 
 test("os filmes da lista não se repetem", async ({ page }) => {

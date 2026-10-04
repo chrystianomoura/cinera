@@ -32,6 +32,16 @@ describe("Worker da API", () => {
     },
   );
 
+  it("recusa pedidos que partem de outros sites, mas aceita o próprio site e quem não envia o cabeçalho", async () => {
+    const f = vi.fn(async () => Response.json({ Response: "True", imdbRating: "7.0", imdbVotes: "1" }));
+    const ask = (site?: string) =>
+      handleApi(new Request("https://cinera.party/api/omdb?i=tt0133093", { headers: site ? { "sec-fetch-site": site } : {} }), env, memoryCache(), f as unknown as typeof fetch);
+    expect((await ask("cross-site")).status).toBe(403);
+    expect((await ask("same-site")).status).toBe(403);
+    expect((await ask("same-origin")).status).toBe(200);
+    expect((await ask()).status).toBe(200);
+  });
+
   it("só aceita GET", async () => {
     const res = await handleApi(new Request("https://cinera.party/api/omdb?i=tt0133093", { method: "POST" }), env, memoryCache());
     expect(res.status).toBe(405);

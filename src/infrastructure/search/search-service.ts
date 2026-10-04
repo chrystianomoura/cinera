@@ -1,5 +1,5 @@
 import type { Movie } from "@/domain";
-import { fetchFromTMDB, isTmdbConfigured } from "../api/tmdb-client";
+import { fetchFromTMDB, isApiEnabled } from "../api/tmdb-client";
 import { mapTMDBMovie } from "../api/tmdb-mappers";
 import type { TMDBMovieRaw, TMDBPaginatedResponse } from "../api/tmdb-types";
 
@@ -390,7 +390,7 @@ export async function searchCineraMovies(
   const apiSearchTerm = extractSearchKeywords(spelledQuery);
 
   // 1. Execução contra a API oficial de filmes do TMDB (/search/movie e /search/collection)
-  if (isTmdbConfigured()) {
+  if (isApiEnabled()) {
     try {
       const moviePath = `/search/movie?query=${encodeURIComponent(unaccentedQuery)}&language=pt-BR&include_adult=false`;
       const collectionPath = `/search/collection?query=${encodeURIComponent(apiSearchTerm)}&language=pt-BR`;

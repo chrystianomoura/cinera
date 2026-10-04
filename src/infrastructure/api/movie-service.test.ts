@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// O tmdb-client lê as chaves ao ser carregado: cada teste carrega o serviço de novo, com ou sem chave.
+// Cada teste carrega o serviço de novo, com a API ligada ou no modo de demonstração.
 async function loadService(withKey: boolean) {
   vi.resetModules();
-  vi.stubEnv("VITE_TMDB_API_KEY", withKey ? "chave-de-teste" : "");
-  vi.stubEnv("VITE_TMDB_API_TOKEN", "");
+  vi.stubEnv("VITE_DEMO_MODE", withKey ? "" : "true");
   return (await import("./movie-service")).movieService;
 }
 

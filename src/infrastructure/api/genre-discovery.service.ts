@@ -1,6 +1,6 @@
 import type { Movie, PaginatedResponse } from '@/domain';
 import { getGenreProfile, type GenreProfile } from '@/features/catalog/constants';
-import { fetchFromTMDB, isTmdbConfigured } from './tmdb-client';
+import { fetchFromTMDB, isApiEnabled } from './tmdb-client';
 import { mapTMDBMovie } from './tmdb-mappers';
 import { filterQualifiedMovies } from './curation-filters';
 import { fetchGenreCatalog } from '../catalog/genre-catalog';
@@ -41,7 +41,7 @@ export async function fetchGenreMoviesPage(
   }
 
   try {
-    if (isTmdbConfigured()) {
+    if (isApiEnabled()) {
       const inputKey = String(categoryOrQuery).trim();
 
       // Localiza o perfil editorial da categoria (seja pelo nome "Comédia" ou pelo ID/Query "35")

@@ -1,13 +1,10 @@
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const globalProcessEnv = (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env;
-const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : (globalProcessEnv || {});
-const API_TOKEN = env.VITE_TMDB_API_TOKEN;
-const API_KEY = env.VITE_TMDB_API_KEY;
+/** O site nunca fala com o TMDB direto: passa pelo Worker (/api/tmdb), que guarda a chave no servidor. */
+const API_BASE_URL = '/api/tmdb';
 
 /**
- * Indica se existem credenciais da API do TMDB configuradas no ambiente.
+ * Indica se o app usa a API. Só o modo de demonstração (VITE_DEMO_MODE=true) a desliga e usa filmes de exemplo.
  */
-export const isTmdbConfigured = (): boolean => Boolean(API_TOKEN || API_KEY);
+export const isApiEnabled = (): boolean => import.meta.env.VITE_DEMO_MODE !== 'true';
 
 /**
  * Função utilitária para obter o URL do cartaz do filme no TMDB.
@@ -43,21 +40,12 @@ export const getProfileUrl = (
 };
 
 /**
- * Executa requisições autenticadas para a API do TMDB.
+ * Executa requisições à API do TMDB pelo Worker do próprio site.
  */
 export async function fetchFromTMDB<T>(pathWithQuery: string, signal?: AbortSignal): Promise<T> {
-  const separator = pathWithQuery.includes('?') ? '&' : '?';
-  let fullUrl = `${TMDB_BASE_URL}${pathWithQuery}`;
-
   const headers: HeadersInit = {
     accept: 'application/json',
   };
-
-  if (API_TOKEN) {
-    headers.Authorization = `Bearer ${API_TOKEN}`;
-  } else if (API_KEY) {
-    fullUrl += `${separator}api_key=${API_KEY}`;
-  }
 
   // Timeout interno protetivo de 10s para impedir requisições zumbis congelando a UI
   const controller = new AbortController();
@@ -72,7 +60,7 @@ export async function fetchFromTMDB<T>(pathWithQuery: string, signal?: AbortSign
   }
 
   try {
-    const response = await fetch(fullUrl, { headers, signal: controller.signal });
+    const response = await fetch(`${API_BASE_URL}${pathWithQuery}`, { headers, signal: controller.signal });
     if (!response.ok) {
       throw new Error(
         `Erro na chamada da API TMDB (${response.status}): ${response.statusText}`

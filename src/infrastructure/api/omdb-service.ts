@@ -10,6 +10,7 @@
  */
 
 import { staticImdbRating } from "../catalog/imdb-ratings";
+import { isApiEnabled } from "./tmdb-client";
 
 export interface ImdbRatingData {
   rating: string; // Ex: "7.6"
@@ -46,14 +47,6 @@ function isClientSideStorageAvailable(): boolean {
 }
 
 export class OmdbService {
-  private static getApiKey(): string {
-    return import.meta.env.VITE_OMDB_API_KEY || "";
-  }
-
-  public static isConfigured(): boolean {
-    return Boolean(this.getApiKey().trim());
-  }
-
   /**
    * Busca a nota do IMDb pelo IMDb ID, usando os caches e a pausa descritos acima.
    */
@@ -75,7 +68,7 @@ export class OmdbService {
       return published;
     }
 
-    if (!this.isConfigured()) {
+    if (!isApiEnabled()) {
       return null;
     }
 
@@ -128,9 +121,9 @@ export class OmdbService {
     // 4. Executa a chamada real protegida
     const requestPromise = (async (): Promise<ImdbRatingData | null> => {
       try {
-        const apiKey = this.getApiKey();
+        // Pelo Worker do site, que guarda a chave do OMDb no servidor
         const response = await fetch(
-          `https://www.omdbapi.com/?i=${encodeURIComponent(cleanId)}&apikey=${apiKey}`,
+          `/api/omdb?i=${encodeURIComponent(cleanId)}`,
           { signal: AbortSignal.timeout(8000) },
         );
 

@@ -18,7 +18,7 @@ export default defineConfig({
   ],
   webServer: {
     // A chave de mentira só liga o modo "com TMDB" do app; as respostas vêm das simulações em e2e/fixtures.ts
-    command: `VITE_TMDB_API_KEY=e2e npm run build && npm run preview -- --port ${PORT} --strictPort`,
+    command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !isCI,
     timeout: 120_000,

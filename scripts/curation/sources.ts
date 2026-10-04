@@ -25,8 +25,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Chamada ao TMDB com nova tentativa em 429. */
 export async function tmdb<T>(pathWithQuery: string): Promise<T> {
-  const token = process.env.VITE_TMDB_API_TOKEN;
-  if (!token) throw new Error("VITE_TMDB_API_TOKEN ausente em .env.local");
+  const token = process.env.TMDB_TOKEN || process.env.VITE_TMDB_API_TOKEN;
+  if (!token) throw new Error("TMDB_TOKEN ausente em .env.local");
   for (let attempt = 0; attempt < 4; attempt++) {
     const response = await fetch(`https://api.themoviedb.org/3${pathWithQuery}`, {
       headers: { Authorization: `Bearer ${token}`, accept: "application/json" },

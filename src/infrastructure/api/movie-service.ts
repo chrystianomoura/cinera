@@ -6,7 +6,7 @@ import type {
 } from "@/domain";
 import {
   fetchFromTMDB,
-  isTmdbConfigured,
+  isApiEnabled,
   getPosterUrl,
   getBackdropUrl,
   getProfileUrl,
@@ -57,7 +57,7 @@ class MovieService {
    */
   async getTrendingMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const pagesPerAppPage = 2;
         const startTmdb = (page - 1) * pagesPerAppPage + 1;
         const pagesToFetch = Array.from(
@@ -114,7 +114,7 @@ class MovieService {
    */
   async getHeroFeaturedMovies(): Promise<Movie[]> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const trending = await this.getTrendingMovies(1);
 
         // Funil 1: Backdrop obrigatório, relevância real (mínimo 50 votos) e nota consistente (>= 6.8)
@@ -156,7 +156,7 @@ class MovieService {
     }
 
     // Com chaves configuradas, uma resposta insuficiente da API não vira dados de demonstração
-    if (isTmdbConfigured()) return [];
+    if (isApiEnabled()) return [];
     return (await loadDemo()).hero();
   }
 
@@ -165,7 +165,7 @@ class MovieService {
    */
   async getMovieById(id: number): Promise<Movie | null> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const raw = await fetchFromTMDB<TMDBMovieRaw>(
           `/movie/${id}?language=pt-BR`,
         );
@@ -184,7 +184,7 @@ class MovieService {
    */
   async getMovieCredits(id: number): Promise<MovieCredits | null> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const data = await fetchFromTMDB<TMDBCreditsRaw>(
           `/movie/${id}/credits?language=pt-BR`,
         );
@@ -205,7 +205,7 @@ class MovieService {
     id: number,
   ): Promise<MovieWatchProviders | null> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const data = await fetchFromTMDB<TMDBProvidersResponse>(
           `/movie/${id}/watch/providers`,
         );
@@ -230,7 +230,7 @@ class MovieService {
     page: number = 1,
   ): Promise<PaginatedResponse<Movie>> {
     try {
-      if (isTmdbConfigured() && query.trim()) {
+      if (isApiEnabled() && query.trim()) {
         const data = await fetchFromTMDB<TMDBPaginatedResponse<TMDBMovieRaw>>(
           `/search/movie?query=${encodeURIComponent(query)}&language=pt-BR&page=${page}&include_adult=false`,
         );
@@ -247,7 +247,7 @@ class MovieService {
       throw error;
     }
 
-    if (isTmdbConfigured()) return { page, results: [], totalPages: 0, totalResults: 0 };
+    if (isApiEnabled()) return { page, results: [], totalPages: 0, totalResults: 0 };
     return (await loadDemo()).search(query, page);
   }
 
@@ -258,7 +258,7 @@ class MovieService {
     page: number = 1,
   ): Promise<PaginatedResponse<Movie>> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const currentYear = new Date().getFullYear();
         const pagesPerAppPage = 3;
         const startTmdb = (page - 1) * pagesPerAppPage + 1;
@@ -321,7 +321,7 @@ class MovieService {
    */
   async getTopRatedMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const pagesPerAppPage = 3;
         const startTmdb = (page - 1) * pagesPerAppPage + 1;
         const pagesToFetch = Array.from(
@@ -376,7 +376,7 @@ class MovieService {
    */
   async getClassicMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const pagesPerAppPage = 3;
         const startTmdb = (page - 1) * pagesPerAppPage + 1;
         const pagesToFetch = Array.from(
@@ -431,7 +431,7 @@ class MovieService {
    */
   async getPopularMovies(page: number = 1): Promise<PaginatedResponse<Movie>> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const pagesPerAppPage = 5;
         const startTmdb = (page - 1) * pagesPerAppPage + 1;
         const pagesToFetch = Array.from(
@@ -494,7 +494,7 @@ class MovieService {
    */
   async getMovieVideos(id: number): Promise<MovieVideo[]> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         let data = await fetchFromTMDB<{ id: number; results: MovieVideo[] }>(
           `/movie/${id}/videos?language=pt-BR`,
         );
@@ -518,7 +518,7 @@ class MovieService {
    */
   async getMovieReleaseDates(id: number): Promise<string | null> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const data = await fetchFromTMDB<TMDBReleaseDatesResponse>(
           `/movie/${id}/release_dates`,
         );
@@ -558,7 +558,7 @@ class MovieService {
    */
   async getMovieGalleryImages(id: number): Promise<string[]> {
     try {
-      if (isTmdbConfigured()) {
+      if (isApiEnabled()) {
         const data = await fetchFromTMDB<TMDBImagesResponse>(
           `/movie/${id}/images`,
         );

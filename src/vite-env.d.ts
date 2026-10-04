@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_TMDB_API_KEY?: string;
-  readonly VITE_TMDB_API_TOKEN?: string;
+  /** "true" liga o modo de demonstração: sem API, com filmes de exemplo */
+  readonly VITE_DEMO_MODE?: string;
 }
 
 interface ImportMeta {

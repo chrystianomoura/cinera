@@ -65,6 +65,10 @@ export async function handleApi(
   fetchImpl: typeof fetch = fetch,
 ): Promise<Response> {
   if (request.method !== "GET") return json({ error: "Método não permitido" }, 405, { allow: "GET" });
+  // Os navegadores informam de onde vem o pedido: recusa o que parte de outros sites (não impede um script
+  // feito à mão, que pode omitir o cabeçalho; esse caso fica a cargo do limite de requisições do Cloudflare)
+  const site = request.headers.get("sec-fetch-site");
+  if (site === "cross-site" || site === "same-site") return json({ error: "Origem não permitida" }, 403);
   const url = new URL(request.url);
   if (url.search.length > MAX_QUERY_LENGTH) return json({ error: "Consulta longa demais" }, 414);
 

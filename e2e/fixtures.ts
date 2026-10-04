@@ -29,14 +29,14 @@ const SEARCH_RESULTS = [
 ];
 
 /**
- * Os testes ponta a ponta não dependem de rede externa: pôsteres, OMDb e YouTube são bloqueados e o TMDB é
+ * Os testes ponta a ponta não dependem de rede externa: pôsteres, OMDb e YouTube são bloqueados e o TMDB (pelo Worker, em /api/tmdb) é
  * simulado (responde só a pesquisa e a ficha do filme 157336; o resto falha, como numa queda da API).
  * O catálogo, o índice de categorias e as listas são arquivos estáticos do próprio site.
  */
 export const test = base.extend({
   page: async ({ page }, provide) => {
-    await page.route(/(image\.tmdb\.org|omdbapi\.com|youtube)/, (route) => route.abort());
-    await page.route(/api\.themoviedb\.org/, (route) => {
+    await page.route(/(image\.tmdb\.org|\/api\/omdb|youtube)/, (route) => route.abort());
+    await page.route(/\/api\/tmdb\//, (route) => {
       const url = route.request().url();
       if (url.includes("/search/movie")) return route.fulfill({ json: { page: 1, total_pages: 1, total_results: SEARCH_RESULTS.length, results: SEARCH_RESULTS } });
       if (/\/movie\/157336\?/.test(url)) return route.fulfill({ json: INTERSTELLAR });

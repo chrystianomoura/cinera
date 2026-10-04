@@ -16,8 +16,8 @@ Respondo o mais rápido possível e agradeço o aviso responsável.
 ## Escopo
 
 - O código deste repositório e o site publicado a partir dele.
-- As chaves de API do front-end (TMDB e OMDb) ficam visíveis no navegador por natureza: use chaves
-  próprias, de uso restrito, ao rodar o projeto, e nunca versione arquivos `.env`.
+- As chaves de API (TMDB e OMDb) ficam só no servidor: o site chama o Worker em `/api`, que as guarda como
+  secrets do Cloudflare e só repassa as consultas que o app usa. Nunca versione arquivos `.env`.
 
 ## Fora do escopo
 

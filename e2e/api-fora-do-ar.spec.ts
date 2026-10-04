@@ -11,7 +11,7 @@ test("a ficha sem a lista de provedores avisa em vez de dizer que o filme não e
 });
 
 test("a pesquisa mostra o erro e o botão de tentar novamente quando a API cai", async ({ page }) => {
-  await page.route(/api\.themoviedb\.org/, (route) => route.abort());
+  await page.route(/\/api\/tmdb\//, (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: /esquis/i }).first().click();
   await page.getByRole("combobox").fill("interestelar");
@@ -20,7 +20,7 @@ test("a pesquisa mostra o erro e o botão de tentar novamente quando a API cai",
 });
 
 test("um link direto com a API fora do ar não quebra a Home", async ({ page }) => {
-  await page.route(/api\.themoviedb\.org/, (route) => route.abort());
+  await page.route(/\/api\/tmdb\//, (route) => route.abort());
   await page.goto("/?filme=157336");
   await expect(page.getByRole("heading", { name: "Novidades" })).toBeVisible();
   await expect(page.getByRole("dialog", { name: /Detalhes do filme/ })).toBeHidden();
