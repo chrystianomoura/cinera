@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Loader2, ArrowUp } from "lucide-react";
 import type { Movie } from "@/domain";
 import { MovieCard } from "./MovieCard";
@@ -28,9 +28,25 @@ export function GenreCatalogGrid({
   onSelectMovie,
 }: GenreCatalogGridProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(0);
   const { showScrollTop, scrollToTop } = useScrollTopButton(400);
   const profile = getGenreProfile(genreName);
   const description = profile?.description || "Explorando os títulos mais populares e aclamados deste gênero";
+
+  // Quantas colunas a grade tem agora (2, 3, 4, 5 ou 6, conforme a largura da tela), lido do próprio CSS
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const measure = () => setColumns(getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [isLoading]);
+
+  // No fim da lista, a última linha sempre fecha completa: sobram de fora, no máximo, colunas - 1 filmes
+  const shown = !hasMore && columns > 0 && movies.length >= columns ? movies.slice(0, Math.floor(movies.length / columns) * columns) : movies;
 
   // Paginação infinita via IntersectionObserver
   useEffect(() => {
@@ -92,8 +108,8 @@ export function GenreCatalogGrid({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-            {movies.map((movie, index) => (
+          <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+            {shown.map((movie, index) => (
               <MovieCard
                 key={movie.id}
                 movie={movie}
@@ -131,9 +147,10 @@ export function GenreCatalogGrid({
           )}
 
           {!hasMore && movies.length > 0 && (
-            <div className="text-center py-10 border-t border-white/5 mt-6">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold">
-                Você chegou ao fim dos títulos deste gênero
+            <div className="text-center pt-7 border-t border-white/5">
+              <p className="text-sm md:text-base text-zinc-400 uppercase tracking-widest font-semibold">
+                O catálogo não acaba aqui.<br />Pesquise e descubra mais.
+                <span aria-hidden="true" className="block mt-3 text-4xl md:text-5xl leading-none normal-case tracking-normal">😉</span>
               </p>
             </div>
           )}
@@ -146,13 +163,13 @@ export function GenreCatalogGrid({
         onClick={scrollToTop}
         aria-label="Voltar ao topo do catálogo"
         title="Voltar ao topo"
-        className={`fixed bottom-7 right-7 z-40 transform-gpu flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white backdrop-blur-md border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.6)] hover:border-white/30 hover:scale-110 active:scale-95 transition-all duration-300 ease-out cursor-pointer group ${
+        className={`fixed bottom-6 right-4 md:bottom-7 md:right-12 z-40 transform-gpu flex items-center justify-center w-14 h-14 md:w-[60px] md:h-[60px] rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white backdrop-blur-md border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.6)] hover:border-white/30 hover:scale-110 active:scale-95 transition-all duration-300 ease-out cursor-pointer group ${
           showScrollTop
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-6 pointer-events-none"
         }`}
       >
-        <ArrowUp className="w-5 h-5 md:w-6 md:h-6 stroke-[2.5] text-zinc-200 group-hover:text-white transition-transform duration-300 group-hover:-translate-y-0.5" />
+        <ArrowUp className="w-6 h-6 md:w-7 md:h-7 stroke-[2.5] text-zinc-200 group-hover:text-white transition-transform duration-300 group-hover:-translate-y-0.5" />
       </button>
     </section>
   );
