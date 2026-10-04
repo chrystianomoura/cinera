@@ -122,7 +122,7 @@ export function HeroFeatured({
     <section
       ref={sectionRef}
       aria-label="Destaque em cartaz"
-      className="relative w-full h-[calc(100svh-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden bg-black select-none [contain:layout_paint] [isolation:isolate] transform-gpu"
+      className="relative w-full h-[calc(var(--app-vh,100svh)-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden bg-black select-none [contain:layout_paint] [isolation:isolate] transform-gpu"
     >
       {(isLoading || !heroMovie) && (
         <div className="absolute inset-0 bg-black animate-pulse" />
@@ -153,9 +153,10 @@ export function HeroFeatured({
               onError={(e) => {
                 e.currentTarget.style.opacity = "0";
               }}
-              className={`w-full h-full object-cover object-center md:object-top origin-center transform-gpu ${
-                isInViewport ? "animate-kenburns" : ""
-              }`}
+              // A animação fica sempre ligada e só é pausada fora da tela: tirar e recolocar a classe a reiniciava do zero
+              // (o zoom saltava de volta) e refazia a camada de GPU da imagem grande no meio da rolagem
+              style={{ animationPlayState: isInViewport ? "running" : "paused" }}
+              className="w-full h-full object-cover object-center md:object-top origin-center transform-gpu animate-kenburns"
             />
 
             {/* Gradiente inferior, com reforço vertical no celular */}

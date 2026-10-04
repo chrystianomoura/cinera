@@ -6,6 +6,7 @@ import { RotateCw } from 'lucide-react'
 import { StatusMessage, statusButtonClassName } from '@/features/feedback/StatusMessage'
 import './index.css'
 import App from './App'
+import { lockViewportHeight } from './lib/stable-viewport'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -71,6 +72,8 @@ const rootElement = document.getElementById('root')
 if (!rootElement) {
   throw new Error('Elemento root não encontrado no DOM.')
 }
+
+lockViewportHeight()
 
 createRoot(rootElement).render(
   <StrictMode>
