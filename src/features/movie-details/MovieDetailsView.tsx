@@ -6,7 +6,6 @@ import { formatRuntime, formatCurrencyUSD } from "@/lib/formatters";
 import { formatCategories } from "@/domain";
 import { useCategoryIndex } from "@/hooks/use-category-index";
 import { resolveCategories } from "@/infrastructure/catalog/category-index";
-import { extractDominantColor } from "@/lib/color-extractor";
 import { useMovieFullDetails } from "@/hooks/use-movie-full-details";
 import { useUserLibrary } from "@/stores/use-user-library";
 import { CertificationBadge } from "./CertificationBadge";
@@ -58,26 +57,14 @@ export function MovieDetailsView({
   // Estado para o modal de foto ampliada da galeria
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
-  // Cor cromática dinâmica baseada no pôster
-  const [ambientColor, setAmbientColor] = useState<string>("30, 41, 59");
-
-  const posterPath = movie?.posterPath;
+  // O trailer é o passo seguinte mais provável: abre a conexão com o YouTube agora, e não só no clique
   useEffect(() => {
-    if (!posterPath) return;
-
-    let cancelled = false;
-    const imgUrl = getPosterUrl(posterPath, "w342");
-
-    extractDominantColor(imgUrl).then((color) => {
-      if (!cancelled) {
-        setAmbientColor(color.rgbString);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [posterPath]);
+    if (!isOpen || document.querySelector('link[rel="preconnect"][href="https://www.youtube-nocookie.com"]')) return;
+    const link = document.createElement("link");
+    link.rel = "preconnect";
+    link.href = "https://www.youtube-nocookie.com";
+    document.head.appendChild(link);
+  }, [isOpen]);
 
   // Tecla ESC para fechar e trava do scroll do body
   useEffect(() => {
@@ -127,24 +114,19 @@ export function MovieDetailsView({
       role="dialog"
       aria-modal="true"
       aria-label={`Detalhes do filme ${movie.title}`}
-      className="fixed inset-0 z-[80] overflow-y-auto bg-black scrollbar-hide animate-in fade-in duration-300"
+      className="fixed inset-0 z-[80] overflow-y-auto bg-black scrollbar-hide md:animate-in md:fade-in md:duration-300"
     >
-      {/* Atmosfera cromática de fundo */}
-      <div
-        className="fixed inset-0 pointer-events-none transition-colors duration-1000 ease-out z-0"
-        style={{
-          background: `radial-gradient(ellipse 95% 70% at 50% -10%, rgba(${ambientColor}, 0.52) 0%, rgba(${ambientColor}, 0.18) 45%, #000000 80%)`,
-        }}
-      />
-
       {/* Backdrop */}
       {backdropUrl ? (
-        <div className="absolute top-0 inset-x-0 h-[65vh] md:h-[75vh] overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 inset-x-0 h-[calc(var(--app-vh,100vh)*0.65)] md:h-[75vh] overflow-hidden pointer-events-none z-0">
           <img
             src={backdropUrl}
+            srcSet={`${getBackdropUrl(movie.backdropPath, "w780")} 780w, ${backdropUrl} 1280w`}
+            sizes="100vw"
             alt=""
             aria-hidden="true"
-            className="w-full h-full object-cover object-top opacity-35 filter contrast-125"
+            decoding="async"
+            className="w-full h-full object-cover object-top opacity-35 md:contrast-125"
           />
           <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent" />
           <div
@@ -301,13 +283,13 @@ export function MovieDetailsView({
 
                   {/* Badge Oficial Dourada do IMDb */}
                   {isLoadingImdbRating && (
-                    <div className="h-5 w-16 rounded bg-zinc-800 animate-pulse border border-white/10" />
+                    <div className="h-6 w-20 rounded bg-zinc-800 animate-pulse border border-white/10" />
                   )}
 
                   {!isLoadingImdbRating && imdbRating && (
                     <div
                       title={imdbRating.votes ? `${imdbRating.votes} votos no IMDb` : "Nota IMDb"}
-                      className="inline-flex items-center rounded px-2 py-0.5 text-xs font-black tracking-wide bg-[#f5c518] text-black shadow-sm select-none cursor-default hover:brightness-105 transition-all"
+                      className="inline-flex items-center h-6 rounded px-2.5 text-sm leading-none font-black tracking-wide bg-[#f5c518] text-black shadow-sm select-none cursor-default hover:brightness-105 transition-all"
                     >
                       <span>IMDb: {imdbRating.rating}</span>
                     </div>
