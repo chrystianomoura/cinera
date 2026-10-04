@@ -43,18 +43,20 @@ export const MovieCard = memo(function MovieCard({
         aria-label={`Ver detalhes de ${movie.title}`}
         className="group/poster aspect-[2/3] w-full relative cursor-pointer select-none focus-visible:outline-none"
       >
-        <div className="w-full h-full overflow-hidden rounded-xl bg-zinc-900 border border-white/10 relative transition-colors duration-150 ease-out">
+        <div className="w-full h-full rounded-xl bg-zinc-900 border border-white/10 relative transition-colors duration-150 ease-out">
+          {/* O arredondamento fica na própria imagem, e não num contêiner com overflow-hidden: recortar cada pôster por um
+              contêiner arredondado, dentro de uma fileira que rola, custava quadros no iPhone. */}
           {posterUrl && !hasError ? (
             <img
               src={posterUrl}
               alt={`Pôster de ${movie.title}`}
-              className="h-full w-full object-cover pointer-events-none"
+              className="h-full w-full rounded-[0.7rem] object-cover pointer-events-none"
               loading={isEager ? "eager" : "lazy"}
               decoding="async"
               onError={() => setHasError(true)}
             />
           ) : (
-            <div className="flex flex-col h-full w-full items-center justify-center bg-zinc-900 text-zinc-400 text-center p-4 pointer-events-none">
+            <div className="flex flex-col h-full w-full items-center justify-center rounded-[0.7rem] bg-zinc-900 text-zinc-400 text-center p-4 pointer-events-none">
               <Film className="w-8 h-8 mb-2 text-zinc-600" />
               <span className="text-[10px] uppercase tracking-widest mb-1 font-mono text-zinc-400">
                 Sem Imagem
