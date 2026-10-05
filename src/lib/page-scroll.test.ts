@@ -22,16 +22,16 @@ const decide = (userAgent: string, extra: Partial<Parameters<typeof shouldUseShe
   shouldUseShell({ userAgent, platform: "iPhone", maxTouchPoints: 5, search: "", stored: null, ...extra });
 
 describe("shouldUseShell", () => {
-  it("liga nos navegadores do iPhone e do iPad com barras fora da página", () => {
+  it("liga em todos os navegadores do iPhone e do iPad, Safari incluído", () => {
+    expect(decide(IPHONE_SAFARI)).toBe(true);
+    expect(decide(IPAD_SAFARI_DESKTOP, { platform: "MacIntel", maxTouchPoints: 5 })).toBe(true);
     expect(decide(IPHONE_CHROME)).toBe(true);
     expect(decide(IPHONE_FIREFOX)).toBe(true);
     expect(decide(IPHONE_EDGE)).toBe(true);
     expect(decide(IPAD_CHROME, { platform: "iPad" })).toBe(true);
   });
 
-  it("não liga no Safari, no Android nem no desktop", () => {
-    expect(decide(IPHONE_SAFARI)).toBe(false);
-    expect(decide(IPAD_SAFARI_DESKTOP, { platform: "MacIntel", maxTouchPoints: 5 })).toBe(false);
+  it("não liga no Android nem no desktop", () => {
     expect(decide(ANDROID_CHROME, { platform: "Linux armv81", maxTouchPoints: 5 })).toBe(false);
     expect(decide(MAC_CHROME, { platform: "MacIntel", maxTouchPoints: 0 })).toBe(false);
   });
@@ -39,7 +39,7 @@ describe("shouldUseShell", () => {
   it("?shell=1 força, ?shell=0 desliga e a escolha guardada vale", () => {
     expect(decide(MAC_CHROME, { platform: "MacIntel", maxTouchPoints: 0, search: "?shell=1" })).toBe(true);
     expect(decide(IPHONE_CHROME, { search: "?shell=0" })).toBe(false);
-    expect(decide(IPHONE_SAFARI, { stored: "1" })).toBe(true);
+    expect(decide(ANDROID_CHROME, { platform: "Linux armv81", stored: "1" })).toBe(true);
     // o parâmetro da URL manda mais que o valor guardado
     expect(decide(IPHONE_SAFARI, { stored: "1", search: "?shell=0" })).toBe(false);
   });

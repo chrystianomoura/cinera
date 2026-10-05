@@ -3,21 +3,19 @@
  *
  * No iPhone, em navegadores que têm barras fora da página (Chrome, Firefox, Edge, Opera, DuckDuckGo...), a barra de baixo
  * recolhe ao rolar e volta ao rolar para cima, e cada passo da animação REDIMENSIONA a área da página: o motor refaz o
- * posicionamento, a árvore de rolagem e a pintura de tudo, e páginas pesadas (como a Home) engasgam. No Safari as barras
- * flutuam por cima de uma página que já ocupa a tela inteira, então nada é redimensionado.
+ * posicionamento, a árvore de rolagem e a pintura de tudo, e páginas pesadas (como a Home) engasgam.
  *
- * Nesses navegadores a rolagem deixa de ser da janela e passa a ser de uma área interna (#root, modo "shell"): como o
+ * No Safari não há esse redimensionamento, mas rolar a janela rápido deixava as fileiras "se montando" (blocos da página
+ * ainda sem pintar). Rolar uma área interna evita isso, então o Safari também usa o modo shell.
+ *
+ * Em todo o iOS a rolagem deixa de ser da janela e passa a ser de uma área interna (#root, modo "shell"): como o
  * documento não rola, a barra não recolhe e a área da página nunca muda. Todo o código que lê ou controla a rolagem da
  * página passa por aqui, para funcionar nos dois modos.
  *
- * `?shell=1` força o modo (e lembra a escolha), `?shell=0` desliga e esquece. Serve para navegadores que não dá para
- * identificar (o Brave no iPhone se apresenta como Safari).
+ * `?shell=1` força o modo (e lembra a escolha), `?shell=0` desliga e esquece.
  */
 
 const STORAGE_KEY = "cinera:shell";
-
-/** Navegadores do iPhone/iPad com barras fora da página, pelo texto que cada um envia */
-const BROWSERS_WITH_OWN_BARS = /CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|DuckDuckGo|Ddg\/|Brave|Vivaldi|YaBrowser|Focus\/|Klar\/|Ecosia/;
 
 interface ShellDecisionInput {
   userAgent: string;
@@ -35,7 +33,7 @@ export function shouldUseShell({ userAgent, platform, maxTouchPoints, search, st
 
   // O iPad em modo desktop se apresenta como Mac, mas tem toque
   const isIOS = /iPhone|iPad|iPod/.test(userAgent) || (platform === "MacIntel" && maxTouchPoints > 1);
-  return isIOS && BROWSERS_WITH_OWN_BARS.test(userAgent);
+  return isIOS;
 }
 
 let shell = false;
