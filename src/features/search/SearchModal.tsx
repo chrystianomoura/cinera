@@ -238,7 +238,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck="false"
-            className="flex-1 bg-transparent text-white placeholder-zinc-500 text-base sm:text-lg focus:outline-none font-medium"
+            className="flex-1 min-w-0 bg-transparent text-white placeholder-zinc-500 text-base sm:text-lg focus:outline-none font-medium"
           />
 
           {/* Indicador de carregamento assíncrono */}
