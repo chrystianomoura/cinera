@@ -27,7 +27,7 @@ const GalleryItem = memo(function GalleryItem({ path, idx, isInteractive, onSele
       disabled={!isInteractive}
       aria-label={isInteractive ? `Ampliar cena ${idx + 1}` : undefined}
       onClick={isInteractive ? () => onSelectImage?.(idx) : undefined}
-      className={`relative aspect-video w-64 sm:w-80 md:w-96 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shadow-md flex-shrink-0 group/item transition-colors duration-200 text-left p-0 [contain:layout_style] ${
+      className={`relative aspect-video w-64 sm:w-80 wide:w-96 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shadow-md flex-shrink-0 group/item transition-colors duration-200 text-left p-0 [contain:layout_style] ${
         isInteractive
           ? "cursor-pointer hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
           : "cursor-default disabled:pointer-events-none"
@@ -110,14 +110,14 @@ export function GalleryCarousel({
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
-        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] wide:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Galeria
         </h3>
-        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-0">
+        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 wide:px-0">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="aspect-video w-64 sm:w-80 md:w-96 rounded-xl bg-zinc-900 border border-white/5 animate-pulse flex-shrink-0"
+              className="aspect-video w-64 sm:w-80 wide:w-96 rounded-xl bg-zinc-900 border border-white/5 animate-pulse flex-shrink-0"
             />
           ))}
         </div>
@@ -135,7 +135,7 @@ export function GalleryCarousel({
     <div className="relative flex flex-col gap-4">
       {/* Título Centralizado com controles na lateral */}
       <div className="relative flex items-center justify-center">
-        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] wide:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Galeria
         </h3>
 
@@ -166,7 +166,7 @@ export function GalleryCarousel({
         {/* Borda de fade esquerda estável via CSS puro */}
         <div
           aria-hidden="true"
-          className={`hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+          className={`hidden wide:block absolute left-0 inset-y-0 w-12 sm:w-16 wide:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
             canScrollLeft ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -176,7 +176,7 @@ export function GalleryCarousel({
           role="region"
           aria-label="Carrossel da galeria"
           tabIndex={0}
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0 [overscroll-behavior-x:contain] [will-change:scroll-position] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded-xl"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 wide:px-0 [overscroll-behavior-x:contain] [will-change:scroll-position] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded-xl"
         >
           {safeImages.map((path, idx) => (
             <GalleryItem
@@ -192,7 +192,7 @@ export function GalleryCarousel({
         {/* Borda de fade direita estável via CSS puro */}
         <div
           aria-hidden="true"
-          className={`hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+          className={`hidden wide:block absolute right-0 inset-y-0 w-12 sm:w-16 wide:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
             canScrollRight ? "opacity-100" : "opacity-0"
           }`}
         />

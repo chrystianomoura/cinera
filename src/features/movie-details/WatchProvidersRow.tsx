@@ -56,7 +56,7 @@ function ProviderCard({
           ? `Acessar home do ${provider.cleanName} — ${provider.addonNote} (Abre em nova aba)`
           : `Acessar home do ${provider.cleanName} (Abre em nova aba)`
       }
-      className="group/provider flex items-center gap-3 w-fit max-w-[15rem] px-3 py-2 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-colors duration-200 shadow-md md:backdrop-blur-md cursor-pointer active:scale-[0.99]"
+      className="group/provider flex items-center gap-3 w-fit max-w-[15rem] px-3 py-2 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-colors duration-200 shadow-md wide:backdrop-blur-md cursor-pointer active:scale-[0.99]"
     >
       <ProviderLogo logoUrl={provider.logoUrl} name={provider.cleanName} />
       <span className="flex flex-col min-w-0 leading-tight text-left">
@@ -73,14 +73,14 @@ function ProviderCard({
 
 export function WatchProvidersRow({ providers, isLoading, isError = false }: WatchProvidersRowProps) {
   const title = (
-    <h3 className="text-sm sm:text-[15px] md:text-xs uppercase tracking-wider text-zinc-400 font-bold text-center md:text-left">
+    <h3 className="text-sm sm:text-[15px] wide:text-xs uppercase tracking-wider text-zinc-400 font-bold text-center wide:text-left">
       Onde Assistir
     </h3>
   );
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/25 md:border-white/10 w-full">
+      <div className="flex flex-col items-center wide:items-start gap-2.5 pt-3 border-t border-white/25 wide:border-white/10 w-full">
         {title}
         <div className="flex gap-2.5">
           {Array.from({ length: 2 }).map((_, i) => (
@@ -96,9 +96,9 @@ export function WatchProvidersRow({ providers, isLoading, isError = false }: Wat
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/25 md:border-white/10 w-full">
+      <div className="flex flex-col items-center wide:items-start gap-2.5 pt-3 border-t border-white/25 wide:border-white/10 w-full">
         {title}
-        <p className="text-zinc-100 font-medium text-base sm:text-lg md:text-sm text-center md:text-left">
+        <p className="text-zinc-100 font-medium text-base sm:text-lg wide:text-sm text-center wide:text-left">
           Não foi possível carregar onde assistir agora. Tente novamente em instantes.
         </p>
       </div>
@@ -120,14 +120,14 @@ export function WatchProvidersRow({ providers, isLoading, isError = false }: Wat
   if (lines.length === 0) return null;
 
   return (
-    <div className="flex flex-col items-center md:items-start gap-2.5 pt-3 border-t border-white/25 md:border-white/10 w-full">
+    <div className="flex flex-col items-center wide:items-start gap-2.5 pt-3 border-t border-white/25 wide:border-white/10 w-full">
       {title}
 
       <div className="flex flex-col gap-2.5 w-full">
         {lines.map((line) => (
           <div
             key={line.type}
-            className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full"
+            className="flex flex-wrap items-center justify-center wide:justify-start gap-2.5 w-full"
           >
             {line.list.map((provider) => (
               <ProviderCard key={provider.providerId} provider={provider} type={line.type} />

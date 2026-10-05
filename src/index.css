@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* Ficha do filme: "wide" é o layout de duas colunas (cartaz ao lado do texto). Vale a partir de 768px de largura (como o md) E
+   também no celular deitado, mesmo abaixo de 768px, que é uma tela larga porém baixa. "not-wide" é o oposto (o layout do celular
+   em pé, empilhado). "paisagem" liga o ajuste compacto da tela baixa (celular deitado) e vem por último para vencer o wide. */
+@custom-variant wide {
+  @media (min-width: 768px) {
+    @slot;
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    @slot;
+  }
+}
+
+@custom-variant not-wide {
+  @media (max-width: 767px) and ((orientation: portrait) or (min-height: 501px)) {
+    @slot;
+  }
+}
+
+@custom-variant paisagem {
+  @media (orientation: landscape) and (max-height: 500px) and (max-width: 1023px) {
+    @slot;
+  }
+}
+
 /* Respiro padrão no fim de qualquer tela rolável: 48px no celular, 64px a partir de md */
 :root {
   --page-end-space: 3rem;

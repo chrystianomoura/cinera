@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import type { CastMember } from "@/domain";
+import { getDisplayCast } from "@/domain/credits";
 import { getProfileUrl } from "@/infrastructure/api/movie-service";
 import { useHorizontalScroll } from "@/hooks/use-horizontal-scroll";
 import { warmImageDecode } from "@/lib/warm-image-decode";
@@ -18,7 +19,7 @@ const CastItem = memo(function CastItem({ actor }: CastItemProps) {
   const profileImg = getProfileUrl(actor.profilePath, "w185");
 
   return (
-    <div className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 md:w-36 select-none group/actor [contain:layout_style]">
+    <div className="flex flex-col items-center text-center flex-shrink-0 w-28 sm:w-32 wide:w-36 select-none group/actor [contain:layout_style]">
       <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group-hover/actor:border-white/30 shadow-md mb-2">
         {profileImg ? (
           <img
@@ -38,8 +39,8 @@ const CastItem = memo(function CastItem({ actor }: CastItemProps) {
         )}
       </div>
 
-      <div className="h-10 md:h-9 flex items-start justify-center w-full px-0.5">
-        <h4 className="text-sm sm:text-[15px] md:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-tight break-words tracking-tight text-center line-clamp-2">
+      <div className="h-10 wide:h-9 flex items-start justify-center w-full px-0.5">
+        <h4 className="text-sm sm:text-[15px] wide:text-sm font-bold text-zinc-100 group-hover/actor:text-white leading-tight break-words tracking-tight text-center line-clamp-2">
           {actor.name}
         </h4>
       </div>
@@ -61,22 +62,19 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
     threshold: 12,
   });
 
-  const topCast = useMemo(
-    () => (cast ?? []).filter((actor) => Boolean(actor.profilePath)).slice(0, 18),
-    [cast]
-  );
+  const topCast = useMemo(() => getDisplayCast(cast), [cast]);
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
-        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] wide:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Elenco Principal
         </h3>
-        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 md:px-0">
+        <div className="flex gap-4 sm:gap-5 overflow-hidden py-2 px-4 wide:px-0">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="flex flex-col items-center flex-shrink-0 w-28 sm:w-32 md:w-36 animate-pulse"
+              className="flex flex-col items-center flex-shrink-0 w-28 sm:w-32 wide:w-36 animate-pulse"
             >
               <div className="aspect-[3/4] w-full rounded-xl bg-zinc-900 border border-white/5 mb-2.5" />
               <div className="h-4 w-20 bg-zinc-900 rounded" />
@@ -94,7 +92,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
   return (
     <div className="relative flex flex-col gap-4 group/cast">
       <div className="relative flex items-center justify-center">
-        <h3 className="text-sm sm:text-[15px] md:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
+        <h3 className="text-sm sm:text-[15px] wide:text-sm uppercase tracking-widest text-zinc-400 font-bold text-center">
           Elenco Principal
         </h3>
 
@@ -124,7 +122,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
         {/* Borda de fade esquerda estável via CSS puro */}
         <div
           aria-hidden="true"
-          className={`hidden md:block absolute left-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+          className={`hidden wide:block absolute left-0 inset-y-0 w-12 sm:w-16 wide:w-20 bg-gradient-to-r from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
             canScrollLeft ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -134,7 +132,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
           role="region"
           aria-label="Elenco principal"
           tabIndex={0}
-          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 md:px-0 [overscroll-behavior-x:contain] [will-change:scroll-position] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded-xl"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide py-2 px-4 wide:px-0 [overscroll-behavior-x:contain] [will-change:scroll-position] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded-xl"
         >
           {topCast.map((actor) => (
             <CastItem key={actor.id} actor={actor} />
@@ -144,7 +142,7 @@ export function CastCarousel({ cast, isLoading }: CastCarouselProps) {
         {/* Borda de fade direita estável via CSS puro */}
         <div
           aria-hidden="true"
-          className={`hidden md:block absolute right-0 inset-y-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
+          className={`hidden wide:block absolute right-0 inset-y-0 w-12 sm:w-16 wide:w-20 bg-gradient-to-l from-black via-black/60 to-transparent z-20 pointer-events-none transition-opacity duration-200 ${
             canScrollRight ? "opacity-100" : "opacity-0"
           }`}
         />
