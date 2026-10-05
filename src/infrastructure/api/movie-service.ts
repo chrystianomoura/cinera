@@ -514,7 +514,9 @@ class MovieService {
   }
 
   /**
-   * Retorna a classificação indicativa do filme (prioridade para o Brasil - BR).
+   * Retorna a classificação indicativa brasileira (BR) do filme, ou null quando o TMDB não tem uma. Não há reserva por
+   * outro país: a classificação americana não equivale à brasileira (um R americano não é sempre um 16), então o filme
+   * sem classificação do Brasil fica sem selo.
    */
   async getMovieReleaseDates(id: number): Promise<string | null> {
     try {
@@ -526,17 +528,6 @@ class MovieService {
         const brData = data.results?.find((r) => r.iso_3166_1 === "BR");
         if (brData) {
           const cert = brData.release_dates.find((d) =>
-            Boolean(d.certification?.trim()),
-          );
-          if (cert?.certification) {
-            return cert.certification.trim();
-          }
-        }
-
-        // Fallback para classificação norte-americana (US)
-        const usData = data.results?.find((r) => r.iso_3166_1 === "US");
-        if (usData) {
-          const cert = usData.release_dates.find((d) =>
             Boolean(d.certification?.trim()),
           );
           if (cert?.certification) {

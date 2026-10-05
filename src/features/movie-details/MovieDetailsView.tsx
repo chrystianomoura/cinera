@@ -9,6 +9,7 @@ import { resolveCategories } from "@/infrastructure/catalog/category-index";
 import { useMovieFullDetails } from "@/hooks/use-movie-full-details";
 import { useUserLibrary } from "@/stores/use-user-library";
 import { CertificationBadge } from "./CertificationBadge";
+import { resolveCertification } from "./certification";
 import { WatchProvidersRow } from "./WatchProvidersRow";
 import { CastCarousel } from "./CastCarousel";
 import { GalleryCarousel } from "./GalleryCarousel";
@@ -92,6 +93,8 @@ export function MovieDetailsView({
   const posterUrl = movie.posterPath ? getPosterUrl(movie.posterPath, "w500") : null;
   const backdropUrl = movie.backdropPath ? getBackdropUrl(movie.backdropPath, "w1280") : null;
   const releaseYear = movie.releaseDate ? movie.releaseDate.slice(0, 4) : null;
+  // Há selo de verdade? Códigos que o selo não reconhece (ex.: "NR") contam como sem selo, para não sobrar um ponto solto
+  const hasCertification = resolveCertification(certification) !== null;
   const duration = formatRuntime(movie.runtime);
   // Categorias do Cinera: as mesmas da pesquisa e das listas (catálogo, ou classificação por tags do TMDB)
   const curatedGenres = formatCategories(resolveCategories({ ...movie, categories: initialMovie?.categories ?? movie.categories }, categoryIndex));
@@ -267,18 +270,18 @@ export function MovieDetailsView({
               )}
 
               {/* Separador no desktop entre Linha 2 e Linha 3 */}
-              {curatedGenres && (certification || imdbRating || isLoadingImdbRating) && (
+              {curatedGenres && (hasCertification || imdbRating || isLoadingImdbRating) && (
                 <span className="hidden md:inline-block w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)]" />
               )}
 
               {/* Linha 3 no mobile: Classificação Indicativa e IMDb */}
-              {(certification || imdbRating || isLoadingImdbRating) && (
+              {(hasCertification || imdbRating || isLoadingImdbRating) && (
                 <div className="flex items-center gap-2.5">
-                  {certification && (
+                  {hasCertification && (
                     <CertificationBadge certification={certification} />
                   )}
 
-                  {certification && (imdbRating || isLoadingImdbRating) && (
+                  {hasCertification && (imdbRating || isLoadingImdbRating) && (
                     <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-[0_0_4px_rgba(255,255,255,0.4)] inline-block" />
                   )}
 
