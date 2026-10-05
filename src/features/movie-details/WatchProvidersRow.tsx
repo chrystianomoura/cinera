@@ -56,7 +56,7 @@ function ProviderCard({
           ? `Acessar home do ${provider.cleanName} — ${provider.addonNote} (Abre em nova aba)`
           : `Acessar home do ${provider.cleanName} (Abre em nova aba)`
       }
-      className="group/provider flex items-center gap-3 w-fit max-w-[15rem] px-3 py-2 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-colors duration-200 shadow-md backdrop-blur-md cursor-pointer active:scale-[0.99]"
+      className="group/provider flex items-center gap-3 w-fit max-w-[15rem] px-3 py-2 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/30 transition-colors duration-200 shadow-md md:backdrop-blur-md cursor-pointer active:scale-[0.99]"
     >
       <ProviderLogo logoUrl={provider.logoUrl} name={provider.cleanName} />
       <span className="flex flex-col min-w-0 leading-tight text-left">

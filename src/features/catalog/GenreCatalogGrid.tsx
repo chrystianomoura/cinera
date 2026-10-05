@@ -163,7 +163,7 @@ export function GenreCatalogGrid({
         onClick={scrollToTop}
         aria-label="Voltar ao topo do catálogo"
         title="Voltar ao topo"
-        className={`fixed bottom-6 right-6 md:bottom-7 md:right-20 z-40 transform-gpu flex items-center justify-center w-14 h-14 md:w-[60px] md:h-[60px] rounded-full bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 transition-all duration-200 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+        className={`fixed bottom-6 right-6 md:bottom-7 md:right-20 z-40 transform-gpu flex items-center justify-center w-14 h-14 md:w-[60px] md:h-[60px] rounded-full bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/20 hover:border-white/35 text-zinc-300 hover:text-white md:backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 transition-all duration-200 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
           showScrollTop
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-6 md:translate-y-0 pointer-events-none"

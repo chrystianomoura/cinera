@@ -321,7 +321,7 @@ export function MovieDetailsView({
                   className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
                     isWatchlist
                       ? "bg-white text-black border border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
-                      : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/20 hover:border-white/40 backdrop-blur-md"
+                      : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/20 hover:border-white/40 md:backdrop-blur-md"
                   }`}
                 >
                   <Bookmark
@@ -339,8 +339,8 @@ export function MovieDetailsView({
                   aria-pressed={isWatched}
                   className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-full text-sm sm:text-base font-bold transition-all duration-200 cursor-pointer shadow-md hover:scale-105 active:scale-95 ${
                     isWatched
-                      ? "bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-400 border border-emerald-400/60 hover:border-emerald-400 backdrop-blur-md"
-                      : "bg-rose-400/10 hover:bg-rose-400/20 text-rose-400 border border-rose-400/60 hover:border-rose-400 backdrop-blur-md"
+                      ? "bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-400 border border-emerald-400/60 hover:border-emerald-400 md:backdrop-blur-md"
+                      : "bg-rose-400/10 hover:bg-rose-400/20 text-rose-400 border border-rose-400/60 hover:border-rose-400 md:backdrop-blur-md"
                   }`}
                 >
                   <WatchedStatusIcon watched={isWatched} />

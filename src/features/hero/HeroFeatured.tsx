@@ -251,7 +251,7 @@ export function HeroFeatured({
                 type="button"
                 onClick={() => onOpenDetails?.(heroMovie)}
                 aria-label={`Ver detalhes de ${heroMovie.title}`}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-950/80 backdrop-blur-md hover:bg-zinc-800 text-white font-medium text-sm border border-white/20 hover:border-white/40 transition-all duration-200 shadow-lg hover:scale-105 active:scale-95 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-950/80 md:backdrop-blur-md hover:bg-zinc-800 text-white font-medium text-sm border border-white/20 hover:border-white/40 transition-all duration-200 shadow-lg hover:scale-105 active:scale-95 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 <Info className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
                 <span>Ver Detalhes</span>

@@ -237,75 +237,80 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-800 pb-page-end relative flex flex-col">
-      <Header
-        onSearchClick={openSearchAndFocus}
-        onLibraryClick={() => setIsLibraryOpen(true)}
-        onLogoClick={handleLogoClick}
-      />
-
-      {/* Hero em destaque com isolamento estrito de camada para não interferir nos carrosséis */}
-      <div
-        className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 [contain:paint_layout] [isolation:isolate] ${
-          isHomeView && !isFadingOutHome
-            ? "max-h-[850px] opacity-100"
-            : isHomeView && isFadingOutHome
-            ? "max-h-[850px] opacity-0"
-            : "max-h-0 opacity-0 pointer-events-none"
-        }`}
-      >
-        {/* Só existe na Home: colapsado (max-h-0) mas montado, no iPhone ele quebrava a rolagem horizontal das pílulas
-            (WebKit); fora da Home também poupa a imagem grande e as animações */}
-        {isHomeView && (
-          <HeroFeatured
-            candidates={heroMovies || []}
-            isLoading={isLoadingHero}
-            isPaused={isAnyOverlayActive}
-            isVisible={!isFadingOutHome}
-            onOpenTrailer={openTrailer}
-            onOpenDetails={handleOpenDetails}
-          />
-        )}
-      </div>
-
-      <main
-        className={`relative z-10 px-0 md:px-12 flex flex-col gap-2.5 sm:gap-3.5 md:gap-6 ${
-          isHomeView
-            ? "pt-0"
-            : "pt-2 sm:pt-3 md:pt-4"
-        }`}
-      >
-        <GenrePills
-          selectedGenre={pendingGenre ?? selectedGenre}
-          onSelectGenre={handleSelectGenre}
+      {/* Com a ficha aberta no celular, a Home de trás fica invisível: a ficha a cobre por inteiro, e mesmo coberta o navegador
+          continuava desenhando os desfoques dela a cada quadro da rolagem. visibility (e não display) preserva a posição de
+          rolagem; contents faz o contêiner não gerar caixa, então o layout não muda. */}
+      <div className={`contents ${isDetailsOpen ? "max-md:invisible" : ""}`}>
+        <Header
+          onSearchClick={openSearchAndFocus}
+          onLibraryClick={() => setIsLibraryOpen(true)}
+          onLogoClick={handleLogoClick}
         />
 
-        {activeCatalogView === "todos" ? (
-          <HomeFeed
-            excludeIds={heroIds}
-            isFadingOut={isFadingOutHome}
-            onSelectMovie={handleOpenDetails}
+        {/* Hero em destaque com isolamento estrito de camada para não interferir nos carrosséis */}
+        <div
+          className={`overflow-hidden [overflow-anchor:none] transition-opacity duration-300 [contain:paint_layout] [isolation:isolate] ${
+            isHomeView && !isFadingOutHome
+              ? "max-h-[850px] opacity-100"
+              : isHomeView && isFadingOutHome
+              ? "max-h-[850px] opacity-0"
+              : "max-h-0 opacity-0 pointer-events-none"
+          }`}
+        >
+          {/* Só existe na Home: colapsado (max-h-0) mas montado, no iPhone ele quebrava a rolagem horizontal das pílulas
+              (WebKit); fora da Home também poupa a imagem grande e as animações */}
+          {isHomeView && (
+            <HeroFeatured
+              candidates={heroMovies || []}
+              isLoading={isLoadingHero}
+              isPaused={isAnyOverlayActive}
+              isVisible={!isFadingOutHome}
+              onOpenTrailer={openTrailer}
+              onOpenDetails={handleOpenDetails}
+            />
+          )}
+        </div>
+
+        <main
+          className={`relative z-10 px-0 md:px-12 flex flex-col gap-2.5 sm:gap-3.5 md:gap-6 ${
+            isHomeView
+              ? "pt-0"
+              : "pt-2 sm:pt-3 md:pt-4"
+          }`}
+        >
+          <GenrePills
+            selectedGenre={pendingGenre ?? selectedGenre}
+            onSelectGenre={handleSelectGenre}
           />
-        ) : (
-          <div
-            className={`transition-opacity duration-300 ${
-              isFadingOutGenre
-                ? "opacity-0"
-                : "opacity-100 animate-in fade-in slide-in-from-bottom-3 duration-500"
-            }`}
-          >
-            <GenreCatalogGrid
-              genreName={lastCategoryGenre}
-              movies={genreMovies}
-              isLoading={isLoadingGenre}
-              isError={isErrorGenre}
-              isLoadingMore={isFetchingNextPage}
-              hasMore={Boolean(hasNextPage)}
-              onLoadMore={() => fetchNextPage()}
+
+          {activeCatalogView === "todos" ? (
+            <HomeFeed
+              excludeIds={heroIds}
+              isFadingOut={isFadingOutHome}
               onSelectMovie={handleOpenDetails}
             />
-          </div>
-        )}
-      </main>
+          ) : (
+            <div
+              className={`transition-opacity duration-300 ${
+                isFadingOutGenre
+                  ? "opacity-0"
+                  : "opacity-100 animate-in fade-in slide-in-from-bottom-3 duration-500"
+              }`}
+            >
+              <GenreCatalogGrid
+                genreName={lastCategoryGenre}
+                movies={genreMovies}
+                isLoading={isLoadingGenre}
+                isError={isErrorGenre}
+                isLoadingMore={isFetchingNextPage}
+                hasMore={Boolean(hasNextPage)}
+                onLoadMore={() => fetchNextPage()}
+                onSelectMovie={handleOpenDetails}
+              />
+            </div>
+          )}
+        </main>
+      </div>
 
       <MovieDetailsView
         isOpen={isDetailsOpen}
