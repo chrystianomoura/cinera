@@ -30,8 +30,17 @@ export function TrailerModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+    // overflow-y-auto + m-auto no painel: se algum dia o painel ainda passar da tela, ele alinha ao topo e dá para rolar até o botão de
+    // fechar (com items-center ele subia para fora da tela e a parte de cima ficava inalcançável). Tocar fora do painel também fecha.
+    <div
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[90] flex overflow-y-auto p-4 md:p-8 paisagem:p-3 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200"
+    >
+      {/* A largura máxima também depende da ALTURA da tela: o vídeo é 16:9, então o painel (cabeçalho de ~3,6rem + vídeo) só cabe se a
+          largura for no máximo (altura disponível) x 16/9. No celular deitado (tela baixa) isso mantém o botão de fechar à vista. */}
+      <div className="relative w-full m-auto max-w-[min(56rem,calc((100dvh-5.75rem)*16/9))] md:max-w-[min(56rem,calc((100dvh-7.75rem)*16/9))] paisagem:max-w-[min(56rem,calc((100dvh-5.2rem)*16/9))] bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
         {/* Cabeçalho com título centralizado */}
         <div className="relative flex items-center justify-center px-12 py-4 border-b border-white/10 bg-zinc-900/80">
           <h4 className="text-base md:text-lg font-semibold text-white tracking-wide text-center truncate">

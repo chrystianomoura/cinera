@@ -136,13 +136,16 @@ export function PhotoModal({
           onClose();
         }
       }}
-      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6 md:p-10 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
+      className="fixed inset-0 z-[60] flex overflow-y-auto p-3 sm:p-6 md:p-10 paisagem:p-3 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
     >
+      {/* overflow-y-auto + m-auto: se o painel passar da tela ele alinha ao topo e dá para rolar até o botão de fechar (centralizado com
+          items-center, o excesso subia para fora da tela e o ✕ ficava inalcançável). A largura máxima também depende da ALTURA da tela:
+          a imagem é 16:9, então o painel (cabeçalho de ~3,6rem + imagem) só cabe se a largura for no máximo (altura livre) x 16/9. */}
       <div
         ref={modalContainerRef}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-5xl bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col cursor-default"
+        className="relative w-full m-auto max-w-[min(64rem,calc((100dvh-5.2rem)*16/9))] sm:max-w-[min(64rem,calc((100dvh-6.7rem)*16/9))] md:max-w-[min(64rem,calc((100dvh-8.7rem)*16/9))] paisagem:max-w-[min(64rem,calc((100dvh-5.2rem)*16/9))] bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col cursor-default"
       >
         {/* Cabeçalho minimalista com nome do filme centralizado */}
         <div className="relative flex items-center justify-center px-12 py-4 border-b border-white/10 bg-zinc-900/80">
