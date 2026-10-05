@@ -12,7 +12,7 @@ import { useUserLibrary } from "@/stores/use-user-library";
 import { useLibraryMovies } from "@/hooks/use-library-movies";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import { BrandLogo } from "@/features/header/BrandLogo";
-import { StatusMessage, statusButtonClassName } from "@/features/feedback/StatusMessage";
+import { StatusMessage, statusButtonRoomyClassName } from "@/features/feedback/StatusMessage";
 
 interface UserLibraryViewProps {
   isOpen: boolean;
@@ -179,6 +179,7 @@ export function UserLibraryView({
           <StatusMessage
             emoji="😔"
             titleAs="h2"
+            roomyOnMobile
             title={
               activeTab === "watchlist"
                 ? "Sua fila de espera está vazia"
@@ -190,7 +191,7 @@ export function UserLibraryView({
                 : "Conforme for assistindo aos filmes, marque-os como assistidos para registrar sua jornada."
             }
           >
-            <button type="button" onClick={onClose} className={statusButtonClassName}>
+            <button type="button" onClick={onClose} className={statusButtonRoomyClassName}>
               <Sparkles size={14} />
               <span>Explorar Catálogo</span>
             </button>

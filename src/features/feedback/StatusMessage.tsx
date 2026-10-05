@@ -4,6 +4,10 @@ import type { ElementType, ReactNode } from "react";
 export const statusButtonClassName =
   "inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white text-black font-bold text-xs sm:text-sm hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-[0_4px_16px_rgba(255,255,255,0.18)]";
 
+/** Igual ao botão acima, com mais corpo no celular (texto e preenchimento maiores); do md em diante é o mesmo. */
+export const statusButtonRoomyClassName =
+  "inline-flex items-center gap-2 px-7 py-2.5 md:px-5 md:py-2 rounded-full bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-[0_4px_16px_rgba(255,255,255,0.18)]";
+
 interface StatusMessageProps {
   emoji: string;
   title: string;
@@ -16,6 +20,8 @@ interface StatusMessageProps {
   flush?: boolean;
   /** Nível do título, para respeitar a hierarquia da tela */
   titleAs?: ElementType;
+  /** Texto de apoio maior no celular (15px em vez de 12px); do md em diante não muda */
+  roomyOnMobile?: boolean;
 }
 
 /**
@@ -30,6 +36,7 @@ export function StatusMessage({
   size = "default",
   flush = false,
   titleAs: Title = "h3",
+  roomyOnMobile = false,
 }: StatusMessageProps) {
   const isCompact = size === "compact";
   const spacing = flush ? "" : isCompact ? "py-4 sm:py-5 px-4" : "pt-8 pb-16 px-4";
@@ -56,7 +63,11 @@ export function StatusMessage({
           {title}
         </Title>
         {description && (
-          <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm mx-auto">
+          <p
+            className={`${
+              roomyOnMobile ? "text-[15px] md:text-sm" : "text-xs sm:text-sm"
+            } text-zinc-400 leading-relaxed max-w-sm mx-auto`}
+          >
             {description}
           </p>
         )}
