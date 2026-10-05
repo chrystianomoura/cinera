@@ -8,6 +8,7 @@ import { useCategoryIndex } from "@/hooks/use-category-index";
 import { GENRES } from "../catalog/constants";
 import { registerSearchInput } from "./open-search";
 import { SearchResultRow } from "./SearchResultRow";
+import { getScrollY, isShellMode, lockPageScroll, scrollPageTo } from "@/lib/page-scroll";
 import { StatusMessage, statusButtonClassName } from "@/features/feedback/StatusMessage";
 
 interface SearchModalProps {
@@ -97,10 +98,11 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     // não consegue rolá-la nem deslocá-la para revelar o campo, então a pesquisa abre sempre no mesmo lugar,
     // sem movimento, de onde quer que o usuário tenha tocado na lupa. No desktop só se esconde a rolagem.
     const body = document.body;
-    const saved = { overflow: body.style.overflow, position: body.style.position, top: body.style.top, width: body.style.width };
-    const scrollY = window.scrollY;
-    const freezeBody = window.matchMedia("(pointer: coarse)").matches;
-    body.style.overflow = "hidden";
+    const saved = { position: body.style.position, top: body.style.top, width: body.style.width };
+    const scrollY = getScrollY();
+    const unlockScroll = lockPageScroll();
+    // No modo "shell" a página rola por dentro de #root e o travamento acima já a segura no lugar
+    const freezeBody = window.matchMedia("(pointer: coarse)").matches && !isShellMode();
     if (freezeBody) {
       body.style.position = "fixed";
       body.style.top = `-${scrollY}px`;
@@ -109,12 +111,12 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
     window.addEventListener("keydown", handleGlobalKeyDown);
 
     return () => {
-      body.style.overflow = saved.overflow;
+      unlockScroll();
       if (freezeBody) {
         body.style.position = saved.position;
         body.style.top = saved.top;
         body.style.width = saved.width;
-        window.scrollTo(0, scrollY);
+        scrollPageTo({ top: scrollY, behavior: "instant" });
       }
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };

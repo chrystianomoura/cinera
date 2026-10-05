@@ -15,6 +15,7 @@ import { CastCarousel } from "./CastCarousel";
 import { GalleryCarousel } from "./GalleryCarousel";
 import { PhotoModal } from "./PhotoModal";
 import { WatchedStatusIcon } from "./WatchedStatusIcon";
+import { lockPageScroll } from "@/lib/page-scroll";
 
 interface MovieDetailsViewProps {
   movie: Movie | null;
@@ -78,13 +79,12 @@ export function MovieDetailsView({
       }
     };
 
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockPageScroll();
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = originalOverflow;
+      unlockScroll();
     };
   }, [isOpen, onClose, selectedPhotoIndex]);
 

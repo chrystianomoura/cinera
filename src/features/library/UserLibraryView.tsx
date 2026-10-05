@@ -12,6 +12,7 @@ import { useUserLibrary } from "@/stores/use-user-library";
 import { useLibraryMovies } from "@/hooks/use-library-movies";
 import { getPosterUrl } from "@/infrastructure/api/movie-service";
 import { BrandLogo } from "@/features/header/BrandLogo";
+import { lockPageScroll } from "@/lib/page-scroll";
 import { StatusMessage, statusButtonRoomyClassName } from "@/features/feedback/StatusMessage";
 
 interface UserLibraryViewProps {
@@ -74,14 +75,8 @@ export function UserLibraryView({
 
   // Trava scroll de fundo
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    if (!isOpen) return;
+    return lockPageScroll();
   }, [isOpen]);
 
   if (!isOpen) return null;

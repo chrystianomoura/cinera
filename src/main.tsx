@@ -7,6 +7,7 @@ import { StatusMessage, statusButtonClassName } from '@/features/feedback/Status
 import './index.css'
 import App from './App'
 import { lockViewportHeight } from './lib/stable-viewport'
+import { initPageScroll } from './lib/page-scroll'
 
 // Medidor de FPS (só no npm run dev, com ?fps=1 na URL); some do build publicado
 if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('fps')) {
@@ -78,6 +79,7 @@ if (!rootElement) {
   throw new Error('Elemento root não encontrado no DOM.')
 }
 
+initPageScroll()
 lockViewportHeight()
 
 createRoot(rootElement).render(

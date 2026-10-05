@@ -100,3 +100,19 @@ body {
   animation: photo-soft-fade 280ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity;
 }
+/* Modo "shell" (iPhone com Chrome, Firefox, Edge...): a página rola por dentro de #root, e não pela janela. Com o documento
+   parado, a barra do navegador não recolhe e a área da página nunca é redimensionada (ver src/lib/page-scroll.ts). */
+html.shell,
+html.shell body {
+  height: 100%;
+  overflow: hidden;
+}
+
+html.shell #root {
+  position: fixed;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}

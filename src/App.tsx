@@ -19,6 +19,7 @@ import { UserLibraryView } from "@/features/library/UserLibraryView";
 import { useSearchStore } from "@/features/search/use-search-store";
 import { openSearchAndFocus } from "@/features/search/open-search";
 import { smoothScrollToTop } from "@/lib/smooth-scroll";
+import { getScrollY, scrollPageTo } from "@/lib/page-scroll";
 
 export default function App() {
   // Referência estável: o App não assina o estado do trailer
@@ -173,7 +174,7 @@ export default function App() {
 
   const handleSelectGenre = (genre: string) => {
     if (genre === selectedGenre) {
-      if (window.scrollY > 0) {
+      if (getScrollY() > 0) {
         smoothScrollToTop();
       }
       return;
@@ -190,7 +191,7 @@ export default function App() {
       setSelectedGenre("Todos");
       setIsFadingOutGenre(true);
 
-      if (window.scrollY > 0) {
+      if (getScrollY() > 0) {
         smoothScrollToTop();
       }
 
@@ -205,7 +206,7 @@ export default function App() {
         setIsFadingOutHome(true);
 
         transitionTimerRef.current = window.setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: "instant" });
+          scrollPageTo({ top: 0, behavior: "instant" });
           setSelectedGenre(genre);
           setLastCategoryGenre(genre);
           setPendingGenre(null);
@@ -213,7 +214,7 @@ export default function App() {
           setIsFadingOutHome(false);
         }, 180);
       } else {
-        window.scrollTo({ top: 0, behavior: "instant" });
+        scrollPageTo({ top: 0, behavior: "instant" });
         setPendingGenre(null);
         setIsFadingOutGenre(false);
         setSelectedGenre(genre);
@@ -225,7 +226,7 @@ export default function App() {
 
   // Logo: apenas sobe ao topo de onde está, sem trocar de tela
   const handleLogoClick = () => {
-    if (window.scrollY > 0) {
+    if (getScrollY() > 0) {
       smoothScrollToTop();
     }
   };

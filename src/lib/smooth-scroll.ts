@@ -1,3 +1,5 @@
+import { addPageScrollListener, getScrollY, scrollPageTo, setScrollY } from "@/lib/page-scroll";
+
 let activeScrollRaf: number | null = null;
 let cleanUpListeners: (() => void) | null = null;
 
@@ -15,26 +17,26 @@ const isCoarsePointer = () =>
  */
 function scrollToTopNative(start: number, onComplete?: () => void) {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    window.scrollTo({ top: 0, behavior: "instant" });
+    scrollPageTo({ top: 0, behavior: "instant" });
     onComplete?.();
     return;
   }
 
   const bound = window.innerHeight;
   if (start > bound) {
-    window.scrollTo({ top: bound, behavior: "instant" });
+    scrollPageTo({ top: bound, behavior: "instant" });
   }
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  scrollPageTo({ top: 0, behavior: "smooth" });
 
   if (!onComplete) return;
   let done = false;
+  const stopListening = addPageScrollListener("scrollend", () => finish(), { once: true });
   const finish = () => {
     if (done) return;
     done = true;
-    window.removeEventListener("scrollend", finish);
+    stopListening();
     onComplete();
   };
-  window.addEventListener("scrollend", finish, { once: true });
   // Navegadores sem scrollend: segue após a duração típica da rolagem suave
   window.setTimeout(finish, 1000);
 }
@@ -61,7 +63,7 @@ export function smoothScrollToTop(onComplete?: () => void) {
     cleanUpListeners = null;
   }
 
-  const start = window.scrollY;
+  const start = getScrollY();
   if (start <= 0) {
     onComplete?.();
     return;
@@ -113,7 +115,7 @@ export function smoothScrollToTop(onComplete?: () => void) {
     const progress = Math.min(elapsed / duration, 1);
     const ease = easeInOutCubic(progress);
 
-    window.scrollTo(0, Math.round(start * (1 - ease)));
+    setScrollY(Math.round(start * (1 - ease)));
 
     if (progress < 1) {
       activeScrollRaf = requestAnimationFrame(step);
