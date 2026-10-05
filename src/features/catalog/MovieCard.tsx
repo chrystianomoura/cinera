@@ -19,6 +19,9 @@ export const MovieCard = memo(function MovieCard({
   const [hasError, setHasError] = useState(false);
 
   const posterUrl = movie.posterPath ? getPosterUrl(movie.posterPath, "w342") : "";
+  const posterUrlHd = movie.posterPath ? getPosterUrl(movie.posterPath, "w500") : "";
+  // Celular: sempre w342 (w500 nas categorias fez os pôsteres tremerem na rolagem). Tela grande de alta densidade: w500.
+  const hdSrcSet = `${posterUrl} 1x, ${posterUrlHd} 2x`;
   const releaseYear = movie.releaseDate?.slice(0, 4) || "—";
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -47,14 +50,17 @@ export const MovieCard = memo(function MovieCard({
           {/* O arredondamento fica na própria imagem, e não num contêiner com overflow-hidden: recortar cada pôster por um
               contêiner arredondado, dentro de uma fileira que rola, custava quadros no iPhone. */}
           {posterUrl && !hasError ? (
-            <img
-              src={posterUrl}
-              alt={`Pôster de ${movie.title}`}
-              className="h-full w-full rounded-[0.7rem] object-cover pointer-events-none"
-              loading={isEager ? "eager" : "lazy"}
-              decoding="async"
-              onError={() => setHasError(true)}
-            />
+            <picture className="contents">
+              <source media="(min-width: 768px)" srcSet={hdSrcSet} />
+              <img
+                src={posterUrl}
+                alt={`Pôster de ${movie.title}`}
+                className="h-full w-full rounded-[0.7rem] object-cover pointer-events-none"
+                loading={isEager ? "eager" : "lazy"}
+                decoding="async"
+                onError={() => setHasError(true)}
+              />
+            </picture>
           ) : (
             <div className="flex flex-col h-full w-full items-center justify-center rounded-[0.7rem] bg-zinc-900 text-zinc-400 text-center p-4 pointer-events-none">
               <Film className="w-8 h-8 mb-2 text-zinc-600" />

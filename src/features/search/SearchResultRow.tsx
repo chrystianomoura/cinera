@@ -28,11 +28,12 @@ export const SearchResultRow = memo(function SearchResultRow({
   onSelect,
   onHover,
 }: SearchResultRowProps) {
-  const posterUrl = movie.posterPath ? getPosterUrl(movie.posterPath, "w342") : "";
+  const posterUrl = movie.posterPath ? getPosterUrl(movie.posterPath, "w185") : "";
   const releaseYear = movie.releaseDate ? movie.releaseDate.slice(0, 4) : null;
   // Só categorias que existem no Cinera (as mesmas da ficha), nunca gêneros soltos do TMDB
   const categoryLabel = formatCategories(resolveCategories(movie, categoryIndex));
 
+  // No celular o divisor é uma linha reta (pseudo-elemento): a borda de baixo de um item arredondado faz a curva nos cantos
   return (
     <div
       id={`search-item-${index}`}
@@ -41,7 +42,7 @@ export const SearchResultRow = memo(function SearchResultRow({
       data-search-index={index}
       onClick={() => onSelect(movie)}
       onMouseEnter={canHover ? () => onHover(index) : undefined}
-      className={`group [-webkit-tap-highlight-color:transparent] flex items-center gap-4 px-3 py-3 rounded-2xl cursor-pointer transition-[background-color,box-shadow] duration-150 [content-visibility:auto] [contain-intrinsic-size:auto_121px] select-none active:bg-white/10 border-b border-white/[0.06] last:border-b-0 ${
+      className={`group [-webkit-tap-highlight-color:transparent] flex items-center gap-4 px-3 py-3 rounded-2xl cursor-pointer transition-[background-color,box-shadow] duration-150 [content-visibility:auto] [contain-intrinsic-size:auto_121px] select-none active:bg-white/10 relative max-md:after:absolute max-md:after:inset-x-0 max-md:after:bottom-0 max-md:after:h-px max-md:after:bg-white/25 max-md:last:after:hidden md:border-b md:border-white/[0.06] md:last:border-b-0 ${
         isSelected
           ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-white/15"
           : "hover:bg-white/[0.04] text-zinc-200"

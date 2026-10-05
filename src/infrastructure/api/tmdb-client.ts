@@ -11,7 +11,7 @@ export const isApiEnabled = (): boolean => import.meta.env.VITE_DEMO_MODE !== 't
  */
 export const getPosterUrl = (
   path: string | null,
-  size: 'w342' | 'w500' | 'w780' = 'w500'
+  size: 'w185' | 'w342' | 'w500' | 'w780' = 'w500'
 ): string => {
   if (!path) return '';
   return `https://image.tmdb.org/t/p/${size}${path}`;
