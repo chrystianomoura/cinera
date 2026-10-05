@@ -57,7 +57,7 @@ export const SearchResultRow = memo(function SearchResultRow({
             decoding="async"
             width={64}
             height={96}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover pointer-events-none group-hover:scale-105 transition-transform duration-200"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-zinc-900">

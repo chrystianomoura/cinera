@@ -197,7 +197,7 @@ export function SearchModal({ onSelectMovie, onSelectGenre }: SearchModalProps) 
       role="dialog"
       aria-modal="true"
       aria-label="Pesquisa global do Cinera"
-      className="fixed inset-0 z-50 flex items-start justify-center pt-0 md:pt-16 lg:pt-20 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-0 md:pt-16 lg:pt-20 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200 [-webkit-touch-callout:none]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           closeSearch();

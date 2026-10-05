@@ -156,7 +156,7 @@ export function HeroFeatured({
               // A animação fica sempre ligada e só é pausada fora da tela: tirar e recolocar a classe a reiniciava do zero
               // (o zoom saltava de volta) e refazia a camada de GPU da imagem grande no meio da rolagem
               style={{ animationPlayState: isInViewport ? "running" : "paused" }}
-              className="w-full h-full object-cover object-center md:object-top origin-center transform-gpu animate-kenburns"
+              className="w-full h-full object-cover object-center md:object-top origin-center transform-gpu animate-kenburns pointer-events-none"
             />
 
             {/* Gradiente inferior, com reforço vertical no celular */}
