@@ -35,6 +35,16 @@ test.describe("modo shell (Chrome no iPhone)", () => {
     await expect.poll(() => rootScroll(page), { timeout: 5000 }).toBe(0);
   });
 
+  test("o destaque acompanha a altura da tela quando a barra do navegador volta", async ({ page }) => {
+    await page.setViewportSize({ width: 430, height: 820 });
+    await page.goto("/");
+    const appVh = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--app-vh"));
+    expect(await appVh()).toBe("820px");
+    // a barra de baixo reaparece: a área visível encolhe
+    await page.setViewportSize({ width: 430, height: 755 });
+    await expect.poll(appVh).toBe("755px");
+  });
+
   test("a ficha trava a rolagem de trás e a devolve ao fechar", async ({ page }) => {
     await page.goto("/?filme=157336");
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -48,6 +58,16 @@ test.describe("modo shell (Chrome no iPhone)", () => {
 test.describe("sem o modo shell (Safari)", () => {
   test.use({ userAgent: IPHONE_SAFARI });
   test.beforeEach(({ isMobile }) => test.skip(!isMobile, "só no celular"));
+
+  test("a altura da tela continua travada na abertura", async ({ page }) => {
+    await page.setViewportSize({ width: 430, height: 820 });
+    await page.goto("/");
+    const appVh = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--app-vh"));
+    expect(await appVh()).toBe("820px");
+    await page.setViewportSize({ width: 430, height: 755 });
+    await page.waitForTimeout(500);
+    expect(await appVh()).toBe("820px");
+  });
 
   test("a janela rola normalmente", async ({ page }) => {
     await page.goto("/");

@@ -122,7 +122,7 @@ export function HeroFeatured({
     <section
       ref={sectionRef}
       aria-label="Destaque em cartaz"
-      className="relative w-full h-[calc(var(--app-vh,100svh)-124px)] md:h-[calc(100vh-140px)] min-h-[480px] max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden bg-black select-none [contain:layout_paint] [isolation:isolate] transform-gpu"
+      className="relative w-full aspect-[4/5] md:aspect-auto md:h-[calc(100vh-140px)] min-h-0 md:min-h-[480px] max-h-none md:max-h-[760px] flex items-end pb-3 sm:pb-4 md:pb-6 px-4 md:px-12 pt-4 md:pt-6 overflow-hidden bg-black select-none [contain:layout_paint] [isolation:isolate] transform-gpu"
     >
       {(isLoading || !heroMovie) && (
         <div className="absolute inset-0 bg-black animate-pulse" />
@@ -171,7 +171,7 @@ export function HeroFeatured({
 
           {/* Textos e CTAs: sincronizados no milissegundo exato com a imagem com aceleração por hardware */}
           <div
-            className={`relative z-10 max-w-3xl lg:max-w-4xl w-full mx-auto md:mx-0 flex flex-col items-center md:items-start transform-gpu will-change-[opacity] transition-opacity duration-700 ease-in-out ${
+            className={`relative z-10 max-w-3xl lg:max-w-4xl w-full mx-auto md:mx-0 paisagem:mx-auto flex flex-col items-center md:items-start paisagem:items-center transform-gpu will-change-[opacity] transition-opacity duration-700 ease-in-out ${
               isFading || !isVisible
                 ? "opacity-0 pointer-events-none"
                 : "opacity-100"
@@ -198,7 +198,7 @@ export function HeroFeatured({
 
                 return (
                   <h2
-                    className={`font-black tracking-tight text-white ${titleSpacingClass} leading-[1.08] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
+                    className={`font-black tracking-tight text-white ${titleSpacingClass} leading-[1.08] drop-shadow-2xl text-center md:text-left paisagem:text-center [text-wrap:balance] ${fontClasses}`}
                   >
                     <span>{part1}:</span>
                     {part2 && (
@@ -221,7 +221,7 @@ export function HeroFeatured({
 
               return (
                 <h2
-                  className={`font-black tracking-tight text-white ${titleSpacingClass} leading-[1.05] drop-shadow-2xl text-center md:text-left [text-wrap:balance] ${fontClasses}`}
+                  className={`font-black tracking-tight text-white ${titleSpacingClass} leading-[1.05] drop-shadow-2xl text-center md:text-left paisagem:text-center [text-wrap:balance] ${fontClasses}`}
                 >
                   {heroMovie.title}
                 </h2>
@@ -229,14 +229,14 @@ export function HeroFeatured({
             })()}
 
             {heroMovie.tagline && (
-              <p className="text-zinc-100 text-base sm:text-lg md:text-xl font-medium italic leading-snug mb-4 md:mb-5 drop-shadow-md max-w-2xl text-center md:text-left [text-wrap:balance]">
+              <p className="text-zinc-100 text-base sm:text-lg md:text-xl font-medium italic leading-snug mb-4 md:mb-5 drop-shadow-md max-w-2xl text-center md:text-left paisagem:text-center [text-wrap:balance]">
                 {heroMovie.tagline
                   .replace(/^["'“”«»]+|["'“”«»]+$/g, "")
                   .trim()}
               </p>
             )}
 
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-3.5 w-full">
+            <div className="flex flex-wrap items-center justify-center md:justify-start paisagem:justify-center gap-3 sm:gap-3.5 w-full">
               <button
                 type="button"
                 onClick={() => onOpenTrailer(heroMovie)}
