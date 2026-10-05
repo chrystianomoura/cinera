@@ -75,6 +75,8 @@ export function validateCatalog(
   const hero = catalog.hero ?? [];
   if (hero.length !== CATALOG_ROW_IDS.length) errors.push(`destaque com ${hero.length} filmes (esperado ${CATALOG_ROW_IDS.length})`);
   if (new Set(hero.map((m) => m.id)).size !== hero.length) errors.push("destaque com filme repetido");
+  const yesterday = new Set((previous?.hero ?? []).map((m) => m.id));
+  for (const m of hero) if (yesterday.has(m.id)) errors.push(`destaque: "${m.title}" já era destaque no dia anterior`);
   for (const m of hero) {
     if (!m.backdropPath) errors.push(`destaque: "${m.title}" sem imagem de fundo`);
     if (!m.tagline?.trim()) errors.push(`destaque: "${m.title}" sem tagline`);

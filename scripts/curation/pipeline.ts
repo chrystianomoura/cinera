@@ -15,7 +15,7 @@ import {
   exclusionReason,
   franchiseOf,
 } from "./scoring.js";
-import { dayIndex, rotateLanes, rotateBlocks } from "./rotation.js";
+import { dayIndex, rotateLanes, rotateBlocks, TOP_BLOCK } from "./rotation.js";
 import { classifyMovie } from "../../src/domain/classification.js";
 import { mapTMDBMovie } from "../../src/infrastructure/api/tmdb-mappers.js";
 import { filterQualifiedMovies, dedupeFranchises } from "../../src/infrastructure/api/curation-filters.js";
@@ -66,8 +66,6 @@ export interface TMDBDetail {
   tagline: string;
 }
 
-/** Tamanho dos blocos do núcleo que giram entre si */
-const CORE_BLOCK = 5;
 const CATALOG_FILE = "public/catalog.json";
 const CATALOG_ORDER = ["em-alta", "novidades", "aclamados", "classicos", "populares"];
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -217,7 +215,7 @@ export async function runRow(def: RowDefinition) {
     // Ordem de entrada: núcleo, janela do dia e, só como reposição de franquia repetida, o resto da fila
     const result = buildRanking([...core, ...window, ...rest.filter((c) => !inWindow.has(c.id))], def.config, def.listSize);
     // O núcleo troca de posição todo dia, em blocos do mesmo nível (os 5 melhores entre si, depois os 5 seguintes)
-    picked = [...rotateBlocks(result.picked.slice(0, coreSize), CORE_BLOCK, dayIndex()), ...result.picked.slice(coreSize)];
+    picked = [...rotateBlocks(result.picked.slice(0, coreSize), TOP_BLOCK, dayIndex()), ...result.picked.slice(coreSize)];
     skipped = result.skipped;
     console.log(`   Rotação: núcleo de ${core.length}, ${window.length} faixas rodando entre ${rest.length} filmes da fila (dia ${dayIndex()})`);
   } else {

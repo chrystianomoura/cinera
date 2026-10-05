@@ -6,6 +6,7 @@
 import { loadEnv, tmdb, mapLimit } from "./curation/sources.js";
 import { type Candidate, buildRanking, franchiseOf } from "./curation/scoring.js";
 import { writeCatalogRow } from "./curation/pipeline.js";
+import { dayIndex, rotateTop } from "./curation/rotation.js";
 import { MODERN_CONFIG, fmt, quality, qualityNorm, modernExclusion, unknownReason, showcaseOrder, loadCandidates } from "./curation/modern.js";
 import { mapTMDBMovie } from "../src/infrastructure/api/tmdb-mappers.js";
 import { filterQualifiedMovies, dedupeFranchises } from "../src/infrastructure/api/curation-filters.js";
@@ -72,7 +73,7 @@ async function main() {
   const multi = [...groups.entries()].filter(([, l]) => l.length > 1);
   console.log(`\n=== Franquias repetidas: ${multi.length === 0 ? "nenhuma" : multi.map(([k, l]) => `${k} (#${l.join(", #")})`).join("; ")}`);
 
-  if (process.argv.includes("--write")) writeCatalogRow({ id: "populares" }, picked, details);
+  if (process.argv.includes("--write")) writeCatalogRow({ id: "populares" }, rotateTop(picked, dayIndex()), details);
 }
 
 main().catch((error) => {

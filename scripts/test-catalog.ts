@@ -5,7 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateCatalog, validateGenres } from "./curation/validate.js";
 import { GENRE_SLUGS } from "../src/features/catalog/constants.js";
-import { rotateLanes, rotateBlocks } from "./curation/rotation.js";
+import { rotateLanes, rotateBlocks, rotateTop } from "./curation/rotation.js";
+import { pickHero } from "./curation/hero.js";
 import { runFixtures } from "./curation/classification-fixtures.js";
 
 let failed = 0;
@@ -71,6 +72,37 @@ check(
     rotateBlocks(core, 5, 1)[0] === 1,
 );
 check("giro do núcleo: lista menor que o bloco não quebra", rotateBlocks([1, 2], 5, 3).length === 2 && rotateBlocks([], 5, 3).length === 0);
+
+// --- Topo das fileiras
+const row50 = Array.from({ length: 50 }, (_, i) => i);
+const topDays = Array.from({ length: 20 }, (_, d) => rotateTop(row50, 20_000 + d));
+check("topo da fileira: os 10 primeiros mantêm os mesmos filmes, só em outra ordem", topDays.every((r) => [...r.slice(0, 10)].sort((x, y) => x - y).join() === "0,1,2,3,4,5,6,7,8,9"));
+check("topo da fileira: o resto da fileira não muda", topDays.every((r) => r.slice(10).join() === row50.slice(10).join()));
+check("topo da fileira: quem abre a fileira muda todo dia", topDays.every((r, i) => i === 0 || r[0] !== topDays[i - 1][0]));
+
+// --- Destaque: os 5 mudam todo dia
+const ROW_IDS = ["em-alta", "novidades", "aclamados", "classicos", "populares"] as const;
+const heroRows = ROW_IDS.map((id, r) => ({
+  id,
+  movies: Array.from({ length: 20 }, (_, i) => ({ id: r * 100 + i, title: `${id} ${i}`, backdropPath: "/x.jpg", tagline: "t" })),
+}));
+let heroOk = true;
+let heroDup = false;
+let previousHero: { id: number }[] = [];
+for (let day = 20_000; day < 20_100; day++) {
+  // as fileiras também giram: o topo muda de lugar a cada dia
+  const rows = heroRows.map((r) => ({ ...r, movies: rotateTop(r.movies, day) }));
+  const hero = pickHero(rows, {}, day, previousHero);
+  if (hero.some((m) => previousHero.some((p) => p.id === m.id))) heroOk = false;
+  if (new Set(hero.map((m) => m.id)).size !== hero.length) heroDup = true;
+  previousHero = hero;
+}
+check("destaque: nenhum dos 5 repete o do dia anterior (100 dias seguidos)", heroOk);
+check("destaque: nunca repete filme no mesmo dia", !heroDup);
+check("destaque: ignora filme sem imagem de fundo ou sem tagline", (() => {
+  const rows = [{ id: "em-alta" as const, movies: [{ id: 1, title: "a", backdropPath: null, tagline: "t" }, { id: 2, title: "b", backdropPath: "/x", tagline: " " }, { id: 3, title: "c", backdropPath: "/x", tagline: "t" }] }];
+  return pickHero(rows, {}, 7)[0].id === 3;
+})());
 
 // --- Catálogo publicado
 const file = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "catalog.json");

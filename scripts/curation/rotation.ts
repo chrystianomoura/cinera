@@ -61,3 +61,12 @@ export function rotateBlocks<T>(items: T[], blockSize: number, day: number): T[]
   }
   return result;
 }
+
+/** Quantos filmes do topo de cada fileira trocam de lugar todo dia, e em blocos de quantos */
+export const TOP_SIZE = 10;
+export const TOP_BLOCK = 5;
+
+/** Embaralha só o topo da fileira (os `TOP_SIZE` primeiros, em blocos do mesmo nível); o resto fica como está. */
+export function rotateTop<T>(items: T[], day: number): T[] {
+  return [...rotateBlocks(items.slice(0, TOP_SIZE), TOP_BLOCK, day), ...items.slice(TOP_SIZE)];
+}
