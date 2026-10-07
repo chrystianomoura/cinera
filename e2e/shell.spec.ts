@@ -55,22 +55,34 @@ test.describe("modo shell (Chrome no iPhone)", () => {
   });
 });
 
-test.describe("sem o modo shell (Safari)", () => {
+test.describe("modo shell (Safari)", () => {
   test.use({ userAgent: IPHONE_SAFARI });
   test.beforeEach(({ isMobile }) => test.skip(!isMobile, "só no celular"));
 
-  test("a altura da tela continua travada na abertura", async ({ page }) => {
+  test("a página rola por dentro de #root e a janela fica parada", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveClass(/shell/);
+    await page.evaluate(() => document.getElementById("root")!.scrollTo(0, 700));
+    await expect.poll(() => rootScroll(page)).toBeGreaterThan(300);
+    expect(await windowScroll(page)).toBe(0);
+  });
+
+  test("o destaque acompanha a altura da tela", async ({ page }) => {
     await page.setViewportSize({ width: 430, height: 820 });
     await page.goto("/");
     const appVh = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--app-vh"));
     expect(await appVh()).toBe("820px");
     await page.setViewportSize({ width: 430, height: 755 });
-    await page.waitForTimeout(500);
-    expect(await appVh()).toBe("820px");
+    await expect.poll(appVh).toBe("755px");
   });
+});
+
+test.describe("sem o modo shell (?shell=0)", () => {
+  test.use({ userAgent: IPHONE_SAFARI });
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, "só no celular"));
 
   test("a janela rola normalmente", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?shell=0");
     await expect(page.locator("html")).not.toHaveClass(/shell/);
     await page.evaluate(() => window.scrollTo(0, 700));
     await expect.poll(() => windowScroll(page)).toBeGreaterThan(300);
