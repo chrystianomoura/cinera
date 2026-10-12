@@ -1,4 +1,4 @@
-// Escolha do destaque: um filme de cada fileira, sempre diferente dos do dia anterior.
+// Escolha do destaque: um filme de cada fileira, sempre diferente dos dos últimos dias (HERO_COOLDOWN_DAYS).
 import type { CatalogRowId } from "../../src/infrastructure/catalog/catalog-schema.js";
 
 /** Quantos filmes da fileira disputam o destaque (os melhores elegíveis) */

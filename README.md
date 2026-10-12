@@ -9,11 +9,11 @@
 [![CI](https://github.com/chrystianomoura/cinera/actions/workflows/ci.yml/badge.svg)](https://github.com/chrystianomoura/cinera/actions/workflows/ci.yml)
 [![Catálogo do dia](https://github.com/chrystianomoura/cinera/actions/workflows/atualizar-catalogo.yml/badge.svg)](https://github.com/chrystianomoura/cinera/actions/workflows/atualizar-catalogo.yml)
 ![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-147_testes-6E9F18?logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-154_testes-6E9F18?logo=vitest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e_+_axe-2EAD33?logo=playwright&logoColor=white)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-100_·_100_·_100-F44B21?logo=lighthouse&logoColor=white)
 [![Licença MIT](https://img.shields.io/badge/licença-MIT-blue)](LICENSE)
@@ -39,7 +39,7 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 - **Curadoria algorítmica explicável.** Cada posição da lista tem uma razão, e os critérios estão no código ([`scripts/curation/`](scripts/curation)), cobertos por testes.
 - **Zero servidor, zero banco.** O catálogo é JSON versionado no Git. O histórico do que mudou a cada dia é o próprio `git log`.
 - **Segurança sem chave no navegador.** O site nunca fala com o TMDB nem com o OMDb: passa por um Worker com rotas fixas, cache e limite de requisições.
-- **Qualidade medida, não prometida.** Tipos, lint, 147 testes unitários, 42 execuções ponta a ponta (desktop e mobile), acessibilidade com axe e validação do catálogo publicado, tudo no CI.
+- **Qualidade medida, não prometida.** Tipos, lint, 154 testes unitários, 76 cenários ponta a ponta (desktop e mobile), acessibilidade com axe e validação do catálogo publicado, tudo no CI.
 - **Classificação única.** Ficha, pesquisa e listas usam a mesma função para decidir a categoria de um filme, então o mesmo filme nunca aparece em categorias diferentes dependendo da tela.
 
 ## Tour
@@ -74,10 +74,10 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 
 | | |
 |---|---|
-| **Catálogo** | 2.526 filmes distintos · 9 categorias de até 400 filmes · 5 fileiras · 5 destaques |
-| **Peso do site** | 141 KB de JavaScript e 10 KB de CSS (gzip) · catálogo da Home em 62 KB (gzip) |
-| **Código** | ~12 mil linhas de TypeScript (app, Worker, scripts e testes) · 167 commits |
-| **Testes** | 147 unitários · 42 execuções ponta a ponta (21 cenários × desktop e mobile) · validação do catálogo publicado |
+| **Catálogo** | Mais de 2.500 filmes distintos · 9 categorias de até 400 filmes · 5 fileiras · 5 destaques |
+| **Peso do site** | 141 KB de JavaScript e 10 KB de CSS (gzip) · catálogo da Home em 60 KB (gzip) |
+| **Código** | ~13 mil linhas de TypeScript (app, Worker, scripts e testes) · 200+ commits |
+| **Testes** | 154 unitários · 76 cenários ponta a ponta (38 × desktop e mobile, 61 executados) · validação do catálogo publicado |
 | **Lighthouse** | Acessibilidade **100** · Boas práticas **100** · SEO **100** · Desempenho ~90 (desktop) e ~83 (mobile) |
 | **Automação** | 4 rodadas do robô por dia · CI em cada push · Dependabot semanal |
 
@@ -174,7 +174,7 @@ sequenceDiagram
 4. **Pontuação da categoria.** Consenso + bônus de prestígio (Oscar e premiações) + bônus por ter a categoria como **primeira** etiqueta + popularidade em escala logarítmica.
 5. **Franquias espalhadas.** Os primeiros 15 filmes de uma lista são de franquias diferentes, e depois delas o mesmo universo só reaparece com pelo menos 10 posições de distância.
 6. **Duas camadas.** Um **topo de 200** com o piso de público cheio e uma **cauda de até 200** com piso menor, sempre abaixo do topo.
-7. **Rotação diária determinística.** A ordem gira em blocos, sem arquivo de estado: o resultado depende só da data, então é reproduzível e uma falha num dia não corrompe o seguinte. A curva de qualidade se mantém, e a posição 12 nunca vira um filme muito pior que a 11. Os 10 primeiros de **todas** as fileiras trocam de lugar todo dia, em blocos do mesmo nível, e os **5 filmes do destaque mudam todo dia** (nenhum repete um dos do dia anterior).
+7. **Rotação diária determinística.** A ordem gira em blocos, sem arquivo de estado: o resultado depende só da data, então é reproduzível e uma falha num dia não corrompe o seguinte. A única memória é o destaque (abaixo). A curva de qualidade se mantém, e a posição 12 nunca vira um filme muito pior que a 11. Os 10 primeiros de **todas** as fileiras trocam de lugar todo dia, em blocos do mesmo nível, e os **5 filmes do destaque mudam todo dia**, um de cada fileira. Um filme que foi destaque só volta depois de **7 dias**: o `catalog.json` guarda os ids dos últimos destaques em `heroHistory` (ignorado pelo site), e o robô e a validação usam esse histórico.
 
 Cada regra tem teste. O `npm run test:catalog` confere o catálogo **publicado**, não só o código.
 
@@ -190,9 +190,9 @@ Tudo que o site lê é um arquivo estático, validado com **Zod** na hora de car
 
 | Arquivo | Conteúdo | Tamanho (gzip) |
 |---|---|---|
-| `public/catalog.json` | Destaque e as 5 fileiras da Home | 62 KB |
-| `public/genres/<categoria>.json` | A lista de cada categoria, já na ordem de exibição | 66 a 115 KB cada |
-| `public/categories.json` | Índice id → categorias de todos os filmes (pesquisa e ficha usam o mesmo resultado das listas) | 12 KB |
+| `public/catalog.json` | Destaque, histórico dos últimos destaques (`heroHistory`) e as 5 fileiras da Home | 60 KB |
+| `public/genres/<categoria>.json` | A lista de cada categoria, já na ordem de exibição | 55 a 115 KB cada |
+| `public/categories.json` | Índice id → categorias de todos os filmes (pesquisa e ficha usam o mesmo resultado das listas) | 11 KB |
 | `public/imdb.json` | IMDb ID → nota e votos dos filmes do catálogo | 21 KB |
 
 ## Front-end
@@ -247,8 +247,8 @@ A política de reporte de falhas está em [`SECURITY.md`](SECURITY.md).
 ## Qualidade
 
 ```text
-Vitest        147 testes   regras de curadoria, classificação, Worker, serviços, mapeadores
-Playwright     42 execuções (21 cenários × desktop e mobile), com a API simulada
+Vitest        154 testes   regras de curadoria, classificação, Worker, serviços, mapeadores
+Playwright     76 cenários (38 × desktop e mobile; 61 executados, o resto é só de uma plataforma), com a API simulada
 axe-core      auditoria de acessibilidade das telas principais
 test:catalog  validação do catálogo publicado (listas, índice, notas do IMDb)
 CI            lint, testes, catálogo, tipos e build, e os testes e2e em paralelo, a cada push
@@ -281,7 +281,7 @@ Para a chave nunca estar no JavaScript. Antes, as chaves iam no bundle (o que é
 
 <br />
 
-O robô já busca essas notas para a curadoria e as descartava. Publicá-las num arquivo de ~60 KB faz a ficha dos filmes do catálogo abrir sem nenhuma chamada externa: mais rápida, funciona mesmo se a API cair e não gasta cota por visitante. A consulta ao vivo ficou só para a cauda longa.
+O robô já busca essas notas para a curadoria e as descartava. Publicá-las num arquivo de ~21 KB (gzip) faz a ficha dos filmes do catálogo abrir sem nenhuma chamada externa: mais rápida, funciona mesmo se a API cair e não gasta cota por visitante. A consulta ao vivo ficou só para a cauda longa.
 
 </details>
 
@@ -370,6 +370,7 @@ VITE_DEMO_MODE=true npm run dev
 | `npm run test:e2e` | Testes ponta a ponta e de acessibilidade (Playwright) |
 | `npm run test:catalog` | Valida o catálogo publicado |
 | `npm run build:catalog` | Monta o catálogo inteiro e só publica se tudo passar |
+| `npm run curate:hero` | Escolhe só o destaque do dia (`-- --dry` mostra sem gravar) |
 | `npm run lint` | Lint com oxlint |
 
 ## Estrutura
