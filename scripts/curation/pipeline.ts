@@ -112,7 +112,7 @@ export function writeCatalogRow(def: { id: CatalogRowId }, picked: Candidate[], 
   });
 
   const file = path.join(root, CATALOG_FILE);
-  let existing: { rows?: { id: string; movies: unknown[] }[]; hero?: unknown[] } = {};
+  let existing: { rows?: { id: string; movies: unknown[] }[]; hero?: unknown[]; heroHistory?: unknown[] } = {};
   try {
     existing = JSON.parse(fs.readFileSync(file, "utf8"));
   } catch {
@@ -121,7 +121,7 @@ export function writeCatalogRow(def: { id: CatalogRowId }, picked: Candidate[], 
   const rows = [...(existing.rows ?? []).filter((r) => r.id !== def.id), { id: def.id, movies }].sort(
     (a, b) => CATALOG_ORDER.indexOf(a.id) - CATALOG_ORDER.indexOf(b.id),
   );
-  const catalog = { version: 1, generatedAt: new Date().toISOString(), ...(existing.hero ? { hero: existing.hero } : {}), rows };
+  const catalog = { version: 1, generatedAt: new Date().toISOString(), ...(existing.hero ? { hero: existing.hero } : {}), ...(existing.heroHistory ? { heroHistory: existing.heroHistory } : {}), rows };
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(catalog));
   console.log(`\nCatálogo gravado em ${CATALOG_FILE}: fileira "${def.id}" com ${movies.length} filmes (${rows.length} fileira(s) no arquivo).`);

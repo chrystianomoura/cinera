@@ -75,8 +75,12 @@ export function validateCatalog(
   const hero = catalog.hero ?? [];
   if (hero.length !== CATALOG_ROW_IDS.length) errors.push(`destaque com ${hero.length} filmes (esperado ${CATALOG_ROW_IDS.length})`);
   if (new Set(hero.map((m) => m.id)).size !== hero.length) errors.push("destaque com filme repetido");
-  const yesterday = new Set((previous?.hero ?? []).map((m) => m.id));
-  for (const m of hero) if (yesterday.has(m.id)) errors.push(`destaque: "${m.title}" já era destaque no dia anterior`);
+  // Sem histórico (catálogo antigo), vale o destaque do dia anterior; com histórico, os últimos dias, sem contar o de hoje
+  const history = catalog.heroHistory ?? [];
+  const recent = new Set(history.length > 0 ? history.slice(0, -1).flatMap((e) => e.ids) : (previous?.hero ?? []).map((m) => m.id));
+  for (const m of hero) if (recent.has(m.id)) errors.push(`destaque: "${m.title}" já foi destaque nos últimos dias`);
+  const heroToday = history[history.length - 1];
+  if (history.length > 0 && (!heroToday || heroToday.ids.join() !== hero.map((m) => m.id).join())) errors.push("histórico do destaque não bate com o destaque de hoje");
   for (const m of hero) {
     if (!m.backdropPath) errors.push(`destaque: "${m.title}" sem imagem de fundo`);
     if (!m.tagline?.trim()) errors.push(`destaque: "${m.title}" sem tagline`);

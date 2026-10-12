@@ -33,6 +33,8 @@ export const catalogSchema = z.object({
   version: z.literal(1),
   generatedAt: z.string(),
   hero: z.array(catalogMovieSchema).optional(),
+  /** Ids dos destaques dos últimos dias (mais antigo primeiro), para o destaque não voltar logo; o site ignora */
+  heroHistory: z.array(z.object({ day: z.number().int(), ids: z.array(z.number().int()) })).optional(),
   rows: z.array(
     z.object({
       id: z.enum(CATALOG_ROW_IDS),

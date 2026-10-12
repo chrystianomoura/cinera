@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { validateCatalog, validateGenres } from "./curation/validate.js";
 import { GENRE_SLUGS } from "../src/features/catalog/constants.js";
 import { rotateLanes, rotateBlocks, rotateTop } from "./curation/rotation.js";
-import { pickHero } from "./curation/hero.js";
+import { pickHero, updateHeroHistory, HERO_COOLDOWN_DAYS, type HeroHistoryEntry } from "./curation/hero.js";
 import { runFixtures } from "./curation/classification-fixtures.js";
 
 let failed = 0;
@@ -88,16 +88,27 @@ const heroRows = ROW_IDS.map((id, r) => ({
 }));
 let heroOk = true;
 let heroDup = false;
-let previousHero: { id: number }[] = [];
+let history: HeroHistoryEntry[] = [];
+let lastSeen = new Map<number, number>();
+let minGap = Infinity;
 for (let day = 20_000; day < 20_100; day++) {
   // as fileiras também giram: o topo muda de lugar a cada dia
   const rows = heroRows.map((r) => ({ ...r, movies: rotateTop(r.movies, day) }));
-  const hero = pickHero(rows, {}, day, previousHero);
-  if (hero.some((m) => previousHero.some((p) => p.id === m.id))) heroOk = false;
+  const { excluded } = updateHeroHistory(history, day, []);
+  const hero = pickHero(rows, {}, day, excluded.map((id) => ({ id })));
+  if (hero.some((m) => excluded.includes(m.id))) heroOk = false;
   if (new Set(hero.map((m) => m.id)).size !== hero.length) heroDup = true;
-  previousHero = hero;
+  for (const m of hero) {
+    if (lastSeen.has(m.id)) minGap = Math.min(minGap, day - lastSeen.get(m.id)!);
+    lastSeen.set(m.id, day);
+  }
+  history = updateHeroHistory(history, day, hero.map((m) => m.id)).history;
 }
-check("destaque: nenhum dos 5 repete o do dia anterior (100 dias seguidos)", heroOk);
+check(`destaque: nenhum repete um dos últimos ${HERO_COOLDOWN_DAYS} dias (100 dias seguidos)`, heroOk && minGap > HERO_COOLDOWN_DAYS);
+check("destaque: refazer o mesmo dia troca a entrada de hoje, sem duplicar o histórico", (() => {
+  const a = updateHeroHistory([{ day: 1, ids: [1] }, { day: 2, ids: [2] }], 2, [9]);
+  return a.history.length === 2 && a.history[1].ids[0] === 9 && a.excluded.join() === "1";
+})());
 check("destaque: nunca repete filme no mesmo dia", !heroDup);
 check("destaque: ignora filme sem imagem de fundo ou sem tagline", (() => {
   const rows = [{ id: "em-alta" as const, movies: [{ id: 1, title: "a", backdropPath: null, tagline: "t" }, { id: 2, title: "b", backdropPath: "/x", tagline: " " }, { id: 3, title: "c", backdropPath: "/x", tagline: "t" }] }];
