@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import type { Plugin } from 'vite'
-import { heroPreloadAttrs } from './src/features/hero/hero-image'
+import { heroPreloadAttrs } from './src/features/hero/hero-image.ts'
 
 /**
  * Coloca no index.html um <link rel="preload"> da primeira foto do destaque, lida do catálogo do dia (public/catalog.json).

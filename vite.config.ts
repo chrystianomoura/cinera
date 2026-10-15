@@ -3,8 +3,8 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
-import { handleApi, type ResponseCache } from './worker/api'
-import { heroPreload } from './vite-plugin-hero-preload'
+import { handleApi, type ResponseCache } from './worker/api.ts'
+import { heroPreload } from './vite-plugin-hero-preload.ts'
 
 /**
  * No `npm run dev` não há Worker: este plugin responde /api/* com o mesmo código dele, usando as chaves do

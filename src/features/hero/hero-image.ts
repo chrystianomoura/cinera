@@ -1,4 +1,4 @@
-import { getBackdropUrl } from "../../infrastructure/api/tmdb-image-url";
+import { getBackdropUrl } from "../../infrastructure/api/tmdb-image-url.ts";
 
 /** Largura que o destaque ocupa na tela. O preload do index.html repete exatamente este valor. */
 export const HERO_IMAGE_SIZES = "min(100vw, 1280px)";

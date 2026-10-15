@@ -4,6 +4,7 @@
     "target": "es2023",
     "lib": ["ES2023"],
     "types": ["node"],
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
 
     /* Resolução para ferramentas e Vite */
