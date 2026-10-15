@@ -17,16 +17,8 @@ export const getPosterUrl = (
   return `https://image.tmdb.org/t/p/${size}${path}`;
 };
 
-/**
- * Função utilitária para obter o URL do backdrop (imagem de fundo) do filme no TMDB.
- */
-export const getBackdropUrl = (
-  path: string | null,
-  size: 'w780' | 'w1280' | 'original' = 'original'
-): string => {
-  if (!path) return '';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
-};
+// O endereço do backdrop mora em tmdb-image-url.ts (sem dependências, para o vite.config.ts usar); reexportado aqui.
+export { getBackdropUrl } from './tmdb-image-url';
 
 /**
  * Função utilitária para obter o URL da foto de perfil de membros do elenco ou equipe no TMDB.
