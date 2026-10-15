@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Play, Info } from "lucide-react";
 import type { Movie } from "@/domain";
-import { getBackdropUrl } from "@/infrastructure/api/movie-service";
+import { heroImageSources } from "./hero-image";
 import { usePageVisibility } from "@/hooks/use-page-visibility";
 import { useTrailerStore } from "@/features/trailer/use-trailer-store";
 
@@ -139,13 +139,7 @@ export function HeroFeatured({
             <img
               key={heroMovie.id}
               ref={imageRef}
-              src={getBackdropUrl(heroMovie.backdropPath, "w1280")}
-              srcSet={`
-                ${getBackdropUrl(heroMovie.backdropPath, "w780")} 780w,
-                ${getBackdropUrl(heroMovie.backdropPath, "w1280")} 1280w,
-                ${getBackdropUrl(heroMovie.backdropPath, "original")} 2560w
-              `}
-              sizes="min(100vw, 1280px)"
+              {...heroImageSources(heroMovie.backdropPath)}
               alt={heroMovie.title}
               loading="eager"
               fetchPriority="high"
