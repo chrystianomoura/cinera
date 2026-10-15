@@ -13,7 +13,7 @@
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-154_testes-6E9F18?logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-162_testes-6E9F18?logo=vitest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e_+_axe-2EAD33?logo=playwright&logoColor=white)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-100_·_100_·_100-F44B21?logo=lighthouse&logoColor=white)
 [![Licença MIT](https://img.shields.io/badge/licença-MIT-blue)](LICENSE)
@@ -39,7 +39,7 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 - **Curadoria algorítmica explicável.** Cada posição da lista tem uma razão, e os critérios estão no código ([`scripts/curation/`](scripts/curation)), cobertos por testes.
 - **Zero servidor, zero banco.** O catálogo é JSON versionado no Git. O histórico do que mudou a cada dia é o próprio `git log`.
 - **Segurança sem chave no navegador.** O site nunca fala com o TMDB nem com o OMDb: passa por um Worker com rotas fixas, cache e limite de requisições.
-- **Qualidade medida, não prometida.** Tipos, lint, 154 testes unitários, 76 cenários ponta a ponta (desktop e mobile), acessibilidade com axe e validação do catálogo publicado, tudo no CI.
+- **Qualidade medida, não prometida.** Tipos, lint, 162 testes unitários, 80 cenários ponta a ponta (desktop e mobile), acessibilidade com axe e validação do catálogo publicado, tudo no CI.
 - **Classificação única.** Ficha, pesquisa e listas usam a mesma função para decidir a categoria de um filme, então o mesmo filme nunca aparece em categorias diferentes dependendo da tela.
 
 ## Tour
@@ -75,9 +75,9 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 | | |
 |---|---|
 | **Catálogo** | Mais de 2.500 filmes distintos · 9 categorias de até 400 filmes · 5 fileiras · 5 destaques |
-| **Peso do site** | 141 KB de JavaScript e 10 KB de CSS (gzip) · catálogo da Home em 60 KB (gzip) |
+| **Peso do site** | 147 KB de JavaScript e 12 KB de CSS (gzip) · catálogo da Home em 58 KB (gzip) |
 | **Código** | ~13 mil linhas de TypeScript (app, Worker, scripts e testes) · 200+ commits |
-| **Testes** | 154 unitários · 76 cenários ponta a ponta (38 × desktop e mobile, 61 executados) · validação do catálogo publicado |
+| **Testes** | 162 unitários · 80 cenários ponta a ponta (40 × desktop e mobile, 65 executados) · validação do catálogo publicado |
 | **Lighthouse** | Acessibilidade **100** · Boas práticas **100** · SEO **100** · Desempenho ~90 (desktop) e ~83 (mobile) |
 | **Automação** | 4 rodadas do robô por dia · CI em cada push · Dependabot semanal |
 
@@ -190,10 +190,10 @@ Tudo que o site lê é um arquivo estático, validado com **Zod** na hora de car
 
 | Arquivo | Conteúdo | Tamanho (gzip) |
 |---|---|---|
-| `public/catalog.json` | Destaque, histórico dos últimos destaques (`heroHistory`) e as 5 fileiras da Home | 60 KB |
+| `public/catalog.json` | Destaque, histórico dos últimos destaques (`heroHistory`) e as 5 fileiras da Home | 58 KB |
 | `public/genres/<categoria>.json` | A lista de cada categoria, já na ordem de exibição | 55 a 115 KB cada |
 | `public/categories.json` | Índice id → categorias de todos os filmes (pesquisa e ficha usam o mesmo resultado das listas) | 11 KB |
-| `public/imdb.json` | IMDb ID → nota e votos dos filmes do catálogo | 21 KB |
+| `public/imdb.json` | IMDb ID → nota e votos dos filmes do catálogo | 20 KB |
 
 ## Front-end
 
@@ -202,6 +202,7 @@ domain/          regras puras e sem dependência de interface (classificação d
 infrastructure/  tudo que fala com o mundo: Worker, arquivos do catálogo, pesquisa, schemas Zod
 features/        cada tela é uma pasta (catálogo, ficha, pesquisa, biblioteca, destaque, trailer)
 hooks/ stores/   dados da tela (TanStack Query) e a biblioteca do usuário (Zustand)
+lib/             utilitários de interface (rolagem, viewport estável, formatação, decodificação de imagem)
 ```
 
 - **Dados do servidor** com TanStack Query: cache e deduplicação de chamadas.
@@ -218,16 +219,27 @@ hooks/ stores/   dados da tela (TanStack Query) e a biblioteca do usuário (Zust
 | Catálogo, listas e índices | 5 minutos, com revalidação |
 | Logos e ícones | 7 dias |
 
-**Medição (Lighthouse, site no ar, em 03/10/2026, mediana de 3 rodadas):**
+**Medição (Lighthouse, site no ar, em 03/10/2026, mediana de 3 rodadas; anterior às mudanças na foto do destaque descritas abaixo):**
 
 | | Acessibilidade | Boas práticas | SEO | Desempenho | LCP | TBT | CLS |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Desktop** | 100 | 100 | 100 | 90 (89 a 96) | 1,9 s | 0 ms | 0 |
 | **Mobile** | 100 | 100 | 100 | 83 (83 a 85) | 4,2 s | 0 ms | 0 |
 
-Uma otimização medida: o destaque do desktop baixava a imagem original (981 KB, 3834 px) para um espaço de 1351 px. Com o `srcset` corrigido, telas normais carregam a de 1280 px e só telas de alta densidade ficam com a original. O resultado foi **−878 KiB de peso, LCP de 2,5 s para 1,9 s e nota de 85 para ~90 no desktop**.
+Uma otimização medida: o destaque do desktop baixava a imagem original (981 KB, 3834 px) para um espaço de 1351 px. Com o `srcset` corrigido, telas normais passaram a carregar a de 1280 px. O resultado foi **−878 KiB de peso, LCP de 2,5 s para 1,9 s e nota de 85 para ~90 no desktop**. Só as telas de alta densidade (retina) ainda recebiam a original, o que a segunda rodada abaixo resolveu.
 
-O ponto fraco que sobra é o mobile: o filme do destaque só é descoberto depois de baixar o JavaScript e o `catalog.json`. Está nos próximos passos. São números de laboratório com rede e CPU simuladas, e variam de uma rodada para outra.
+São números de laboratório com rede e CPU simuladas, e variam de uma rodada para outra.
+
+### A foto do destaque, segunda rodada (15/10/2026)
+
+O que sobrava era o ponto fraco do mobile: o filme do destaque só era descoberto depois de baixar o JavaScript e o `catalog.json`. Foram dois problemas, os dois medidos antes de mexer:
+
+1. **A original ainda era escolhida em tela retina.** Numa tela retina (densidade 2×, como a de um Mac) com a janela acima de ~640 px, o navegador pedia a versão `original`: ele multiplica a largura do espaço pela densidade, e acima de 1280 px só o `original` servia. Nas 5 fotos do dia, ela pesava de 617 KB a 1.510 KB cada (5.079 KB no total), contra 95 a 185 KB da de 1280 px (692 KB no total). O `srcset` agora termina nos 1280 px ([`hero-image.ts`](src/features/hero/hero-image.ts)). É uma troca consciente de nitidez em tela 4K por peso: a foto fica sob um degradê escuro e com zoom animado, então a perda tende a ser pouco visível.
+2. **A foto só começava a baixar tarde.** O `<img>` do destaque só existe depois do JavaScript (495 KB sem comprimir), do React e do `catalog.json`. Agora o build lê a primeira foto do destaque em `public/catalog.json` e coloca um `<link rel="preload">` dela no `index.html` ([`vite-plugin-hero-preload.ts`](vite-plugin-hero-preload.ts)), com a mesma lista de tamanhos e o mesmo `sizes` do `<img>`, vindos da mesma função, para o navegador reaproveitar o pedido em vez de baixar a foto duas vezes.
+
+**Medição:** Chrome com rede de 4G lento simulado (1,6 Mbps e 150 ms de latência), de 3 a 5 rodadas por caso. A foto passou a ser pedida aos **~170 ms em vez de ~1.950 ms**, uma única vez, tanto num Mac retina (antes: `original`; depois: 1280 px) quanto num celular. Limites honestos: a rede era simulada e as respostas do TMDB foram trocadas por um arquivo mínimo, então isso mede **quando** a foto é pedida, não quanto demora a baixar; só testei no Chrome. A nota do Lighthouse da tabela acima é anterior a essas mudanças e ainda não foi medida de novo.
+
+Dois limites do preload: ele cobre só a **primeira** foto do destaque (as outras quatro, a cada 7 s, carregam na hora da troca); e, como o `catalog.json` fica 5 minutos no cache do navegador e o `index.html` não fica, quem ainda tem o catálogo do dia anterior pode, por alguns minutos depois de um deploy, baixar a foto do preload sem ela ser a exibida (desperdício de banda, não quebra nada).
 
 ## Segurança
 
@@ -238,7 +250,7 @@ O site é público, então a pergunta é sempre "o que um visitante mal-intencio
 | **Chaves** | Nenhuma vai para o navegador. TMDB e OMDb ficam como *secrets* do Cloudflare e do GitHub; o bundle compilado é verificado para não conter nenhuma |
 | **Worker `/api`** | Lista fixa de rotas aceitas (qualquer outra recebe 404), só `GET`, consultas com tamanho limitado, recusa pedidos vindos de outros sites (`Sec-Fetch-Site`) e, no OMDb, devolve só a nota e os votos |
 | **Limite de requisições** | Regra no Cloudflare: 60 chamadas a `/api/` por IP a cada 10 s. Testada com 150 chamadas em rajada: 80 foram bloqueadas |
-| **CSP restrita** | `default-src 'self'`; chamadas de rede só para o próprio domínio; sem `eval` (o Zod roda em modo `jitless` justamente por isso) |
+| **CSP restrita** | `default-src 'self'`; chamadas de rede só para o próprio domínio e para a métrica de visitas do Cloudflare; imagens só do TMDB e trailers só do YouTube sem cookies; sem `eval` (o Zod roda em modo `jitless` justamente por isso) |
 | **Cabeçalhos** | HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` e `frame-ancestors 'none'` |
 | **Cadeia de suprimentos** | Dependabot (versões e correções de segurança), alertas de vulnerabilidade, *secret scanning* com *push protection* e `npm audit` limpo |
 
@@ -247,14 +259,16 @@ A política de reporte de falhas está em [`SECURITY.md`](SECURITY.md).
 ## Qualidade
 
 ```text
-Vitest        154 testes   regras de curadoria, classificação, Worker, serviços, mapeadores
-Playwright     76 cenários (38 × desktop e mobile; 61 executados, o resto é só de uma plataforma), com a API simulada
+Vitest        162 testes   regras de curadoria, classificação, Worker, serviços, mapeadores e o plugin do preload
+Playwright     80 cenários (40 × desktop e mobile; 65 executados, o resto é só de uma plataforma), com a API simulada
 axe-core      auditoria de acessibilidade das telas principais
 test:catalog  validação do catálogo publicado (listas, índice, notas do IMDb)
 CI            lint, testes, catálogo, tipos e build, e os testes e2e em paralelo, a cada push
 ```
 
 Os testes ponta a ponta **não dependem de rede externa**: o Worker e o TMDB são simulados, então não ficam intermitentes por causa de um serviço de terceiros.
+
+Um deles confere o que o build **realmente publica**: que o `index.html` traz o preload da primeira foto do destaque do dia e que o `<img>` escolhe exatamente a mesma foto ([`e2e/preload-destaque.spec.ts`](e2e/preload-destaque.spec.ts)). Foi provado por mutação: com o plugin quebrado de propósito, ele falha.
 
 ## Decisões de engenharia
 
@@ -281,7 +295,7 @@ Para a chave nunca estar no JavaScript. Antes, as chaves iam no bundle (o que é
 
 <br />
 
-O robô já busca essas notas para a curadoria e as descartava. Publicá-las num arquivo de ~21 KB (gzip) faz a ficha dos filmes do catálogo abrir sem nenhuma chamada externa: mais rápida, funciona mesmo se a API cair e não gasta cota por visitante. A consulta ao vivo ficou só para a cauda longa.
+O robô já busca essas notas para a curadoria e as descartava. Publicá-las num arquivo de ~20 KB (gzip) faz a ficha dos filmes do catálogo abrir sem nenhuma chamada externa: mais rápida, funciona mesmo se a API cair e não gasta cota por visitante. A consulta ao vivo ficou só para a cauda longa.
 
 </details>
 
@@ -321,6 +335,26 @@ Porque "nunca ficar desatualizado" é um requisito, e um único horário diário
 
 </details>
 
+<details>
+<summary><b>Por que o preload da foto é gerado no build, e não escrito no HTML?</b></summary>
+
+<br />
+
+- **A foto muda todo dia.** O robô gira a ordem do destaque, então um `<link>` escrito à mão apontaria para a foto errada. O build lê o `catalog.json` do dia e escreve a tag; o catálogo e o `index.html` saem no mesmo deploy, então combinam.
+- **Uma função só define as versões da foto.** O `<img>` e o preload usam a mesma ([`hero-image.ts`](src/features/hero/hero-image.ts)), com teste. Se um pedisse outra lista de tamanhos ou outro `sizes`, o navegador baixaria a foto duas vezes, e o preload seria pior do que nada.
+- **Sem preload, o build avisa em vez de falhar.** Com o catálogo ilegível ou sem destaque, o site só ficaria mais lento, não quebrado, então o build segue, mas escreve um aviso no registro. E o teste ponta a ponta confere o `index.html` publicado, para essa perda não passar em silêncio.
+
+</details>
+
+<details>
+<summary><b>Por que as importações da configuração do Vite escrevem <code>.ts</code>?</b></summary>
+
+<br />
+
+O Vite avisava que o carregador "native" de configuração vai virar o padrão e não aceita importação sem extensão. Os arquivos que o `vite.config.ts` importa (o Worker local, o plugin do preload e o que ele usa) agora escrevem o `.ts`, e os `tsconfig` liberam isso com `allowImportingTsExtensions` (sem efeito na saída: o projeto já usa `noEmit`). O aviso sumiu, e `vite build --configLoader native` lê a configuração normalmente.
+
+</details>
+
 ## Stack
 
 | Área | Tecnologias |
@@ -341,7 +375,7 @@ Para publicar o seu, crie os secrets `TMDB_TOKEN` e `OMDB_KEY` no Worker e, no G
 
 ## Rodando localmente
 
-Requisitos: Node 22 ou mais novo.
+Requisitos: Node 22 ou mais novo (o CI e o robô usam o 24).
 
 ```bash
 git clone https://github.com/chrystianomoura/cinera.git
@@ -365,11 +399,16 @@ VITE_DEMO_MODE=true npm run dev
 | Comando | O que faz |
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento |
-| `npm run build` | Checa os tipos e gera o build de produção |
+| `npm run build` | Checa os tipos e gera o build de produção (já com o preload da foto do destaque no `index.html`) |
+| `npm run preview` | Serve o build de produção localmente |
 | `npm test` | Testes unitários (Vitest) |
-| `npm run test:e2e` | Testes ponta a ponta e de acessibilidade (Playwright) |
+| `npm run test:watch` | Testes unitários em modo de observação |
+| `npm run test:e2e` | Testes ponta a ponta e de acessibilidade (Playwright; ele mesmo faz o build e sobe o `preview`) |
 | `npm run test:catalog` | Valida o catálogo publicado |
+| `npm run test:search` | Audita a pesquisa contra resultados esperados ([`audit-search.ts`](scripts/audit-search.ts)) |
 | `npm run build:catalog` | Monta o catálogo inteiro e só publica se tudo passar |
+| `npm run curate:aclamados` · `classicos` · `em-alta` · `novidades` · `populares` | Relatório de uma fileira (`-- --write` grava em `public/catalog.json`) |
+| `npm run curate:generos` | Relatório das 9 categorias (`-- --write` grava `public/genres/*.json`; `-- Drama --write` grava só uma) |
 | `npm run curate:hero` | Escolhe só o destaque do dia (`-- --dry` mostra sem gravar) |
 | `npm run lint` | Lint com oxlint |
 
@@ -381,7 +420,10 @@ src/
   features/          catálogo, ficha, pesquisa, biblioteca, destaque, trailer
   infrastructure/    clientes de API, leitura do catálogo, pesquisa, schemas Zod
   hooks/ stores/     dados da tela e biblioteca do usuário
+  lib/               utilitários de interface (rolagem, viewport estável, formatação, decodificação de imagem)
+  dev/               medidor de FPS, só no `npm run dev` com `?fps=1` (some do build publicado)
 worker/              o Worker de /api (rotas fixas, cache, limites) e seus testes
+vite-plugin-hero-preload.ts   plugin do build que coloca o preload da foto do destaque no index.html (e o teste dele)
 scripts/
   curation/          pontuação, filtros, rotação, validação e notas do IMDb
   build-catalog.ts   monta o catálogo e só publica se passar nas verificações
@@ -395,7 +437,7 @@ docs/screenshots/    imagens deste README
 
 Nenhum projeto está pronto, e vale dizer o que falta:
 
-- **LCP no mobile (~4,2 s).** O navegador só descobre qual é a imagem do destaque depois de baixar o JavaScript e o `catalog.json`. Colocar um `preload` dela no HTML durante o build e dividir o JavaScript (hoje 77 KB sem uso no carregamento) são os ganhos mais claros.
+- **LCP no mobile (4,2 s na última medição do Lighthouse, anterior ao preload).** O preload da primeira foto do destaque já está no HTML (veja Desempenho), mas o ganho na nota ainda precisa ser medido depois do deploy. Faltam dividir o JavaScript (77 KB sem uso no carregamento, na medição de 03/10) e pré-carregar a próxima foto do rodízio, que hoje só começa a baixar na hora da troca.
 - **Limite de requisições curto.** No plano gratuito do Cloudflare o bloqueio dura 10 s. Um contador de uso dentro do Worker (com KV) cortaria o abuso por completo, e só vale a pena se o tráfego mostrar necessidade.
 - **Notas de filmes novos.** Filmes fora do catálogo dependem da consulta ao vivo ao OMDb e, se a cota acabar, aparecem sem a nota do IMDb até o dia seguinte. Os do catálogo não são afetados.
 - **Sem contas de usuário.** A biblioteca vive no navegador de cada pessoa; trocar de aparelho começa do zero.
