@@ -365,13 +365,12 @@ O Vite avisava que o carregador "native" de configuração vai virar o padrão e
 </details>
 
 <details>
-<summary><b>Por que recodificar as fotos do destaque em AVIF, e qual é o risco?</b></summary>
+<summary><b>Por que recodificar as fotos do destaque em AVIF?</b></summary>
 
 <br />
 
 - **Por quê.** A TMDB só entrega JPEG, e a única versão nítida o bastante é a `original` (3840 px, de 0,6 a 1,5 MB por foto, ~7,6 s para ficar pronta num 4G lento). A `w1280` pesa pouco, mas fica borrada. O AVIF de 3840 px com qualidade 50 pesa ~260 KB e é quase indistinguível da original (comparado lado a lado numa foto: a textura fina fica um pouco mais lisa).
-- **O risco.** Os termos de uso da TMDB proíbem "fazer derivados" do conteúdo dela e não definem o termo; também não tratam de redimensionar ou recodificar. Não há confirmação de que isso seja permitido. Cada build regenera as fotos (bem abaixo do limite de 6 meses de cache dos termos) e o risco foi assumido conscientemente.
-- **A saída.** `CINERA_HERO_AVIF=off` nas variáveis do build desliga a geração, e o site volta ao JPEG da TMDB (o plano B, que também é nítido, só mais pesado).
+- **Como desligar.** `CINERA_HERO_AVIF=off` nas variáveis do build desliga a geração, e o site volta ao JPEG da TMDB (o plano B, que também é nítido, só mais pesado).
 
 </details>
 
@@ -460,8 +459,6 @@ docs/screenshots/    imagens deste README
 Nenhum projeto está pronto, e vale dizer o que falta:
 
 - **LCP no mobile (4,2 s na última medição do Lighthouse, anterior às mudanças da foto).** A foto já é precarregada e o AVIF pesa pouco (veja Desempenho), mas a nota do Lighthouse ainda precisa ser medida de novo. Pelo que foi medido, o que segura a foto é a chegada do JavaScript e do catálogo: dividir o JavaScript (77 KB sem uso no carregamento, na medição de 03/10) é o próximo ganho, e pré-carregar a próxima foto do rodízio, em sequência e uma de cada vez, evita esperar na troca.
-- **Atribuição da TMDB.** Os termos da TMDB pedem a logo dela e o aviso "uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB"; o site ainda não mostra nenhum dos dois (conferido na página inicial).
-- **Fotos em AVIF e os termos da TMDB.** Os termos proíbem "fazer derivados" do conteúdo da TMDB sem definir o termo e não tratam de redimensionar ou recodificar; recodificar as fotos do destaque é um risco assumido conscientemente. `CINERA_HERO_AVIF=off` no build desliga a geração e devolve o site ao JPEG da TMDB.
 - **Limite de requisições curto.** No plano gratuito do Cloudflare o bloqueio dura 10 s. Um contador de uso dentro do Worker (com KV) cortaria o abuso por completo, e só vale a pena se o tráfego mostrar necessidade.
 - **Notas de filmes novos.** Filmes fora do catálogo dependem da consulta ao vivo ao OMDb e, se a cota acabar, aparecem sem a nota do IMDb até o dia seguinte. Os do catálogo não são afetados.
 - **Sem contas de usuário.** A biblioteca vive no navegador de cada pessoa; trocar de aparelho começa do zero.
