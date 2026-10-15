@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Play, Info } from "lucide-react";
 import type { Movie } from "@/domain";
+import heroAvif from "virtual:hero-images";
 import { heroImageSources } from "./hero-image";
 import { usePageVisibility } from "@/hooks/use-page-visibility";
 import { useTrailerStore } from "@/features/trailer/use-trailer-store";
@@ -136,22 +137,28 @@ export function HeroFeatured({
               isFading ? "opacity-0" : "opacity-100"
             }`}
           >
-            <img
-              key={heroMovie.id}
-              ref={imageRef}
-              {...heroImageSources(heroMovie.backdropPath)}
-              alt={heroMovie.title}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              onError={(e) => {
-                e.currentTarget.style.opacity = "0";
-              }}
-              // A animação fica sempre ligada e só é pausada fora da tela: tirar e recolocar a classe a reiniciava do zero
-              // (o zoom saltava de volta) e refazia a camada de GPU da imagem grande no meio da rolagem
-              style={{ animationPlayState: isInViewport ? "running" : "paused" }}
-              className="w-full h-full object-cover object-center md:object-top origin-center transform-gpu animate-kenburns pointer-events-none"
-            />
+            {/* O AVIF gerado no build (3840 px, do próprio site) vale para todos os aparelhos; navegador sem AVIF, ou foto sem
+                AVIF (build sem rede, busca ao vivo), cai no <img>, com o JPEG da TMDB. `contents` mantém o <picture> fora do layout. */}
+            <picture key={heroMovie.id} className="contents">
+              {heroMovie.backdropPath && heroAvif[heroMovie.backdropPath] && (
+                <source type="image/avif" srcSet={heroAvif[heroMovie.backdropPath]} />
+              )}
+              <img
+                ref={imageRef}
+                {...heroImageSources(heroMovie.backdropPath)}
+                alt={heroMovie.title}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                onError={(e) => {
+                  e.currentTarget.style.opacity = "0";
+                }}
+                // A animação fica sempre ligada e só é pausada fora da tela: tirar e recolocar a classe a reiniciava do zero
+                // (o zoom saltava de volta) e refazia a camada de GPU da imagem grande no meio da rolagem
+                style={{ animationPlayState: isInViewport ? "running" : "paused" }}
+                className="w-full h-full object-cover object-center md:object-top origin-center transform-gpu animate-kenburns pointer-events-none"
+              />
+            </picture>
 
             {/* Gradiente inferior, com reforço vertical no celular */}
             <div

@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 import { handleApi, type ResponseCache } from './worker/api.ts'
-import { heroPreload } from './vite-plugin-hero-preload.ts'
+import { heroImages } from './vite-plugin-hero-images.ts'
 
 /**
  * No `npm run dev` não há Worker: este plugin responde /api/* com o mesmo código dele, usando as chaves do
@@ -36,7 +36,15 @@ function devApi(mode: string): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), devApi(mode), heroPreload(fileURLToPath(new URL('./public/catalog.json', import.meta.url)))],
+  plugins: [
+    react(),
+    tailwindcss(),
+    devApi(mode),
+    heroImages({
+      catalogPath: fileURLToPath(new URL('./public/catalog.json', import.meta.url)),
+      cacheDir: fileURLToPath(new URL('./node_modules/.cache/cinera-hero-images', import.meta.url)),
+    }),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
