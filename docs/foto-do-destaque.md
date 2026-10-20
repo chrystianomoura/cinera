@@ -1,0 +1,18 @@
+# A foto do destaque
+
+Três etapas. A do meio foi um erro, e fica registrada de propósito:
+
+1. **A foto só começava a baixar tarde.** O `<img>` do destaque só existe depois do JavaScript (496 KB sem comprimir), do React e do `catalog.json`. O build passou a colocar no `index.html` um `<link rel="preload">` da primeira foto, lida de `public/catalog.json`. A foto passou a ser pedida aos ~170 ms, em vez de ~1.950 ms.
+2. **Tentativa que deu errado: parar no `w1280`.** Para tirar o peso da `original` (de 0,6 a 1,5 MB por foto), o `srcset` parou nos 1280 px (95 a 185 KB). Pesou menos e ficou **borrado**: medindo no Chrome quantos pixels do aparelho cobrem cada pixel da foto (acima de 1,35× fica macia, acima de 1,8× borrada), a `w1280` era esticada de 2,2× a 2,4× no Mac retina e nos iPhones. A causa é o `sizes`: ele descrevia a largura do quadro, mas a foto é 16:9 e o `object-cover` a corta (para 4:5 no celular), então a parte visível é bem maior que o quadro e o navegador subestimava os pixels necessários. O mesmo erro já deixava o iPhone comum borrado (2,2×) antes dessa tentativa, sem que ninguém tivesse medido.
+3. **A solução: AVIF de 3840 px, gerado no build.** A TMDB só entrega JPEG e não tem nada entre 1280 e 3840 px. O build ([`vite-plugin-hero-images.ts`](vite-plugin-hero-images.ts)) baixa as originais das 5 fotos do destaque, recodifica em **AVIF** (qualidade 50, de 160 a 340 KB cada, ~39 dB de fidelidade) e as publica no próprio domínio, em `/hero/<nome>.<hash>.avif`, com cache de 1 ano. Uma foto só serve todos os aparelhos, e o `index.html` precarrega a primeira. O app descobre quais existem por um módulo virtual (`virtual:hero-images`). O `<img>` fica dentro de um `<picture>`: navegador sem AVIF, ou foto sem AVIF, cai no **plano B**, o JPEG da TMDB, agora com a `original` no `srcset` e um `sizes` que descreve a foto inteira (236vw no celular, no mínimo 1432 px no desktop), então o plano B também fica nítido.
+
+| Chrome, 4G lento simulado | Antes (original; no iPhone, `w1280`) | `w1280` + preload (a tentativa) | AVIF + preload (atual) |
+|---|:---:|:---:|:---:|
+| **Mac retina** · foto pronta na tela | 7,6 s | 2,6 s | 2,8 s |
+| **Mac retina** · pixels do aparelho por pixel da foto, no fim do zoom | 0,8× (nítida) | 2,4× (borrada) | 0,8× (nítida) |
+| **iPhone 15** · foto pronta na tela | 3,1 s | 2,6 s | 2,8 s |
+| **iPhone 15** · pixels do aparelho por pixel da foto, no fim do zoom | 2,2× (borrada) | 2,2× (borrada) | 0,7× (nítida) |
+
+Como foi medido: Chrome com rede de 4G lento simulado (1,6 Mbps e 150 ms), servidor local que comprime como o Cloudflare, os mesmos arquivos da TMDB servidos localmente, 3 rodadas por caso (variação abaixo de 30 ms), até a foto estar carregada na tela. Só no Chrome; nada foi medido em celular de verdade, e o custo de decodificar o AVIF de 3840 px num celular ficou sem medir (neste Mac: 77 ms, contra 16 ms da `w1280`). O tempo de ~2,6 a 2,8 s é dominado pela chegada do JavaScript e do catálogo, já que o `<img>` só existe depois deles: por isso a foto de 260 KB custa só ~0,2 s a mais que a de 140 KB.
+
+Limites: o preload cobre só a **primeira** foto. As outras quatro, a cada 7 s, carregam na hora da troca; pré-carregar todas de uma vez deixou a primeira de 2,5× a 3,6× mais lenta num teste com a rede da TMDB (2 a 3 rodadas), porque as fotos dividem a mesma rede. E, como o `catalog.json` fica 5 minutos no cache do navegador e o `index.html` não fica, quem ainda tem o catálogo do dia anterior pode, por alguns minutos depois de um deploy, baixar uma foto precarregada que não é a exibida (desperdício de banda, não quebra nada).

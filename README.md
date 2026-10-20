@@ -15,7 +15,6 @@
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-172_testes-6E9F18?logo=vitest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e_+_axe-2EAD33?logo=playwright&logoColor=white)
-![Lighthouse](https://img.shields.io/badge/Lighthouse-100_·_100_·_100-F44B21?logo=lighthouse&logoColor=white)
 [![Licença MIT](https://img.shields.io/badge/licença-MIT-blue)](LICENSE)
 
 <br />
@@ -36,10 +35,10 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 
 ## Em destaque
 
-- **Curadoria algorítmica explicável.** Cada posição da lista tem uma razão, e os critérios estão no código ([`scripts/curation/`](scripts/curation)), cobertos por testes.
+- **Curadoria algorítmica explicável.** Os critérios de entrada e de ordem estão no código ([`scripts/curation/`](scripts/curation)), cobertos por testes.
 - **Zero servidor, zero banco.** O catálogo é JSON versionado no Git. O histórico do que mudou a cada dia é o próprio `git log`.
-- **Segurança sem chave no navegador.** O site nunca fala com o TMDB nem com o OMDb: passa por um Worker com rotas fixas, cache e limite de requisições.
-- **Qualidade medida, não prometida.** Tipos, lint, 172 testes unitários, 82 cenários ponta a ponta (desktop e mobile), acessibilidade com axe e validação do catálogo publicado, tudo no CI.
+- **Segurança sem chave no navegador.** O site nunca chama as APIs do TMDB e do OMDb: passa por um Worker com rotas fixas, cache e limite de requisições. Só as imagens vêm direto do CDN do TMDB.
+- **Qualidade medida, não prometida.** Tipos, lint, testes unitários, testes ponta a ponta (desktop e mobile), acessibilidade com axe e validação do catálogo publicado, tudo no CI. Os números estão em [O projeto em números](#o-projeto-em-números).
 - **Classificação única.** Ficha, pesquisa e listas usam a mesma função para decidir a categoria de um filme, então o mesmo filme nunca aparece em categorias diferentes dependendo da tela.
 
 ## Tour
@@ -75,11 +74,10 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 | | |
 |---|---|
 | **Catálogo** | Mais de 2.500 filmes distintos · 9 categorias de até 400 filmes · 5 fileiras · 5 destaques |
-| **Peso do site** | 147 KB de JavaScript e 12 KB de CSS (gzip) · catálogo da Home em 58 KB (gzip) · foto do destaque em AVIF, de 160 a 340 KB |
+| **Peso do site** | 146 KB de JavaScript e 12 KB de CSS (gzip) · catálogo da Home em 58 KB (gzip) · foto do destaque em AVIF, de 160 a 340 KB |
 | **Código** | ~13 mil linhas de TypeScript (app, Worker, scripts e testes) · 200+ commits |
-| **Testes** | 172 unitários · 82 cenários ponta a ponta (41 × desktop e mobile, 67 executados) · validação do catálogo publicado |
-| **Lighthouse** | Acessibilidade **100** · Boas práticas **100** · SEO **100** · Desempenho ~90 (desktop) e ~83 (mobile) |
-| **Automação** | 4 rodadas do robô por dia · CI em cada push · Dependabot semanal |
+| **Testes** | 172 unitários · 82 cenários ponta a ponta (desktop e mobile) · validação do catálogo publicado |
+| **Automação** | 3 rodadas do robô por dia · CI em cada push · Dependabot semanal |
 
 ## Funcionalidades
 
@@ -119,7 +117,7 @@ flowchart LR
     H -.-> X["TMDB · OMDb"]
 ```
 
-**O caminho comum nunca toca em API externa.** Home, categorias e a nota do IMDb dos filmes do catálogo saem de arquivos estáticos servidos pela CDN. O Worker só entra para o que não está no catálogo (por exemplo, a ficha de um filme encontrado na pesquisa), com cache de 1 hora para o TMDB e de 24 horas para o OMDb.
+**O caminho comum nunca chama API externa.** Home, categorias e a nota do IMDb dos filmes do catálogo saem de arquivos estáticos servidos pela CDN (só as imagens vêm do CDN do TMDB e os trailers do YouTube). O Worker só entra para o que não está no catálogo (por exemplo, a ficha de um filme encontrado na pesquisa), com cache de 1 hora para o TMDB e de 24 horas para o OMDb.
 
 ### O que acontece ao abrir uma ficha
 
@@ -157,8 +155,7 @@ sequenceDiagram
 
 | Hora (Brasília) | O que acontece |
 |---|---|
-| **00h30** | O robô monta o catálogo do dia: coleta, pontua, ordena, gira a ordem e valida. Se tudo passar, faz o commit na `main`, e o Cloudflare publica em poucos minutos, já com as fotos do destaque recodificadas em AVIF pelo build |
-| **06h30 · 12h30 · 18h30** | Rodadas de reserva: se o catálogo de hoje já está publicado, encerram em segundos sem gastar cota; se a da madrugada falhou, tentam de novo |
+| **06h30 · 12h30 · 18h30** | O robô confere a data do `catalog.json`. Se o catálogo de hoje ainda não saiu, monta tudo (coleta, pontua, ordena, gira a ordem e valida) e, se tudo passar, faz o commit na `main`; o Cloudflare publica em poucos minutos, já com as fotos do destaque recodificadas em AVIF pelo build. Se o de hoje já está publicado, encerra em segundos sem gastar cota |
 | **Se tudo falhar** | O catálogo do dia anterior continua no ar e o robô abre uma issue no repositório |
 
 ### A curadoria
@@ -192,8 +189,8 @@ Tudo que o site lê é um arquivo estático, validado com **Zod** na hora de car
 |---|---|---|
 | `public/catalog.json` | Destaque, histórico dos últimos destaques (`heroHistory`) e as 5 fileiras da Home | 58 KB |
 | `public/genres/<categoria>.json` | A lista de cada categoria, já na ordem de exibição | 55 a 115 KB cada |
-| `public/categories.json` | Índice id → categorias de todos os filmes (pesquisa e ficha usam o mesmo resultado das listas) | 11 KB |
-| `public/imdb.json` | IMDb ID → nota e votos dos filmes do catálogo | 20 KB |
+| `public/categories.json` | Índice id → categorias de todos os filmes (pesquisa e ficha usam o mesmo resultado das listas) | 12 KB |
+| `public/imdb.json` | IMDb ID → nota e votos dos filmes do catálogo | 21 KB |
 
 ## Front-end
 
@@ -220,35 +217,7 @@ lib/             utilitários de interface (rolagem, viewport estável, formata�
 | Catálogo, listas e índices | 5 minutos, com revalidação |
 | Logos e ícones | 7 dias |
 
-**Medição (Lighthouse, site no ar, em 03/10/2026, mediana de 3 rodadas; anterior às mudanças na foto do destaque descritas abaixo):**
-
-| | Acessibilidade | Boas práticas | SEO | Desempenho | LCP | TBT | CLS |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Desktop** | 100 | 100 | 100 | 90 (89 a 96) | 1,9 s | 0 ms | 0 |
-| **Mobile** | 100 | 100 | 100 | 83 (83 a 85) | 4,2 s | 0 ms | 0 |
-
-Uma otimização medida: o destaque do desktop baixava a imagem original (981 KB, 3834 px) para um espaço de 1351 px. Com o `srcset` corrigido, telas normais passaram a carregar a de 1280 px. O resultado foi **−878 KiB de peso, LCP de 2,5 s para 1,9 s e nota de 85 para ~90 no desktop**. Só as telas de alta densidade (retina) ainda recebiam a original, e a segunda rodada abaixo revisitou isso.
-
-São números de laboratório com rede e CPU simuladas, e variam de uma rodada para outra.
-
-### A foto do destaque, segunda rodada (15/10/2026)
-
-Três etapas. A do meio foi um erro, e fica registrada de propósito:
-
-1. **A foto só começava a baixar tarde.** O `<img>` do destaque só existe depois do JavaScript (496 KB sem comprimir), do React e do `catalog.json`. O build passou a colocar no `index.html` um `<link rel="preload">` da primeira foto, lida de `public/catalog.json`. A foto passou a ser pedida aos ~170 ms, em vez de ~1.950 ms.
-2. **Tentativa que deu errado: parar no `w1280`.** Para tirar o peso da `original` (de 0,6 a 1,5 MB por foto), o `srcset` parou nos 1280 px (95 a 185 KB). Pesou menos e ficou **borrado**: medindo no Chrome quantos pixels do aparelho cobrem cada pixel da foto (acima de 1,35× fica macia, acima de 1,8× borrada), a `w1280` era esticada de 2,2× a 2,4× no Mac retina e nos iPhones. A causa é o `sizes`: ele descrevia a largura do quadro, mas a foto é 16:9 e o `object-cover` a corta (para 4:5 no celular), então a parte visível é bem maior que o quadro e o navegador subestimava os pixels necessários. O mesmo erro já deixava o iPhone comum borrado (2,2×) antes dessa tentativa, sem que ninguém tivesse medido.
-3. **A solução: AVIF de 3840 px, gerado no build.** A TMDB só entrega JPEG e não tem nada entre 1280 e 3840 px. O build ([`vite-plugin-hero-images.ts`](vite-plugin-hero-images.ts)) baixa as originais das 5 fotos do destaque, recodifica em **AVIF** (qualidade 50, de 160 a 340 KB cada, ~39 dB de fidelidade) e as publica no próprio domínio, em `/hero/<nome>.<hash>.avif`, com cache de 1 ano. Uma foto só serve todos os aparelhos, e o `index.html` precarrega a primeira. O app descobre quais existem por um módulo virtual (`virtual:hero-images`). O `<img>` fica dentro de um `<picture>`: navegador sem AVIF, ou foto sem AVIF, cai no **plano B**, o JPEG da TMDB, agora com a `original` no `srcset` e um `sizes` que descreve a foto inteira (236vw no celular, no mínimo 1432 px no desktop), então o plano B também fica nítido.
-
-| Chrome, 4G lento simulado | Antes (original; no iPhone, `w1280`) | `w1280` + preload (a tentativa) | AVIF + preload (atual) |
-|---|:---:|:---:|:---:|
-| **Mac retina** · foto pronta na tela | 7,6 s | 2,6 s | 2,8 s |
-| **Mac retina** · pixels do aparelho por pixel da foto, no fim do zoom | 0,8× (nítida) | 2,4× (borrada) | 0,8× (nítida) |
-| **iPhone 15** · foto pronta na tela | 3,1 s | 2,6 s | 2,8 s |
-| **iPhone 15** · pixels do aparelho por pixel da foto, no fim do zoom | 2,2× (borrada) | 2,2× (borrada) | 0,7× (nítida) |
-
-Como foi medido: Chrome com rede de 4G lento simulado (1,6 Mbps e 150 ms), servidor local que comprime como o Cloudflare, os mesmos arquivos da TMDB servidos localmente, 3 rodadas por caso (variação abaixo de 30 ms), até a foto estar carregada na tela. Só no Chrome; nada foi medido em celular de verdade, e o custo de decodificar o AVIF de 3840 px num celular ficou sem medir (neste Mac: 77 ms, contra 16 ms da `w1280`). O tempo de ~2,6 a 2,8 s é dominado pela chegada do JavaScript e do catálogo, já que o `<img>` só existe depois deles: por isso a foto de 260 KB custa só ~0,2 s a mais que a de 140 KB. A nota do Lighthouse da tabela acima é anterior a tudo isso e ainda não foi medida de novo.
-
-Limites: o preload cobre só a **primeira** foto. As outras quatro, a cada 7 s, carregam na hora da troca; pré-carregar todas de uma vez deixou a primeira de 2,5× a 3,6× mais lenta num teste com a rede da TMDB (2 a 3 rodadas), porque as fotos dividem a mesma rede. E, como o `catalog.json` fica 5 minutos no cache do navegador e o `index.html` não fica, quem ainda tem o catálogo do dia anterior pode, por alguns minutos depois de um deploy, baixar uma foto precarregada que não é a exibida (desperdício de banda, não quebra nada).
+A história completa da foto do destaque (preload, a tentativa que deu errado e o AVIF gerado no build) está em [`docs/foto-do-destaque.md`](docs/foto-do-destaque.md). Em resumo: a TMDB só entrega JPEG, então o build baixa as 5 fotos do destaque, recodifica em AVIF de 3840 px (de 160 a 340 KB cada) e as publica no próprio domínio, e o `index.html` precarrega a primeira.
 
 ## Segurança
 
@@ -268,8 +237,8 @@ A política de reporte de falhas está em [`SECURITY.md`](SECURITY.md).
 ## Qualidade
 
 ```text
-Vitest        172 testes   regras de curadoria, classificação, Worker, serviços, mapeadores e o plugin das fotos do destaque
-Playwright     82 cenários (41 × desktop e mobile; 67 executados, o resto é só de uma plataforma), com a API simulada
+Vitest        testes   regras de curadoria, classificação, Worker, serviços, mapeadores e o plugin das fotos do destaque
+Playwright     cenários em desktop e mobile, com a API simulada
 axe-core      auditoria de acessibilidade das telas principais
 test:catalog  validação do catálogo publicado (listas, índice, notas do IMDb)
 CI            lint, testes, catálogo, tipos e build, e os testes e2e em paralelo, a cada push
@@ -280,6 +249,8 @@ Os testes ponta a ponta **não dependem de rede externa**: o Worker e o TMDB sã
 Alguns conferem o que o build **realmente publica**: que o `index.html` precarrega o AVIF da primeira foto do destaque, que o arquivo é servido e que o `<img>` usa exatamente esse mesmo arquivo ([`e2e/preload-destaque.spec.ts`](e2e/preload-destaque.spec.ts)). Foi provado por mutação: com a geração do AVIF desligada (`CINERA_HERO_AVIF=off`), eles falham. Como o build baixa as originais da TMDB, esses testes precisam de rede na primeira vez; perder o AVIF deixa a foto bem mais pesada, e isso não pode passar em silêncio.
 
 ## Decisões de engenharia
+
+As outras decisões (notas do IMDb no catálogo, Zod sem `eval`, a poda do fim da lista, o preload da foto, AVIF e as importações `.ts` do Vite) estão em [`docs/decisoes.md`](docs/decisoes.md).
 
 <details>
 <summary><b>Por que o catálogo é um arquivo, e não uma consulta?</b></summary>
@@ -300,15 +271,6 @@ Para a chave nunca estar no JavaScript. Antes, as chaves iam no bundle (o que é
 </details>
 
 <details>
-<summary><b>Por que publicar as notas do IMDb junto com o catálogo?</b></summary>
-
-<br />
-
-O robô já busca essas notas para a curadoria e as descartava. Publicá-las num arquivo de ~20 KB (gzip) faz a ficha dos filmes do catálogo abrir sem nenhuma chamada externa: mais rápida, funciona mesmo se a API cair e não gasta cota por visitante. A consulta ao vivo ficou só para a cauda longa.
-
-</details>
-
-<details>
 <summary><b>Por que uma classificação única?</b></summary>
 
 <br />
@@ -318,59 +280,11 @@ Antes, a ficha, a pesquisa e as listas decidiam a categoria de formas ligeiramen
 </details>
 
 <details>
-<summary><b>Por que o Zod roda em modo <code>jitless</code>?</b></summary>
+<summary><b>Por que o robô roda três vezes por dia?</b></summary>
 
 <br />
 
-Por padrão, o Zod gera código com `new Function` para validar mais rápido, e isso exige `unsafe-eval` na política de segurança. Em vez de afrouxar a CSP, o app liga o modo `jitless` (em [`zod-config.ts`](src/infrastructure/zod-config.ts)), que troca um pouco de velocidade por uma política sem `eval`. Como os arquivos validados são pequenos, a diferença não aparece.
-
-</details>
-
-<details>
-<summary><b>Por que o fim da lista "poda" filmes?</b></summary>
-
-<br />
-
-Para a última linha da grade fechar cheia em qualquer largura (2, 3, 4, 5 ou 6 colunas). A grade lê o número de colunas do próprio CSS e esconde no máximo `colunas − 1` filmes, só quando não há mais o que carregar. É um detalhe pequeno que muda a sensação de acabamento.
-
-</details>
-
-<details>
-<summary><b>Por que o robô tem rodadas de reserva?</b></summary>
-
-<br />
-
-Porque "nunca ficar desatualizado" é um requisito, e um único horário diário é um ponto único de falha. As rodadas extras conferem a data do `catalog.json` antes de qualquer coisa e encerram em segundos se já está tudo em dia, então a redundância praticamente não custa cota.
-
-</details>
-
-<details>
-<summary><b>Por que o preload da foto é gerado no build, e não escrito no HTML?</b></summary>
-
-<br />
-
-- **A foto muda todo dia.** O robô gira a ordem do destaque, então um `<link>` escrito à mão apontaria para a foto errada. O build lê o `catalog.json` do dia e escreve a tag; o catálogo e o `index.html` saem no mesmo deploy, então combinam.
-- **O `<img>` e o preload têm que pedir a mesma foto.** Com o AVIF, é o mesmo arquivo; no plano B, as duas partes usam a mesma função ([`hero-image.ts`](src/features/hero/hero-image.ts)), com teste, e o mesmo `sizes`. Se um pedisse outra foto, o navegador baixaria duas vezes, e o preload seria pior do que nada.
-- **Sem preload ou sem AVIF, o build avisa em vez de falhar.** Com o catálogo ilegível, sem destaque ou uma foto que não baixa, o site só ficaria mais lento, não quebrado, então o build segue, mas escreve um aviso no registro. E o teste ponta a ponta confere o `index.html` publicado, para essa perda não passar em silêncio.
-
-</details>
-
-<details>
-<summary><b>Por que as importações da configuração do Vite escrevem <code>.ts</code>?</b></summary>
-
-<br />
-
-O Vite avisava que o carregador "native" de configuração vai virar o padrão e não aceita importação sem extensão. Os arquivos que o `vite.config.ts` importa (o Worker local, o plugin das fotos do destaque e o que ele usa) agora escrevem o `.ts`, e os `tsconfig` liberam isso com `allowImportingTsExtensions` (sem efeito na saída: o projeto já usa `noEmit`). O aviso sumiu, e `vite build --configLoader native` lê a configuração normalmente.
-
-</details>
-
-<details>
-<summary><b>Por que recodificar as fotos do destaque em AVIF?</b></summary>
-
-<br />
-
-- **Por quê.** A TMDB só entrega JPEG, e a única versão nítida o bastante é a `original` (3840 px, de 0,6 a 1,5 MB por foto, ~7,6 s para ficar pronta num 4G lento). A `w1280` pesa pouco, mas fica borrada. O AVIF de 3840 px com qualidade 50 pesa ~260 KB e é quase indistinguível da original (comparado lado a lado numa foto: a textura fina fica um pouco mais lisa).
-- **Como desligar.** `CINERA_HERO_AVIF=off` nas variáveis do build desliga a geração, e o site volta ao JPEG da TMDB (o plano B, que também é nítido, só mais pesado).
+Porque "nunca ficar desatualizado" é um requisito, e um único horário diário é um ponto único de falha. Os três horários conferem a data do `catalog.json` antes de qualquer coisa: o primeiro que encontra o dia sem catálogo monta e publica, e os seguintes encerram em segundos, então a redundância praticamente não custa cota.
 
 </details>
 
@@ -394,26 +308,23 @@ Para publicar o seu, crie os secrets `TMDB_TOKEN` e `OMDB_KEY` no Worker e, no G
 
 ## Rodando localmente
 
-Requisitos: Node 22 ou mais novo (o CI e o robô usam o 24).
+Requisitos: Node 24, o mesmo do CI e do robô (há um `.nvmrc`).
 
 ```bash
 git clone https://github.com/chrystianomoura/cinera.git
 cd cinera
 npm ci
-
-cp .env.example .env.local   # preencha TMDB_TOKEN e OMDB_KEY
-npm run dev                  # http://localhost:5173
 ```
 
-O `npm run build` baixa as 5 fotos do destaque na TMDB e gera os AVIF (precisa de rede na primeira vez; depois ficam em `node_modules/.cache/cinera-hero-images`). Sem rede, ou para pular essa etapa: `CINERA_HERO_AVIF=off npm run build`.
-
-No `npm run dev`, um plugin do Vite responde `/api/*` com o **mesmo código do Worker**, lendo as chaves do `.env.local`. Elas ficam só no servidor local.
-
-Sem chaves, dá para ver o app com filmes de exemplo:
+**Jeito mais curto, sem chaves:** o app abre com filmes de exemplo.
 
 ```bash
-VITE_DEMO_MODE=true npm run dev
+VITE_DEMO_MODE=true npm run dev   # http://localhost:5173
 ```
+
+**Com dados reais:** copie o `.env.example` para `.env.local`, preencha `TMDB_TOKEN` e `OMDB_KEY` e rode `npm run dev`. No `npm run dev`, um plugin do Vite responde `/api/*` com o **mesmo código do Worker**, lendo as chaves do `.env.local`. Elas ficam só no servidor local.
+
+O `npm run build` baixa as 5 fotos do destaque na TMDB e gera os AVIF (precisa de rede na primeira vez; depois ficam em `node_modules/.cache/cinera-hero-images`). Sem rede, ou para pular essa etapa: `CINERA_HERO_AVIF=off npm run build`.
 
 ### Scripts
 
@@ -450,18 +361,13 @@ scripts/
   build-catalog.ts   monta o catálogo e só publica se passar nas verificações
 e2e/                 testes ponta a ponta e de acessibilidade
 public/              o catálogo publicado, ícones, cabeçalhos e manifest
-docs/screenshots/    imagens deste README
+docs/                documentação extra (foto do destaque, decisões) e imagens deste README
 .github/workflows/   CI e robô diário
 ```
 
-## Limitações e próximos passos
+## Créditos
 
-Nenhum projeto está pronto, e vale dizer o que falta:
-
-- **LCP no mobile (4,2 s na última medição do Lighthouse, anterior às mudanças da foto).** A foto já é precarregada e o AVIF pesa pouco (veja Desempenho), mas a nota do Lighthouse ainda precisa ser medida de novo. Pelo que foi medido, o que segura a foto é a chegada do JavaScript e do catálogo: dividir o JavaScript (77 KB sem uso no carregamento, na medição de 03/10) é o próximo ganho, e pré-carregar a próxima foto do rodízio, em sequência e uma de cada vez, evita esperar na troca.
-- **Limite de requisições curto.** No plano gratuito do Cloudflare o bloqueio dura 10 s. Um contador de uso dentro do Worker (com KV) cortaria o abuso por completo, e só vale a pena se o tráfego mostrar necessidade.
-- **Notas de filmes novos.** Filmes fora do catálogo dependem da consulta ao vivo ao OMDb e, se a cota acabar, aparecem sem a nota do IMDb até o dia seguinte. Os do catálogo não são afetados.
-- **Sem contas de usuário.** A biblioteca vive no navegador de cada pessoa; trocar de aparelho começa do zero.
+Este produto usa a API do TMDB, mas não é endossado nem certificado por ele. Os dados de filmes, pôsteres e provedores de streaming vêm do [TMDB](https://www.themoviedb.org); as notas do IMDb vêm do [OMDb](https://www.omdbapi.com); os trailers são do YouTube.
 
 ## Licença
 
