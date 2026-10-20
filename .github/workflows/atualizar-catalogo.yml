@@ -1,13 +1,12 @@
 name: Atualizar catálogo
 
-# Roda todos os dias às 00h30 de Brasília (03h30 UTC) e monta o catálogo do dia: fileiras, destaque e categorias.
-# Mais três horários (06h30, 12h30 e 18h30 de Brasília) servem de reserva: se o catálogo do dia já foi publicado,
-# eles encerram na hora; se a rodada da madrugada falhou, eles tentam de novo. Se tudo falhar, abre uma issue.
+# Roda três vezes por dia (06h30, 12h30 e 18h30 de Brasília) e monta o catálogo do dia: fileiras, destaque e categorias.
+# Cada rodada confere a data do catálogo: se o do dia já foi publicado, encerra na hora; senão, monta e publica.
+# Se nenhuma conseguir publicar, abre uma issue.
 # Fica DESLIGADO até existir a variável de repositório CATALOGO_AUTOMATICO com o valor "true"
 # (Settings → Secrets and variables → Actions → Variables). Segredos necessários: TMDB_TOKEN e OMDB_SCRIPT_KEY.
 on:
   schedule:
-    - cron: "30 3 * * *"
     - cron: "30 9 * * *"
     - cron: "30 15 * * *"
     - cron: "30 21 * * *"
