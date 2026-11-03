@@ -13,13 +13,13 @@
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-172_testes-6E9F18?logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-181_testes-6E9F18?logo=vitest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e_+_axe-2EAD33?logo=playwright&logoColor=white)
 [![Licença MIT](https://img.shields.io/badge/licença-MIT-blue)](LICENSE)
 
 <br />
 
-<img src="docs/screenshots/desktop.jpg" alt="CINERA no desktop: destaque em tela cheia e filtros por categoria" width="73%" />&nbsp;&nbsp;<img src="docs/screenshots/mobile.jpg" alt="CINERA no celular" width="22%" />
+<img src="docs/screenshots/desktop.jpg" alt="CINERA no desktop: destaque em tela cheia com Interestelar e filtros por categoria" width="73%" />&nbsp;&nbsp;<img src="docs/screenshots/mobile.jpg" alt="CINERA no celular" width="22%" />
 
 </div>
 
@@ -47,17 +47,17 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 
 **Fileiras da Home** · rolagem horizontal, uma curadoria por fileira
 
-<img src="docs/screenshots/desktop-fileiras.jpg" alt="Fileiras Em Alta e Aclamados pela Crítica" width="88%" />
+<img src="docs/screenshots/desktop-fileiras.jpg" alt="Fileiras Aclamados pela Crítica e Clássicos Indispensáveis, com A Viagem de Chihiro, Parasita, O Poderoso Chefão e Um Sonho de Liberdade" width="88%" />
 
 <br /><br />
 
 | **Ficha do filme** · onde assistir, notas e ações | **Categoria** · grade com rolagem infinita |
 |:---:|:---:|
-| <img src="docs/screenshots/desktop-ficha.jpg" alt="Ficha do filme Interestelar" width="100%" /> | <img src="docs/screenshots/desktop-categoria.jpg" alt="Categoria Drama" width="100%" /> |
+| <img src="docs/screenshots/desktop-ficha.jpg" alt="Ficha de O Poderoso Chefão, com IMDb 9,2 e onde assistir no Brasil" width="100%" /> | <img src="docs/screenshots/desktop-categoria.jpg" alt="Categoria Drama, com O Resgate do Soldado Ryan, O Poderoso Chefão, A Lista de Schindler e Um Sonho de Liberdade" width="100%" /> |
 
 **Pesquisa** · teclado primeiro, com as categorias do CINERA em cada resultado
 
-<img src="docs/screenshots/desktop-pesquisa.jpg" alt="Pesquisa por matrix" width="60%" />
+<img src="docs/screenshots/desktop-pesquisa.jpg" alt="Pesquisa por poderoso chefão, com os três filmes da trilogia" width="60%" />
 
 <br /><br />
 
@@ -65,7 +65,7 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 
 | Ficha | Categoria | Pesquisa |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/mobile-ficha.jpg" alt="Ficha no celular" width="100%" /> | <img src="docs/screenshots/mobile-categoria.jpg" alt="Categoria no celular" width="100%" /> | <img src="docs/screenshots/mobile-pesquisa.jpg" alt="Pesquisa no celular" width="100%" /> |
+| <img src="docs/screenshots/mobile-ficha.jpg" alt="Ficha de O Poderoso Chefão no celular" width="100%" /> | <img src="docs/screenshots/mobile-categoria.jpg" alt="Categoria Drama no celular" width="100%" /> | <img src="docs/screenshots/mobile-pesquisa.jpg" alt="Pesquisa no celular" width="100%" /> |
 
 </div>
 
@@ -75,8 +75,8 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 |---|---|
 | **Catálogo** | Mais de 2.500 filmes distintos · 9 categorias de até 400 filmes · 5 fileiras · 5 destaques |
 | **Peso do site** | 146 KB de JavaScript e 12 KB de CSS (gzip) · catálogo da Home em 58 KB (gzip) · foto do destaque em AVIF, de 160 a 340 KB |
-| **Código** | ~13 mil linhas de TypeScript (app, Worker, scripts e testes) · 200+ commits |
-| **Testes** | 172 unitários · 82 cenários ponta a ponta (desktop e mobile) · validação do catálogo publicado |
+| **Código** | ~13 mil linhas de TypeScript (app, Worker, scripts e testes) · 240+ commits |
+| **Testes** | 181 unitários · 82 cenários ponta a ponta (desktop e mobile) · validação do catálogo publicado |
 | **Automação** | 3 rodadas do robô por dia · CI em cada push · Dependabot semanal |
 
 ## Funcionalidades
@@ -88,7 +88,7 @@ A graça não está só na tela, está no que acontece por trás dela: **ningué
 | **Ficha do filme** | Sinopse, elenco, galeria, trailer, classificação indicativa, notas e **onde assistir no Brasil** (assinatura ou, quando não há, aluguel) |
 | **Pesquisa** | Tolerante a acento e a variações de título, entende coleções e franquias, e sempre devolve só as categorias do CINERA |
 | **Minha biblioteca** | "Quero assistir" e "Já assisti", guardados no próprio navegador, sem cadastro |
-| **Acessibilidade** | Navegação por teclado, foco gerenciado nos modais, rótulos ARIA e auditoria automática com axe |
+| **Acessibilidade** | Navegação por teclado, foco gerenciado nos modais, rótulos ARIA (com o texto visível dentro do nome, WCAG 2.5.3) e auditoria automática com axe |
 
 ## Como funciona
 
@@ -156,7 +156,7 @@ sequenceDiagram
 | Hora (Brasília) | O que acontece |
 |---|---|
 | **06h30 · 12h30 · 18h30** | O robô confere a data do `catalog.json`. Se o catálogo de hoje ainda não saiu, monta tudo (coleta, pontua, ordena, gira a ordem e valida) e, se tudo passar, faz o commit na `main`; o Cloudflare publica em poucos minutos, já com as fotos do destaque recodificadas em AVIF pelo build. Se o de hoje já está publicado, encerra em segundos sem gastar cota |
-| **Se tudo falhar** | O catálogo do dia anterior continua no ar e o robô abre uma issue no repositório |
+| **Se tudo falhar** | O catálogo do dia anterior continua no ar e o robô abre uma issue no repositório (ou comenta na que já está aberta) |
 
 ### A curadoria
 
@@ -172,6 +172,7 @@ sequenceDiagram
 5. **Franquias espalhadas.** Os primeiros 15 filmes de uma lista são de franquias diferentes, e depois delas o mesmo universo só reaparece com pelo menos 10 posições de distância.
 6. **Duas camadas.** Um **topo de 200** com o piso de público cheio e uma **cauda de até 200** com piso menor, sempre abaixo do topo.
 7. **Rotação diária determinística.** A ordem gira em blocos, sem arquivo de estado: o resultado depende só da data, então é reproduzível e uma falha num dia não corrompe o seguinte. A única memória é o destaque (abaixo). A curva de qualidade se mantém, e a posição 12 nunca vira um filme muito pior que a 11. Os 10 primeiros de **todas** as fileiras trocam de lugar todo dia, em blocos do mesmo nível, e os **5 filmes do destaque mudam todo dia**, um de cada fileira. Um filme que foi destaque só volta depois de **7 dias**: o `catalog.json` guarda os ids dos últimos destaques em `heroHistory` (ignorado pelo site), e o robô e a validação usam esse histórico.
+8. **A Home fecha 20 filmes em cada fileira.** Nenhum filme aparece em duas fileiras (nem no destaque), e Novidades e Em Alta dividem os mesmos lançamentos de qualidade. Antes, cada fileira levava os seus primeiros filmes livres, na ordem, e quem vinha depois ficava com o que sobrava: o Em Alta chegava a 17 e a verificação reprovava. Agora a Home ([`assignHomeRows`](src/infrastructure/catalog/home-assembly.ts)) começa do mesmo jeito e, quando uma fileira fica curta, busca os que faltam em outra que tenha reposição na própria lista (cede o filme de pior posição na lista dela). O app e a verificação do catálogo usam a mesma função.
 
 Cada regra tem teste. O `npm run test:catalog` confere o catálogo **publicado**, não só o código.
 
@@ -179,7 +180,7 @@ Cada regra tem teste. O `npm run test:catalog` confere o catálogo **publicado**
 
 ### O robô
 
-O workflow [`atualizar-catalogo.yml`](.github/workflows/atualizar-catalogo.yml) só publica depois de passar por **todas** as validações: tamanho mínimo das listas, ausência de repetição, formato dos dados, cobertura das notas do IMDb e mudanças bruscas em relação a ontem. Se qualquer passo falhar, o catálogo anterior é restaurado e nada é commitado.
+O workflow [`atualizar-catalogo.yml`](.github/workflows/atualizar-catalogo.yml) só publica depois de passar por **todas** as validações: tamanho mínimo das listas, ausência de repetição, **20 filmes por fileira na Home**, formato dos dados, cobertura das notas do IMDb e mudanças bruscas em relação a ontem. Se qualquer passo falhar, o catálogo anterior é restaurado e nada é commitado.
 
 ## Dados e contratos
 
@@ -239,7 +240,7 @@ A política de reporte de falhas está em [`SECURITY.md`](SECURITY.md).
 ```text
 Vitest        testes   regras de curadoria, classificação, Worker, serviços, mapeadores e o plugin das fotos do destaque
 Playwright     cenários em desktop e mobile, com a API simulada
-axe-core      auditoria de acessibilidade das telas principais
+axe-core      auditoria de acessibilidade das telas principais (axe 4.14, com a regra de rótulo no nome)
 test:catalog  validação do catálogo publicado (listas, índice, notas do IMDb)
 CI            lint, testes, catálogo, tipos e build, e os testes e2e em paralelo, a cada push
 ```
@@ -276,6 +277,15 @@ Para a chave nunca estar no JavaScript. Antes, as chaves iam no bundle (o que é
 <br />
 
 Antes, a ficha, a pesquisa e as listas decidiam a categoria de formas ligeiramente diferentes, e o mesmo filme podia aparecer em categorias distintas. Hoje existe uma função ([`classification.ts`](src/domain/classification.ts)) usada por todos, com fixtures de regressão para os casos difíceis.
+
+</details>
+
+<details>
+<summary><b>Por que a Home distribui os filmes entre as fileiras?</b></summary>
+
+<br />
+
+Porque a regra "o primeiro que pega fica com o filme" desperdiçava filmes. Em 30 catálogos publicados, Novidades e Em Alta juntos têm no mínimo **45 filmes distintos** para 40 vagas, mas cada uma levava os seus 20 melhores e a segunda ficava curta. Dividir o conjunto fecha as 20 vagas em todos os dias medidos, sem afrouxar nenhum filtro de qualidade e sem trazer clássicos de sempre para uma fileira que é de agora. Nos dias em que a conta antiga já fechava, a Home é idêntica à de antes. Detalhes e alternativas descartadas em [`docs/decisoes.md`](docs/decisoes.md).
 
 </details>
 
