@@ -1,7 +1,21 @@
 {
   "name": "cinera",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.1.0",
+  "description": "Catálogo de filmes curado por algoritmo: um robô monta as fileiras todo dia, o site é estático na borda do Cloudflare e um Worker guarda as chaves de API.",
+  "license": "MIT",
+  "author": "Chrystiano Moura",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrystianomoura/cinera.git"
+  },
+  "homepage": "https://cinera.party",
+  "bugs": {
+    "url": "https://github.com/chrystianomoura/cinera/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
