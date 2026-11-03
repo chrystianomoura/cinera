@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Plugin } from 'vite'
-import { heroPreloadAttrs } from './src/features/hero/hero-image.ts'
+import { heroPreloadAttrs } from '../src/features/hero/hero-image.ts'
 
 /**
  * Fotos do destaque em AVIF, geradas no build.

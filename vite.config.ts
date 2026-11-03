@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 import { handleApi, type ResponseCache } from './worker/api.ts'
-import { heroImages } from './vite-plugin-hero-images.ts'
+import { heroImages } from './build/vite-plugin-hero-images.ts'
 
 /**
  * No `npm run dev` não há Worker: este plugin responde /api/* com o mesmo código dele, usando as chaves do
@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => ({
     host: true,
   },
   test: {
-    include: ['src/**/*.test.ts', 'worker/**/*.test.ts', 'vite-plugin-*.test.ts'],
+    include: ['src/**/*.test.ts', 'worker/**/*.test.ts', 'build/**/*.test.ts'],
     environment: 'node',
   },
 }))

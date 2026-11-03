@@ -233,7 +233,7 @@ O site é público, então a pergunta é sempre "o que um visitante mal-intencio
 | **Cabeçalhos** | HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` e `frame-ancestors 'none'` |
 | **Cadeia de suprimentos** | Dependabot (versões e correções de segurança), alertas de vulnerabilidade, *secret scanning* com *push protection* e `npm audit` limpo |
 
-A política de reporte de falhas está em [`SECURITY.md`](SECURITY.md).
+A política de reporte de falhas está em [`SECURITY.md`](.github/SECURITY.md).
 
 ## Qualidade
 
