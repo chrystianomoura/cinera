@@ -3,7 +3,7 @@ import type { Movie } from "@/domain";
 import { MovieCarousel } from "./MovieCarousel";
 import { useCatalog } from "@/hooks/use-catalog";
 import type { CatalogRowId } from "@/infrastructure/catalog/catalog-schema";
-import { createDeduper } from "@/infrastructure/catalog/home-assembly";
+import { HOME_ROW_ORDER, assignHomeRows } from "@/infrastructure/catalog/home-assembly";
 import {
   useTrendingMovies,
   useNewReleasesMovies,
@@ -22,8 +22,8 @@ interface HomeFeedProps {
 /**
  * Feed principal da Home com os 5 carrosséis editoriais do Cinera.
  * Cada fileira vem do catálogo curado quando ele a possui; senão, da busca ao vivo (retorno por
- * fileira, então o catálogo pode ser adotado aos poucos). Aplica deduplicação em cascata (seenIds)
- * para nenhum filme se repetir entre as fileiras nem com o destaque.
+ * fileira, então o catálogo pode ser adotado aos poucos). Distribui os filmes entre as fileiras (assignHomeRows)
+ * para nenhum filme se repetir entre elas nem com o destaque, e cada fileira feche o seu limite sempre que houver filmes.
  */
 export function HomeFeed({ excludeIds, isFadingOut = false, onSelectMovie }: HomeFeedProps) {
   const { data: catalog, isLoading: isLoadingCatalog } = useCatalog();
@@ -45,8 +45,19 @@ export function HomeFeed({ excludeIds, isFadingOut = false, onSelectMovie }: Hom
     const curated = (id: CatalogRowId): Movie[] | undefined =>
       catalog?.rows.find((row) => row.id === id)?.movies;
 
-    // Garante unicidade de filmes entre as seções (e em relação ao destaque)
-    const dedupe = createDeduper<Movie>(excludedKey ? excludedKey.split(",").map(Number) : []);
+    // Os filmes de cada fileira: os do catálogo curado ou, na falta dele, os da busca ao vivo
+    const sources: Record<CatalogRowId, Movie[] | undefined> = {
+      novidades: curated("novidades") ?? newData?.results,
+      "em-alta": curated("em-alta") ?? trendingData?.results,
+      aclamados: curated("aclamados") ?? topData?.results,
+      classicos: curated("classicos") ?? classicsData?.results,
+      populares: curated("populares") ?? popularData?.results,
+    };
+    // Garante unicidade de filmes entre as seções (e em relação ao destaque) e que cada uma feche o limite quando der
+    const assigned = assignHomeRows<Movie>(
+      HOME_ROW_ORDER.map((id) => ({ id, movies: sources[id] })),
+      excludedKey ? excludedKey.split(",").map(Number) : [],
+    );
 
     const define = (
       id: CatalogRowId,
@@ -58,7 +69,7 @@ export function HomeFeed({ excludeIds, isFadingOut = false, onSelectMovie }: Hom
       return {
         title,
         icon,
-        movies: dedupe(fromCatalog ?? live.results),
+        movies: assigned[id] ?? [],
         // Enquanto o catálogo carrega, a fileira espera: evita mostrar a busca ao vivo e trocar depois
         isLoading: isLoadingCatalog || (!fromCatalog && live.isLoading),
         isError: !fromCatalog && live.isError,
@@ -66,7 +77,8 @@ export function HomeFeed({ excludeIds, isFadingOut = false, onSelectMovie }: Hom
     };
 
     return [
-      // Novidades vem antes: fica com os grandes lançamentos do ano e Em Alta com o que sobra em tendência
+      // Novidades vem antes: fica com os grandes lançamentos do ano e Em Alta com o que sobra em tendência (e, se faltar, recebe filmes
+      // que Novidades tem de sobra na própria lista: veja assignHomeRows)
       define("novidades", "Novidades", "✨", { results: newData?.results, isLoading: isLoadingNew, isError: isErrorNew }),
       define("em-alta", "Em Alta", "🔥", { results: trendingData?.results, isLoading: isLoadingTrending, isError: isErrorTrending }),
       define("aclamados", "Aclamados pela Crítica", "⭐", { results: topData?.results, isLoading: isLoadingTop, isError: isErrorTop }),

@@ -2,7 +2,7 @@
 import { catalogSchema, CATALOG_ROW_IDS, type Catalog, type CatalogRowId } from "../../src/infrastructure/catalog/catalog-schema.js";
 import { getFranchiseKey } from "../../src/infrastructure/api/curation-filters.js";
 import { dayIndex } from "./rotation.js";
-import { HOME_ROW_ORDER, HOME_ROW_LIMIT, createDeduper } from "../../src/infrastructure/catalog/home-assembly.js";
+import { HOME_ROW_ORDER, HOME_ROW_LIMIT, assignHomeRows } from "../../src/infrastructure/catalog/home-assembly.js";
 import { genreCatalogSchema } from "../../src/infrastructure/catalog/genre-catalog.js";
 import { GENRES, type GenreCategory } from "../../src/features/catalog/constants.js";
 
@@ -86,10 +86,13 @@ export function validateCatalog(
     if (!m.tagline?.trim()) errors.push(`destaque: "${m.title}" sem tagline`);
   }
 
-  // Home como o app a monta: sem os filmes do destaque e sem repetir filme entre fileiras
-  const dedupe = createDeduper<{ id: number }>(hero.map((m) => m.id));
+  // Home como o app a monta: sem os filmes do destaque e sem repetir filme entre fileiras (a mesma distribuição da Home)
+  const home = assignHomeRows<{ id: number }>(
+    HOME_ROW_ORDER.map((id) => ({ id, movies: catalog.rows.find((r) => r.id === id)?.movies })),
+    hero.map((m) => m.id),
+  );
   for (const id of HOME_ROW_ORDER) {
-    const visible = dedupe(catalog.rows.find((r) => r.id === id)?.movies).length;
+    const visible = home[id].length;
     if (visible < HOME_ROW_LIMIT) errors.push(`${id}: só ${visible} filmes aparecem na Home (esperado ${HOME_ROW_LIMIT})`);
   }
 
