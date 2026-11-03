@@ -106,10 +106,11 @@ export function UserLibraryView({
       <div className="sticky top-0 z-20 bg-black/60 backdrop-blur-xl border-b border-white/10 px-4 md:px-12 header-bar flex items-center justify-between">
         <BrandLogo onClick={scrollLibraryToTop} titleId={titleId} />
 
+        {/* O nome acessível contém o texto visível ("Voltar"): WCAG 2.5.3, rótulo no nome (axe 4.14, label-content-name-mismatch). */}
         <button
           type="button"
           onClick={onClose}
-          aria-label="Fechar biblioteca"
+          aria-label="Voltar, fechar biblioteca"
           title="Fechar (Esc)"
           className="flex items-center gap-2 px-4 h-9 sm:h-10 rounded-full bg-zinc-800/80 hover:bg-white text-zinc-300 hover:text-black border border-white/20 transition-all duration-200 cursor-pointer shadow-lg group active:scale-95"
         >

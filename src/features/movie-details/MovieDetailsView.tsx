@@ -149,6 +149,8 @@ export function MovieDetailsView({
           Cinera
         </h1>
 
+        {/* O nome acessível contém o texto visível do botão ("Pesquisa" ou "Voltar"): WCAG 2.5.3, rótulo no nome (regra
+            label-content-name-mismatch do axe 4.14). Quem usa comando de voz diz o que lê na tela. */}
         <button
           onClick={onClose}
           aria-label={
@@ -156,7 +158,7 @@ export function MovieDetailsView({
               ? "Voltar para a pesquisa (Esc)"
               : isFromLibrary
               ? "Voltar para a biblioteca (Esc)"
-              : "Fechar detalhes (Esc)"
+              : "Voltar, fechar detalhes (Esc)"
           }
           title={
             isFromSearch
