@@ -247,7 +247,7 @@ CI            lint, testes, catálogo, tipos e build, e os testes e2e em paralel
 
 Os testes ponta a ponta **não dependem de rede externa**: o Worker e o TMDB são simulados, então não ficam intermitentes por causa de um serviço de terceiros.
 
-Alguns conferem o que o build **realmente publica**: que o `index.html` precarrega o AVIF da primeira foto do destaque, que o arquivo é servido e que o `<img>` usa exatamente esse mesmo arquivo ([`e2e/preload-destaque.spec.ts`](e2e/preload-destaque.spec.ts)). Foi provado por mutação: com a geração do AVIF desligada (`CINERA_HERO_AVIF=off`), eles falham. Como o build baixa as originais da TMDB, esses testes precisam de rede na primeira vez; perder o AVIF deixa a foto bem mais pesada, e isso não pode passar em silêncio.
+Alguns conferem o que o build **realmente publica**: que o `index.html` precarrega o AVIF da primeira foto do destaque, que o arquivo é servido e que o `<img>` usa exatamente esse mesmo arquivo ([`e2e/hero-preload.spec.ts`](e2e/hero-preload.spec.ts)). Foi provado por mutação: com a geração do AVIF desligada (`CINERA_HERO_AVIF=off`), eles falham. Como o build baixa as originais da TMDB, esses testes precisam de rede na primeira vez; perder o AVIF deixa a foto bem mais pesada, e isso não pode passar em silêncio.
 
 ## Decisões de engenharia
 
@@ -360,20 +360,26 @@ O `npm run build` baixa as 5 fotos do destaque na TMDB e gera os AVIF (precisa d
 src/
   domain/            tipos do domínio e a classificação única de categorias
   features/          catálogo, ficha, pesquisa, biblioteca, destaque, trailer
-  infrastructure/    clientes de API, leitura do catálogo, pesquisa, schemas Zod
+  infrastructure/    clientes de API, leitura do catálogo, pesquisa, schemas Zod e os dados de exemplo do modo demo
   hooks/ stores/     dados da tela e biblioteca do usuário
   lib/               utilitários de interface (rolagem, viewport estável, formatação, decodificação de imagem)
   dev/               medidor de FPS, só no `npm run dev` com `?fps=1` (some do build publicado)
 worker/              o Worker de /api (rotas fixas, cache, limites) e seus testes
-vite-plugin-hero-images.ts    plugin do build: gera as fotos do destaque em AVIF, o módulo `virtual:hero-images` e o preload no index.html (e o teste dele)
+build/               plugin do Vite: gera as fotos do destaque em AVIF, o módulo `virtual:hero-images` e o preload no index.html (e o teste dele)
 scripts/
   curation/          pontuação, filtros, rotação, validação e notas do IMDb
   build-catalog.ts   monta o catálogo e só publica se passar nas verificações
 e2e/                 testes ponta a ponta e de acessibilidade
 public/              o catálogo publicado, ícones, cabeçalhos e manifest
 docs/                documentação extra (foto do destaque, decisões) e imagens deste README
-.github/workflows/   CI e robô diário
+.github/             CI e robô diário (workflows), política de segurança, modelos de PR e de issue
 ```
+
+Na raiz ficam só a documentação (`README.md`, `CONTRIBUTING.md`, `LICENSE`), o manifesto (`package.json`, `index.html`) e as configurações das ferramentas (Vite, Playwright, Wrangler, TypeScript, oxlint e editorconfig), no mesmo desenho do template oficial do Vite.
+
+## Contribuindo
+
+Correções e ideias são bem-vindas. O [`CONTRIBUTING.md`](CONTRIBUTING.md) explica como rodar, o que conferir antes de abrir um PR e as convenções do projeto. Falhas de segurança seguem a [política de segurança](.github/SECURITY.md), não issues públicas.
 
 ## Créditos
 
