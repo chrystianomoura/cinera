@@ -1,0 +1,24 @@
+name: Ideia ou melhoria
+description: Sugira algo novo ou uma melhoria no CINERA
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qual problema isto resolve?
+      description: Conte a situação em que sentiu falta disso.
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: O que você propõe
+      description: Como imagina que funcionaria. Um desenho ou exemplo ajuda.
+    validations:
+      required: true
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas que você considerou
+    validations:
+      required: false
