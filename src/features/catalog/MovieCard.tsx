@@ -64,9 +64,15 @@ export const MovieCard = memo(function MovieCard({
           ) : (
             <div className="flex flex-col h-full w-full items-center justify-center rounded-[0.7rem] bg-zinc-900 text-zinc-400 text-center p-4 pointer-events-none">
               <Film className="w-8 h-8 mb-2 text-zinc-600" />
-              <span className="text-[10px] uppercase tracking-widest mb-1 font-mono text-zinc-400">
-                Sem Imagem
-              </span>
+              {/* O "Sem Imagem" é desenhado por CSS (::after), e não como texto: o botão já se chama "Ver detalhes de {título}", e um texto
+                  visível dentro dele que não faz parte desse nome reprova na regra label-content-name-mismatch do axe 4.14 (WCAG 2.5.3,
+                  rótulo no nome). Com o pôster carregando não havia texto no botão; era só o cartão sem imagem (e os testes ponta a ponta,
+                  que bloqueiam os pôsteres). O tamanho na tela é o mesmo. */}
+              <span
+                aria-hidden="true"
+                className="text-[10px] uppercase tracking-widest mb-1 font-mono text-zinc-400 after:content-['Sem_Imagem']"
+              />
+
               <span className="font-semibold text-xs leading-tight text-zinc-400 line-clamp-2">
                 {movie.title}
               </span>
