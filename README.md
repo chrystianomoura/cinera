@@ -19,7 +19,7 @@
 
 <br />
 
-<img src="docs/screenshots/desktop.jpg" alt="CINERA no desktop: destaque em tela cheia com Gladiador e filtros por categoria" width="73%" />&nbsp;&nbsp;<img src="docs/screenshots/mobile.jpg" alt="CINERA no celular, com Gladiador em destaque" width="22%" />
+<img src="docs/screenshots/desktop.jpg" alt="CINERA no desktop: destaque em tela cheia com Oppenheimer e filtros por categoria" width="73%" />&nbsp;&nbsp;<img src="docs/screenshots/mobile.jpg" alt="CINERA no celular, com Oppenheimer em destaque" width="22%" />
 
 </div>
 
