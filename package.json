@@ -37,9 +37,9 @@
     "test:catalog": "tsx scripts/test-catalog.ts"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "@tanstack/react-query": "^5.105.0",
-    "lucide-react": "^1.63.0",
+    "@tailwindcss/vite": "^4.3.4",
+    "@tanstack/react-query": "^5.105.3",
+    "lucide-react": "^1.68.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.3",
